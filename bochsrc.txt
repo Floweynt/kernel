@@ -1,0 +1,2 @@
+ata0-master: type=disk, path="/home/Flowey/home/kernel/kernel.img", mode=flat
+boot: disk
