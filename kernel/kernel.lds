@@ -1,44 +1,47 @@
-OUTPUT_FORMAT("binary")
-ENTRY(main);
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+
+ENTRY(_start)
+
+PHDRS
+{
+    null    PT_NULL    FLAGS(0) ;                   /* Null segment */
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */
+    rodata  PT_LOAD    FLAGS((1 << 2)) ;            /* Read only */
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
+    dynamic PT_DYNAMIC FLAGS((1 << 1) | (1 << 2)) ; /* Dynamic segment needed for PIE */
+}
+
 SECTIONS
-{   
-    . = 0x100000;
-        
-    kstart = .;
-    
-    .text : 
-	{
-		code = .;
-		*(.text*)
-	}
+{
+    . = 0xffffffff80200000;
 
-	.rodata BLOCK(1) : 
-	{
-		*(.rodata)
-	}
+    .text : {
+        *(.text*)
+    } :text
 
-	.data BLOCK(1) : 
-	{
-		data = .;
-		*(.data)
-	}
+    . += 0x1000;
 
-	.bss BLOCK(1) : 
-	{
-		PROVIDE(_bss_start = .);
-		bss = .;
-		*(COMMON)
-		*(.bss)
-		*(.stack)
-		PROVIDE(_bss_end = .);
-	}
-	
-	kend = .;
-    
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-        *(.note.gnu.build-id)
-    }
+    .stivale2hdr : {
+        KEEP(*(.stivale2hdr))
+    } :rodata
+
+    .rodata : {
+        *(.rodata*)
+    } :rodata
+
+    . += 0x1000;
+
+    .data : {
+        *(.data*)
+    } :data
+
+    .dynamic : {
+        *(.dynamic)
+    } :data :dynamic
+
+    .bss : {
+        *(COMMON)
+        *(.bss*)
+    } :data
 }
