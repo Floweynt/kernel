@@ -1,2 +1,3 @@
-ata0-master: type=disk, path="/home/Flowey/home/kernel/kernel.img", mode=flat
+ata0-master: type=disk, path="build/kernel.img", mode=flat
 boot: disk
+memory: guest=512, host=256

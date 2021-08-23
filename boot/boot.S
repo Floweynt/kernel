@@ -4,12 +4,22 @@
 	xor %ax, %ax
 	mov %ax, %ds
 	mov %ax, %ss
+    mov %ax, %es
 
-	mov %dl, boot_disk
+	mov %dl, 0x1000
 
     mov $0x7c00, %ax
     mov %ax, %sp
 
+    mov $0x02, %ah
+    mov $0x8, %al
+    mov $0x8000, %bx
+    mov $0x0002, %cx
+    mov $0x0, %dh
+    int $0x13
+    ljmp $0x0,$0x8000
+
+    /*
     // switch to protected mode
     cli
     pushw %ds
@@ -43,7 +53,7 @@ unrealmode:
     movl $3840, %ecx
     movl $0xb8000, %edi
     addr32 rep stosb
-    
+
 setup_video:
     mov $0x4f00, %ax
     mov $0x2000, %di
@@ -67,7 +77,7 @@ setup_video:
     jl .L3
     cmpw $480, 0x3014
     jl .L3
-    
+
     mov 0x3000, %dx
     and $(1 << 7), %dx
     jnz .L4
@@ -78,7 +88,7 @@ setup_video:
     mov %cx, 0x4001
     movl $0x2000, 0x4003
     movl $0x3000, 0x4007
-    
+
     mov $0x4f02, %ax
     mov %cx, %bx
     // flags
@@ -175,25 +185,10 @@ gdt_data:
     .byte 0
 gdt_end:
 
-.global boot_disk
-boot_disk:
-	.byte 0
-
-.global mmap_ent
-mmap_ent:
-	.byte 0
-	.byte 0
-
-.global lower_mem
-lower_mem:
-	.byte 0
-	.byte 0
-
-.align 4
 .global dap
 dap:
 	.byte 16
-	.byte 0 /* always 0 */
+	.byte 0 /* always 0
 
 .global dap_sectors
 dap_sectors:
@@ -205,3 +200,4 @@ dap_lba_low:
 	.long 1
 dap_lba_high:
 	.long 0
+*/
