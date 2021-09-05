@@ -1,5 +1,18 @@
 #!/bin/sh
 set -xe
+
+filename=$4
+maxsize=2000000
+filesize=$(stat -c%s "$filename")
+echo "Size of $filename = $filesize bytes."
+
+if (( filesize > maxsize )); then
+    echo "nope"
+    exit -1
+else
+    echo "fine"
+fi
+
 echo "Root:" $1
 echo "Boot:" $2
 echo "Stage 2:" $3

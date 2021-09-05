@@ -6,9 +6,10 @@
 
 struct bootloader_packet
 {
-    uint64_t loaded_address;
-    uint64_t mmap_size;
-    uint64_t mmap_ptr;
+    uint32_t loaded_address;
+    uint32_t loaded_size;
+    uint32_t mmap_size;
+    uint32_t mmap_ptr;
 
     uint8_t boot_device;
 

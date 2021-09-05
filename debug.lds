@@ -1,4 +1,3 @@
-OUTPUT_FORMAT("binary")
 ENTRY(main);
 SECTIONS
 {
@@ -37,6 +36,17 @@ SECTIONS
 	}
 
 	kend = .;
+    . = 0;
+    .debug :
+    {
+        *(.debug)
+        *(.debug.*)
+    }
+    .sym :
+    {
+        *(.sym)
+        *(.sym.*)
+    }
 
     /DISCARD/ :
     {

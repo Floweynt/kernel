@@ -5,20 +5,21 @@ kernel_gen = find_program('gen_binary.sh')
 add_project_arguments(
     '-fno-rtti',
     '-fno-exceptions',
-    '-lc',
-    '-march=i386',
     '-Os',
     '-ffreestanding',
     '-fno-PIC',
+    '-no-pie',
     '-fno-exceptions',
+    '-Wno-ignored-attributes',
+    '-Wall',
     '-fcf-protection=none',
     '-I' + (meson.source_root() / 'kernel/'),
     '-I' + (meson.source_root() / 'kernel/arch/x86/'),
+    '-I' + (meson.source_root() / 'kernel/arch/interface/'),
     language: 'cpp'
 )
 
 add_project_arguments(
-    '-march=i386',
     '-Os',
     '-ffreestanding',
     '-fno-PIC',
@@ -34,10 +35,24 @@ kernel = executable('kernel.bin',
 		    '-T' + (meson.source_root() / 'kernel/kernel.lds'),
 		    '-static',
         '-nostdlib',
-        '-lgcc'
+        '-lgcc',
+        '-m64',
 	  ],
-    cpp_args: '-m32',
-    c_args: '-m32'
+    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
+    c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel']
+)
+
+kernel_debug = executable('kernel.o',
+    sources,
+    link_args: [
+        '-T' + (meson.source_root() / 'debug.lds'),
+        '-static',
+        '-nostdlib',
+        '-lgcc',
+        '-m64',
+    ],
+    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-g'],
+    c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-g']
 )
 
 boot = executable('boot.bin',
@@ -47,7 +62,7 @@ boot = executable('boot.bin',
 		    '-static',
         '-nostdlib',
 	  ],
-    c_args: '-m16'
+    c_args: ['-m16', '-march=i386']
 )
 
 stage2 = executable('stage2.bin',
@@ -57,8 +72,8 @@ stage2 = executable('stage2.bin',
 		    '-static',
         '-nostdlib',
 	  ],
-    c_args: '-m16',
-    cpp_args: '-m16'
+    c_args: ['-m16', '-march=i386'],
+    cpp_args: ['-m16', '-march=i386']
 )
 
 kernelimg = custom_target(
@@ -66,4 +81,11 @@ kernelimg = custom_target(
     output : 'kernel.img',
     input : [boot, stage2, kernel],
     command : [kernel_gen, '@BUILD_ROOT@', '@INPUT0@', '@INPUT1@', '@INPUT2@', '@OUTPUT@']
+)
+
+bochs = find_program('bochs')
+run = run_target(
+    'run',
+    depends : [kernelimg],
+    command : [bochs]
 )

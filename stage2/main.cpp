@@ -176,6 +176,52 @@ void load()
     asm volatile("popa");
 }
 
+void actual_pmode()
+{
+    asm volatile(
+        "pushw %ax\n"
+        "lgdtw descriptor\n"
+        "mov %cr0, %eax\n"
+    	"or $1, %eax\n"
+    	"mov %eax, %cr0\n"
+
+    	"mov $0x10, %ax\n"
+    	"mov %ax, %ds\n"
+    	"mov %ax, %es\n"
+    	"mov %ax, %fs\n"
+    	"mov %ax, %gs\n"
+    	"mov %ax, %ss\n"
+        "popw %ax"
+    );
+}
+
+struct bootloader_packet
+{
+    uint32_t loaded_address;
+    uint32_t loaded_size;
+    uint32_t mmap_size;
+    uint32_t mmap_ptr;
+
+    uint8_t boot_device;
+
+    uint16_t vbe_version;
+    uint16_t total_memory_used;
+    uint16_t width;
+    uint16_t height;
+    uint8_t bpp;
+
+    uint8_t red_mask;
+	uint8_t red_position;
+	uint8_t green_mask;
+	uint8_t green_position;
+	uint8_t blue_mask;
+	uint8_t blue_position;
+
+    uint32_t framebuffer;
+};
+
+bootloader_packet pkt;
+
 void check_for_long_mode()
 {
     asm volatile("pusha");
@@ -202,15 +248,32 @@ void main()
     mmap* map = (mmap*)0x1000;
     for(int i = 0; i < size; i++)
     {
-        if(map->len >= 0x80 * 512 && map->type == 1 && map->base != 0 && (map->len + 0x80 * 512) < 0xFFFFFFFF)
+        uint64_t real_start = map->base + 0x1FFFFF;
+        real_start = real_start & ~0x1FFFFF;
+
+        uint64_t real_len = map->base + map->len - real_start;
+        if(
+            real_len >= 0x80 * 512 &&
+            map->type == 1 &&
+            map->base != 0 &&
+            (real_start + 0x80 * 512) < 0xFFFFFFFF
+        )
         {
             n = 0x80;
-            load_pos = map->base;
+            load_pos = real_start;
             load();
+            actual_pmode();
+            pkt.loaded_address = real_start;
+            pkt.mmap_size = size;
+            pkt.mmap_ptr = 0x1000;
+            pkt.boot_device = boot_disk;
+            pkt.loaded_addr = 0x80;
             asm volatile(
                 "push $0x8\n"
                 "push %0\n"
-                "lret": : "r"(map->base));
+                "mov $0x5061696e, %%eax\n"
+                "mov $pkt, %%ebx\n"
+                "lretl": : "r"(real_start));
         }
         map++;
     }
