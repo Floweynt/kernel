@@ -28,7 +28,7 @@ namespace paging
 
     void* get_page(uint64_t physical_address, uint64_t len);
 
-    using page_table = alignas(4096) page_table_entry[512];
+    using page_table = alignas(4096) uint64_t[512];
 }
 
 #endif

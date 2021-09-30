@@ -13,10 +13,10 @@
 #define TO_CANONICAL(ptr) \
     (reinterpret_cast<std::decay_t<decltype(ptr)>>(0xFFFF000000000000 | (uint64_t)ptr))
 
-template<uint8_t n>
+template <uint8_t n>
 uint64_t align(uint64_t t)
 {
-    return (t + (1 << n) - 1) & (~(1 << n))
+    return (t + (1 << n) - 1) & (~(1 << n));
 }
 
 #endif

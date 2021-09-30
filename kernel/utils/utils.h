@@ -27,4 +27,7 @@ constexpr inline void set_bits(uint64_t& v, uint64_t to_set)
 	v &= ~(((1ULL << (uint64_t)(end - start + 1)) - 1) << start);
 	v |= (((1ULL << (uint64_t)(end - start + 1)) - 1) << start) & to_set;
 }
+
+#define PACKED __attribute__((packed))
+
 #endif
