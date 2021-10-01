@@ -1,6 +1,6 @@
 #include "paging.h"
 #include "utils.h"
-#include "kinit.h"
+#include "kinit/kinit.h"
 
 #define GET_VIRTUAL_POS(n) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION)
 

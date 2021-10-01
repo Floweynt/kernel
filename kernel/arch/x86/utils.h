@@ -1,7 +1,7 @@
 #ifndef __ARCH_X86_UTILS_H__
 #define __ARCH_X86_UTILS_H__
 #include <type_traits>
-#include "kinit.h"
+#include "kinit/kinit.h"
 
 #define PLACE_AT_START __attribute__((section(".place.in.front")))
 #define GET_OFFSET_FROM_START(ptr) \

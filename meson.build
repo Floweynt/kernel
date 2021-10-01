@@ -5,17 +5,14 @@ kernel_gen = find_program('gen_binary.sh')
 add_project_arguments(
     '-fno-rtti',
     '-fno-exceptions',
+    '-lc',
     '-Os',
     '-ffreestanding',
     '-fno-PIC',
-    '-no-pie',
     '-fno-exceptions',
-    '-Wno-ignored-attributes',
-    '-Wall',
     '-fcf-protection=none',
     '-I' + (meson.source_root() / 'kernel/'),
     '-I' + (meson.source_root() / 'kernel/arch/x86/'),
-    '-I' + (meson.source_root() / 'kernel/arch/interface/'),
     language: 'cpp'
 )
 
@@ -33,26 +30,13 @@ kernel = executable('kernel.bin',
     sources,
     link_args: [
 		    '-T' + (meson.source_root() / 'kernel/kernel.lds'),
+        '-m64',
 		    '-static',
         '-nostdlib',
-        '-lgcc',
-        '-m64',
+        '-lgcc'
 	  ],
-    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
-    c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel']
-)
-
-kernel_debug = executable('kernel.o',
-    sources,
-    link_args: [
-        '-T' + (meson.source_root() / 'debug.lds'),
-        '-static',
-        '-nostdlib',
-        '-lgcc',
-        '-m64',
-    ],
-    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-g'],
-    c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-g']
+    cpp_args: ['-m64', '-march=x86-64'],
+    c_args: ['-m64', '-march=x86-64']
 )
 
 boot = executable('boot.bin',
@@ -63,7 +47,8 @@ boot = executable('boot.bin',
         '-nostdlib',
         '-m16'
 	  ],
-    c_args: ['-m16', '-march=i386']
+    c_args: ['-m16', '-march=i386'],
+    cpp_args: ['-m16', '-march=i386']
 )
 
 stage2 = executable('stage2.bin',
@@ -83,11 +68,4 @@ kernelimg = custom_target(
     output : 'kernel.img',
     input : [boot, stage2, kernel],
     command : [kernel_gen, '@BUILD_ROOT@', '@INPUT0@', '@INPUT1@', '@INPUT2@', '@OUTPUT@']
-)
-
-bochs = find_program('bochs')
-run = run_target(
-    'run',
-    depends : [kernelimg],
-    command : [bochs]
 )

@@ -3,7 +3,7 @@
 #include "kinit.h"
 #include "config.h"
 #include "utils.h"
-#include "driver/tty.h"
+#include "arch/interface/driver/tty.h"
 #include "paging/paging.h"
 
 #define GET_VIRTUAL_POS(n) (get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION) >> ((4 - n) * 9 + 12))

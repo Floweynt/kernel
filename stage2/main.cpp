@@ -296,6 +296,7 @@ void main()
             load_pos = real_start;
             load();
             actual_pmode();
+            asm volatile(".code32");
             pkt.loaded_address = real_start;
             pkt.mmap_size = size;
             pkt.mmap_ptr = 0x1000;
