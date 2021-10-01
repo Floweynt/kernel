@@ -64,7 +64,8 @@ boot = executable('boot.bin',
         '-nostdlib',
         '-m16'
     ],
-    c_args: ['-m16', '-march=i386']
+    c_args: ['-m16', '-march=i386'],
+    cpp_args: ['-m16', '-march=i386']
 )
 
 stage2 = executable('stage2.bin',
