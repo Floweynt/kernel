@@ -61,6 +61,7 @@ boot = executable('boot.bin',
 		    '-T' + (meson.source_root() / 'boot/boot.lds'),
 		    '-static',
         '-nostdlib',
+        '-m16'
 	  ],
     c_args: ['-m16', '-march=i386']
 )
@@ -71,6 +72,7 @@ stage2 = executable('stage2.bin',
 		    '-T' + (meson.source_root() / 'stage2/link.lds'),
 		    '-static',
         '-nostdlib',
+        '-m16'
 	  ],
     c_args: ['-m16', '-march=i386'],
     cpp_args: ['-m16', '-march=i386']

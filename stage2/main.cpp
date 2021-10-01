@@ -235,8 +235,41 @@ void check_for_long_mode()
     asm volatile("popa");
 }
 
+constexpr uint64_t MASK_PRESENT = 0x1;
+constexpr uint64_t MASK_RW = 0x2;
+constexpr uint64_t MASK_USER = 0x4;
+constexpr uint64_t MASK_ACCESSED = 0x20;
+constexpr uint64_t MASK_PAGE_SIZE = 0x80;
+
+constexpr uint64_t MASK_TABLE_POINTER = 0xFFFFFFFFFF000;
+constexpr uint64_t MASK_TABLE_LARGE = 0xFFFFFC0000000;
+constexpr uint64_t MASK_TABLE_MEDIUM = 0xFFFFFFFE00000;
+constexpr uint64_t MASK_TABLE_SMALL = 0xFFFFFFFFFF000;
+
+constexpr uint64_t MASK_PROT_KEY = 0x7800000000000000;
+
+template <typename T>
+void set_table_pointer(uint64_t& table, T* ptr, uint64_t mask)
+{
+    table = (table & ~mask) | ((uint64_t)table & mask);
+}
+
+inline void set_prot_key(uint64_t& table, uint8_t prot_key)
+{
+    table = (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
+}
+
 uint32_t jump_to;
 uint16_t boot_disk;
+
+template<uint8_t start, uint8_t end>
+constexpr inline uint64_t get_bits(uint64_t v)
+{
+    return v & (((1ULL << (uint64_t)(end - start + 1)) - 1) << start);
+}
+
+#define GET_PHYSICAL_POINTER(n, pos) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(pos)
+
 void main()
 {
     boot_disk = *((uint16_t*)0x1000);
@@ -267,7 +300,25 @@ void main()
             pkt.mmap_size = size;
             pkt.mmap_ptr = 0x1000;
             pkt.boot_device = boot_disk;
-            pkt.loaded_addr = 0x80;
+            pkt.loaded_address = 0x80;
+
+            *((uint64_t*)0x9000) = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x9000), (void*)0x10000, MASK_TABLE_POINTER);
+            *((uint64_t*)0x10000) = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x10000), (void*)0x10000, MASK_TABLE_POINTER);
+            *((uint64_t*)0x11000) = MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x11000), (void*)0, MASK_TABLE_MEDIUM);
+
+            // we need l1->l2->l3->mem
+            ((uint64_t*)0x9000)[GET_PHYSICAL_POINTER(1, 0xFFFFFFFF80000000)] = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x9000), (void*)0x12000, MASK_TABLE_POINTER);
+
+            ((uint64_t*)0x12000)[GET_PHYSICAL_POINTER(2, 0xFFFFFFFF80000000)] = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x12000), (void*)0x13000, MASK_TABLE_POINTER);
+
+            ((uint64_t*)0x13000)[GET_PHYSICAL_POINTER(3, 0xFFFFFFFF80000000)] = MASK_PRESENT | MASK_RW;
+            set_table_pointer(*((uint64_t*)0x13000), (void*)real_start, MASK_TABLE_MEDIUM);
+
             asm volatile(
                 "push $0x8\n"
                 "push %0\n"

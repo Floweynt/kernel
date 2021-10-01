@@ -14,8 +14,8 @@ namespace paging
     page_table PLACE_AT_START remap_boot_l3;
     page_table PLACE_AT_START remap_boot_l4;
 
-    bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, bool override)
+    bool request_page(page_type pt, void* root, uint64_t virtual_addr, uint64_t physical_address, bool override)
     {
-
+        // traverse
     }
 }
