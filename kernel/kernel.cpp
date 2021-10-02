@@ -1,4 +1,7 @@
+#include "arch/interface/kinit.h"
+
 int main ()
 {
-    while(1) { }
+    pre_kernel_init();
+    kernel_init();
 }

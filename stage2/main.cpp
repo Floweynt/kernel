@@ -296,30 +296,11 @@ void main()
             load_pos = real_start;
             load();
             actual_pmode();
-            asm volatile(".code32");
             pkt.loaded_address = real_start;
             pkt.mmap_size = size;
             pkt.mmap_ptr = 0x1000;
             pkt.boot_device = boot_disk;
-            pkt.loaded_address = 0x80;
-
-            *((uint64_t*)0x9000) = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x9000), (void*)0x10000, MASK_TABLE_POINTER);
-            *((uint64_t*)0x10000) = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x10000), (void*)0x10000, MASK_TABLE_POINTER);
-            *((uint64_t*)0x11000) = MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x11000), (void*)0, MASK_TABLE_MEDIUM);
-
-            // we need l1->l2->l3->mem
-            ((uint64_t*)0x9000)[GET_PHYSICAL_POINTER(1, 0xFFFFFFFF80000000)] = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x9000), (void*)0x12000, MASK_TABLE_POINTER);
-
-            ((uint64_t*)0x12000)[GET_PHYSICAL_POINTER(2, 0xFFFFFFFF80000000)] = MASK_PAGE_SIZE | MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x12000), (void*)0x13000, MASK_TABLE_POINTER);
-
-            ((uint64_t*)0x13000)[GET_PHYSICAL_POINTER(3, 0xFFFFFFFF80000000)] = MASK_PRESENT | MASK_RW;
-            set_table_pointer(*((uint64_t*)0x13000), (void*)real_start, MASK_TABLE_MEDIUM);
-
+            
             asm volatile(
                 "push $0x8\n"
                 "push %0\n"

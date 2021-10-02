@@ -23,6 +23,10 @@ idt_common:
     pushq %r13
     pushq %r14
     pushq %r15
+    pushq %rbp
+    movq %rsp, %rbp
+    movq %rax, %rsi
+    movq %rbp, %rdi
 	call *idt_handler_entries(%rax)
 
 idt_entry_start:

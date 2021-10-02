@@ -53,6 +53,23 @@ __attribute__((section(".text.init"))) void start(uint64_t loaded_addr)
 
 void pre_kernel_init()
 {
+    asm volatile(
+        "push %rax\n"
+        "movw $handler, 8 * 4\n"
+        "mov %cs, 8 * 4 + 2\n"
+        "outb $0b00110100, $0x43\n"
+
+        "mov $0xFF, %al\n"
+        "out %al, $0x40\n"
+        "out %al, $0x40\n"
+        "pop %rax\n"
+    );
+    init_idt();
+    register_idt([](uint64_t vec, void* stack) {
+        for(int i = 0; i < 100; i++)
+            asm volatile(" ");
+    }, 0b11100001, 0);
+    install_idt();
 
 }
 

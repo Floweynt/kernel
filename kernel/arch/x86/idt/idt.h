@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 
-using interrupt_handler = void (*)();
+using interrupt_handler = void (*)(uint64_t, void*);
 
 struct idt_entry
 {
