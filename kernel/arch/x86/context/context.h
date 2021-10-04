@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "config.h"
 
+// this is a fully restorable execution context
 struct context
 {
     uint64_t rip;
@@ -14,7 +15,7 @@ struct context
     uint64_t cs;
     uint64_t ss;
 
-    inline void load_ctx(void* stackpos)
+    inline void load_ctx(void* stackpos, uint64_t vec)
     {
         uint64_t* stack = (uint64_t*)stackpos;
         rflags = *stack--;
@@ -33,7 +34,8 @@ struct context
 
         rip = *stack--;
         stack--;
-        stack--;
+        if(vec == 8 || (vec >= 10 && vec <= 14) || vec == 17)
+            stack--;
 
         for(int i = 0; i < 16; i++)
             rgp[i] = *stack--;

@@ -1,0 +1,32 @@
+.text
+
+.global idt_handler_entries
+.global idt_entry_start
+.global idt_entry_end
+
+idt_common:
+    cld
+	pushq %rax
+    movq 8(%rsp), %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rsp
+    pushq %rbp
+    pushq %rsi
+    pushq %rdi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+    pushq %rbp
+    movq %rsp, %rbp
+    movq %rax, %rsi
+    movq %rbp, %rdi
+	call *idt_handler_entries(%rax)
+
+idt_entry_start:
