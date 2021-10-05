@@ -2,9 +2,18 @@
 #define __ARCH_X86_ASM_CPU_H__
 #include <cstdint>
 
-inline void cpuid(int code, uint64_t* a, uint64_t* d)
+inline void cpuid(int code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
 {
-    asm volatile ( "cpuid" : "=a"(*a), "=d"(*d) : "0"(code) : "ebx", "ecx" );
+    uint32_t tmp = 0;
+    if(a == nullptr)
+        a = &tmp;
+    if(b == nullptr)
+        b = &tmp;
+    if(c == nullptr)
+        c = &tmp;
+    if(d == nullptr)
+        d = &tmp;
+    asm volatile ( "cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "0"(code) : "ebx", "ecx");
 }
 
 #define READ_CR(CR) \

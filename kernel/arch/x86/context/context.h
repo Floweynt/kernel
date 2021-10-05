@@ -34,8 +34,7 @@ struct context
 
         rip = *stack--;
         stack--;
-        if(vec == 8 || (vec >= 10 && vec <= 14) || vec == 17)
-            stack--;
+        stack--;
 
         for(int i = 0; i < 16; i++)
             rgp[i] = *stack--;
