@@ -1,4 +1,4 @@
-#include "arch/interface/kinit.h"
+#include "init.h"
 
 int main ()
 {

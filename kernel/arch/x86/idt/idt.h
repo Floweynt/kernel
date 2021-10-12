@@ -6,6 +6,10 @@
 
 using interrupt_handler = void (*)(uint64_t, void*);
 
+constexpr uint64_t MASK_DPL_R0 = 0x0;
+constexpr uint64_t MASK_DPL_R3 = 0x3;
+constexpr uint64_t MASK_TYPE = 0x1;
+
 struct idt_entry
 {
    uint16_t offset_low;

@@ -7,10 +7,11 @@
 
 namespace paging
 {
-    constexpr uint64_t MASK_PRESENT = 0x1;
-    constexpr uint64_t MASK_RW = 0x2;
-    constexpr uint64_t MASK_USER = 0x4;
-    constexpr uint64_t MASK_ACCESSED = 0x20;
+    constexpr uint64_t PRESENT = 0x1;
+    constexpr uint64_t RD_WR = 0x2;
+    constexpr uint64_t USR_SUP = 0x4;
+    constexpr uint64_t ACCESSED = 0x20;
+    constexpr uint64_t PAGE_SIZE = 0x80;
 
     constexpr uint64_t MASK_TABLE_POINTER = 0xFFFFFFFFFF000;
     constexpr uint64_t MASK_TABLE_LARGE = 0xFFFFFC0000000;
@@ -20,14 +21,14 @@ namespace paging
     constexpr uint64_t MASK_PROT_KEY = 0x7800000000000000;
 
     template <typename T>
-    void set_table_pointer(uint64_t& table, T* ptr, uint64_t mask)
+    uint64_t set_ptr(uint64_t table, T* ptr, uint64_t mask)
     {
-        table = (table & ~mask) | ((uint64_t)table & mask);
+        return (table & ~mask) | ((uint64_t)ptr & mask);
     }
 
-    inline void set_prot_key(uint64_t& table, uint8_t prot_key)
+    inline uint64_t set_prot_key(uint64_t table, uint8_t prot_key)
     {
-        table = (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
+        return (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
     }
 };
 

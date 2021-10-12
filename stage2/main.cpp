@@ -1,43 +1,9 @@
 #pragma pack(1)
 #include <cstdint>
-asm volatile(".code16gcc");
-asm volatile(".code16");
-asm volatile("jmpl $0x0000, $main");
-
-struct mmap
-{
-    uint64_t base;
-    uint64_t len;
-    uint32_t type;
-};
-
-struct alignas(8) dap
-{
-    uint8_t size = 0x10;
-    uint8_t zero = 0;
-    uint16_t to_read = 1;
-    uint16_t offset = 0x6000;
-    uint16_t segment = 0;
-    uint32_t start = 9;
-    uint32_t unused = 0;
-};
-
-struct alignas(8) gdtr
-{
-    uint16_t size;
-    uint32_t base;
-};
-
-// i have no clue how gdt works
-struct alignas(8) gdt_entry
-{
-    uint16_t a;
-    uint16_t b;
-    uint8_t c;
-    uint8_t d;
-    uint8_t e;
-    uint8_t f;
-};
+#include "types.h"
+asm (".code16gcc");
+asm (".code16");
+asm ("jmpl $0x0000, $main");
 
 gdt_entry gdt_entries[3] =
 {
@@ -195,31 +161,6 @@ void actual_pmode()
     );
 }
 
-struct bootloader_packet
-{
-    uint32_t loaded_address;
-    uint32_t loaded_size;
-    uint32_t mmap_size;
-    uint32_t mmap_ptr;
-
-    uint8_t boot_device;
-
-    uint16_t vbe_version;
-    uint16_t total_memory_used;
-    uint16_t width;
-    uint16_t height;
-    uint8_t bpp;
-
-    uint8_t red_mask;
-	uint8_t red_position;
-	uint8_t green_mask;
-	uint8_t green_position;
-	uint8_t blue_mask;
-	uint8_t blue_position;
-
-    uint32_t framebuffer;
-};
-
 bootloader_packet pkt;
 
 void check_for_long_mode()
@@ -235,40 +176,8 @@ void check_for_long_mode()
     asm volatile("popa");
 }
 
-constexpr uint64_t MASK_PRESENT = 0x1;
-constexpr uint64_t MASK_RW = 0x2;
-constexpr uint64_t MASK_USER = 0x4;
-constexpr uint64_t MASK_ACCESSED = 0x20;
-constexpr uint64_t MASK_PAGE_SIZE = 0x80;
-
-constexpr uint64_t MASK_TABLE_POINTER = 0xFFFFFFFFFF000;
-constexpr uint64_t MASK_TABLE_LARGE = 0xFFFFFC0000000;
-constexpr uint64_t MASK_TABLE_MEDIUM = 0xFFFFFFFE00000;
-constexpr uint64_t MASK_TABLE_SMALL = 0xFFFFFFFFFF000;
-
-constexpr uint64_t MASK_PROT_KEY = 0x7800000000000000;
-
-template <typename T>
-void set_table_pointer(uint64_t& table, T* ptr, uint64_t mask)
-{
-    table = (table & ~mask) | ((uint64_t)table & mask);
-}
-
-inline void set_prot_key(uint64_t& table, uint8_t prot_key)
-{
-    table = (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
-}
-
 uint32_t jump_to;
 uint16_t boot_disk;
-
-template<uint8_t start, uint8_t end>
-constexpr inline uint64_t get_bits(uint64_t v)
-{
-    return v & (((1ULL << (uint64_t)(end - start + 1)) - 1) << start);
-}
-
-#define GET_PHYSICAL_POINTER(n, pos) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(pos)
 
 void main()
 {
@@ -296,11 +205,12 @@ void main()
             load_pos = real_start;
             load();
             actual_pmode();
+
             pkt.loaded_address = real_start;
             pkt.mmap_size = size;
             pkt.mmap_ptr = 0x1000;
             pkt.boot_device = boot_disk;
-            
+
             asm volatile(
                 "push $0x8\n"
                 "push %0\n"

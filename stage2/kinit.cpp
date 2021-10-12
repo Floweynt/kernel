@@ -2,9 +2,7 @@
 #include "asm/asm_cpp.h"
 #include "paging/paging.h"
 #include "kinit.h"
-#include "init.h"
 #include "config.h"
-#include "context/context.h"
 #include "utils.h"
 #include "arch/interface/driver/tty.h"
 #include "paging/paging.h"
@@ -15,8 +13,8 @@
 #pragma GCC diagnostic ignored "-Warray-bounds"
 
 bootloader_packet* PLACE_AT_START packet = nullptr;
-bootloader_packet* get_bootloader_packet() { return packet; }
 
+bootloader_packet* get_bootloader_packet() { return packet; }
 static tty_startup_driver* driver;
 
 class vbe_tty_driver : public tty_startup_driver
@@ -48,7 +46,6 @@ uint64_t _lpos;
 uint64_t tmp_stack[0x80];
 
 static void setup();
-
 __attribute__((section(".text.init"))) void start(const uint64_t loaded_pos)
 {
     uint64_t* l1_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(root_table, loaded_pos);
@@ -83,84 +80,20 @@ __attribute__((section(".text.init"))) void start(const uint64_t loaded_pos)
 static void setup()
 {
     // find a nice place for our heap
-    pre_kernel_init();
+    
     __builtin_unreachable();
 }
-
-using task = void (*)();
-
-task tasks[2] = {
-    []() {
-        while(1)
-        {
-            asm volatile(
-                "mov $12, %rax\n"
-                "mov $13, %rbx\n"
-                "mov $14, %rcx\n"
-                "mov $15, %rdx\n"
-                "mov $16, %rsi\n"
-                "mov $17, %rdi\n"
-                "mov $18, %r8\n"
-                "mov $19, %r9\n"
-                "mov $20, %r10\n"
-                "mov $21, %r11\n"
-                "mov $22, %r12\n"
-                "mov $23, %r13\n"
-                "mov $24, %r14\n"
-                "mov $25, %r15\n"
-                "int $0x80"
-            );
-            asm volatile("xchg %rbx, %rbx");
-        }
-    },
-    []() {
-        while(1)
-        {
-            asm volatile(
-                "mov $112, %rax\n"
-                "mov $113, %rbx\n"
-                "mov $114, %rcx\n"
-                "mov $115, %rdx\n"
-                "mov $116, %rsi\n"
-                "mov $117, %rdi\n"
-                "mov $118, %r8\n"
-                "mov $119, %r9\n"
-                "mov $120, %r10\n"
-                "mov $121, %r11\n"
-                "mov $122, %r12\n"
-                "mov $123, %r13\n"
-                "mov $124, %r14\n"
-                "mov $125, %r15\n"
-                "int $0x80"
-            );
-            asm volatile("xchg %rbx, %rbx");
-        }
-    }
-};
-
-context ctx[2] = {
-    {
-        .rip = (uint64_t)tasks[0]
-    },
-    {
-        .rip = (uint64_t)tasks[1]
-    }
-};
-
-bool v = false;
 
 void pre_kernel_init()
 {
     init_idt();
     register_idt([](uint64_t vec, void* stack) {
-        // context switch
-        ctx[(int)v].load_ctx(stack);
-        v = !v;
-        ctx[(int)v].restore_ctx(stack);
+        asm volatile("xchg %rbx, %rbx");
     }, 0b11100001, 0x80);
     install_idt();
 
     asm volatile("int $0x80");
+
 }
 
 void kernel_init()

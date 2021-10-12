@@ -106,8 +106,7 @@
     // first align stack
     and $~0xF, %rsp
 
-    mov (%rbx), %rdi
-    pushq   %rbp
-    movq    %rsp, %rbp
+    pushq %rbp
+    movq %rsp, %rbp
     mov (%rbx), %rdi
     call _Z5startm

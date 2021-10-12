@@ -3,7 +3,4 @@
 #include "driver/tty.h"
 void pre_kernel_init();
 void kernel_init();
-
-tty_startup_driver* tty;
-
 #endif

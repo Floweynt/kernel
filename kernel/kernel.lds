@@ -37,6 +37,7 @@ SECTIONS
 	}
 
 	kend = .;
+    PROVIDE(KERNEL_LENGTH = kend - kstart);
 
     /DISCARD/ :
     {

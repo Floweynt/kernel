@@ -3,4 +3,5 @@
 #include <cstdint>
 
 constexpr uint64_t HEAP_SIZE = 0x400000;
+extern uint64_t KERNEL_SIZE;
 #endif

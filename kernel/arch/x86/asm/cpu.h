@@ -13,22 +13,38 @@ inline void cpuid(int code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
         c = &tmp;
     if(d == nullptr)
         d = &tmp;
-    asm volatile ( "cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "0"(code) : "ebx", "ecx");
+    asm volatile ("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "0"(code));
 }
 
 #define READ_CR(CR) \
     inline uint64_t read_cr ## CR () \
     { \
         uint64_t val; \
-        asm volatile ("mov %%cr" #CR, %0" : "=r"(val) ); \
+        asm volatile ("mov %%cr" #CR "%0" : "=r"(val)); \
         return val; \
     }
+#define WRITE_CR(CR) \
+    inline void write_cr ## CR (uint64_t val) \
+    { \
+        asm volatile ("mov %0, %%cr" #CR : : "r"(val)); \
+    }
+
 
 READ_CR(0)
 // READ_CR(1)
 READ_CR(2)
 READ_CR(3)
 READ_CR(4)
+//READ_CR(5)
+//READ_CR(6)
+//READ_CR(7)
+//READ_CR(8)
+
+WRITE_CR(0)
+// READ_CR(1)
+WRITE_CR(2)
+WRITE_CR(3)
+WRITE_CR(4)
 //READ_CR(5)
 //READ_CR(6)
 //READ_CR(7)
@@ -46,11 +62,21 @@ inline void wrmsr(uint64_t msr, uint64_t value)
 	asm volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
-static inline uint64_t rdmsr(uint64_t msr)
+inline uint64_t rdmsr(uint64_t msr)
 {
 	uint32_t low, high;
 	asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
 	return ((uint64_t)high << 32) | low;
+}
+
+inline void setstack(uint64_t sp)
+{
+    asm volatile("mov %0, %%rsp" : : "r"(sp));
+}
+
+inline void ljmp(void* addr)
+{
+    asm volatile("push %0\nret" : : "r"(addr));
 }
 
 #endif

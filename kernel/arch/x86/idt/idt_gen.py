@@ -1,7 +1,6 @@
 fmt_str = """
 idt_{0}:
     {1}push $0
-    and $~0xf, %rsp
     pushq ${0}
     jmp idt_common
 
