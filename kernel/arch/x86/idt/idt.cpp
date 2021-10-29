@@ -5,7 +5,6 @@
 uintptr_t idt_handler_entries[256];
 
 extern char idt_entry_start[];
-extern char idt_entry_end[];
 
 namespace idt
 {
@@ -29,11 +28,9 @@ namespace idt
 
     void init_idt()
     {
-        uint64_t sizeof_handler = (uint64_t)(idt_entry_end - idt_entry_start);
-
         for(int i = 0; i < 256; i++)
         {
-            uint64_t handler = (uint64_t)idt_entry_start + i * sizeof_handler;
+            uint64_t handler = (uint64_t)idt_entry_start + i * 0x10;
         	idt_entries[i].offset_low = (uint64_t)handler;
             idt_entries[i].offset_mid = (uint64_t)handler >> 16;
         	idt_entries[i].offset_high = ((uint64_t)handler) >> 32;

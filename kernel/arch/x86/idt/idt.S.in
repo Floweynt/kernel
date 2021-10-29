@@ -6,9 +6,8 @@
 
 idt_common:
     cld
-    addq $8, %rsp
 	pushq %rax
-    movq -0x10(%rsp), %rax
+    movq 0x10(%rsp), %rax
     pushq %rbx
     pushq %rcx
     pushq %rdx
@@ -22,6 +21,10 @@ idt_common:
     pushq %r13
     pushq %r14
     pushq %r15
+    pushq %rbp
+
+    movq %rsp, %rdi
+    andq $~0x7, %rsp
 
     // setup stack frame
     pushq %rbp
@@ -50,4 +53,5 @@ idt_common:
     subq $0x18, %rsp
     iretq
 
+.align 0x10
 idt_entry_start:
