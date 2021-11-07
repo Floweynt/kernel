@@ -17,17 +17,52 @@
 bootloader_packet* PLACE_AT_START packet = nullptr;
 bootloader_packet* get_bootloader_packet() { return packet; }
 
-static tty_startup_driver* driver;
+tty_startup_driver* early_tty_driver;
 
-class vbe_tty_driver : public tty_startup_driver
+#define PORT 0x3f8          // COM1
+class serial_tty_driver : public tty_startup_driver
 {
-public:
-    void putc(char c)
+private:
+    int is_transmit_empty()
     {
-
+        return inb(PORT + 5) & 0x20;
     }
 
-    ~vbe_tty_driver() { }
+    void write_serial(char a)
+    {
+        while (is_transmit_empty() == 0);
+
+        outb(PORT, a);
+    }
+public:
+    serial_tty_driver()
+    {
+        outb(PORT + 1, 0x00);    // Disable all interrupts
+        outb(PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
+        outb(PORT + 0, 0x03);    // Set divisor to 3 (lo byte) 38400 baud
+        outb(PORT + 1, 0x00);    //                  (hi byte)
+        outb(PORT + 3, 0x03);    // 8 bits, no parity, one stop bit
+        outb(PORT + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
+        outb(PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+        outb(PORT + 4, 0x1E);    // Set in loopback mode, test the serial chip
+        outb(PORT + 0, 0xAE);    // Test serial chip (send byte 0xAE and check if serial returns same byte)
+
+        if(inb(PORT + 0) != 0xAE)
+            return;
+
+        outb(PORT + 4, 0x0F);
+        puts("Console driver initalized!\n");
+    }
+
+    void puts(const char* c)
+    {
+        MAGIC_BREAK;
+        while(*c)
+        {
+            write_serial(*c);
+            c++;
+        }
+    }
 };
 
 namespace paging
@@ -43,9 +78,8 @@ namespace paging
 using namespace paging;
 
 void main();
-uint64_t _lpos;
-
-uint64_t tmp_stack[0x80];
+static uint64_t _lpos;
+static uint64_t tmp_stack[0x100];
 
 static void setup();
 
@@ -56,33 +90,37 @@ __attribute__((section(".text.init"))) void start(const uint64_t loaded_pos)
     uint64_t* l3_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(kernel_l3, loaded_pos);
 
     // write l1 -> l2 entry
-    l1_addr[VIDX(1)] = set_ptr(l1_addr[VIDX(1)], l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
+    l1_addr[VIDX(1)] = set_ptr(0, l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
     // write l2 -> l3 entry
-    l2_addr[VIDX(2)] = set_ptr(l2_addr[VIDX(2)], l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
+    l2_addr[VIDX(2)] = set_ptr(0, l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
     // write l3 -> memory entry
-    l3_addr[VIDX(3)] = set_ptr(l3_addr[VIDX(3)], (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
+    l3_addr[VIDX(3)] = set_ptr(0, (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
 
     l2_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(identity_l2, loaded_pos);
     l3_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(identity_l3, loaded_pos);
 
     // identity map
     // write l1 -> l2 entry
-    l1_addr[VIDX_OF(1)] = set_ptr(l1_addr[VIDX_OF(1)], l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
+    l1_addr[VIDX_OF(1)] = set_ptr(0, l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
     // write l2 -> l3 entry
-    l2_addr[VIDX_OF(2)] = set_ptr(l2_addr[VIDX_OF(2)], l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
+    l2_addr[VIDX_OF(2)] = set_ptr(0, l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
     // write l3 -> memory entry
-    l3_addr[VIDX_OF(3)] = set_ptr(l3_addr[VIDX_OF(3)], (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
+    l3_addr[VIDX_OF(3)] = set_ptr(0, (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
 
     write_cr3((uint64_t)GET_PHYSICAL_POINTER_ADDR(root_table, loaded_pos));
     setstack((uint64_t)tmp_stack);
+    _lpos = loaded_pos;
     ljmp((void*)setup);
-
     __builtin_unreachable();
 }
 
 static void setup()
 {
-    // find a nice place for our heap
+    static serial_tty_driver driver{};
+    early_tty_driver = &driver;
+    MAGIC_BREAK;
+    early_puts("Vtable?");
+    early_dbg("Debugging uwu\n");
     pre_kernel_init();
     __builtin_unreachable();
 }
@@ -151,7 +189,15 @@ bool v = false;
 
 void pre_kernel_init()
 {
+    MAGIC_BREAK;
     init_idt();
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
+    early_dbg("Debugging uwu\n");
     register_idt([](uint64_t vec, void* stack) {
         // context switch
         ctx[(int)v].load_ctx(stack);

@@ -19,6 +19,8 @@ uint64_t align(uint64_t t)
     return (t + (1 << n) - 1) & (~(1 << n));
 }
 
+#define MAGIC_BREAK asm volatile("xchg %bx, %bx")
+
 constexpr auto KERNEL_SPACE_CS = 0x8;
 constexpr auto KERNEL_SPACE_DS = 0x10;
 

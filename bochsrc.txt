@@ -1,4 +1,6 @@
 ata0-master: type=disk, path="build/kernel.img", mode=flat
 boot: disk
+magic_break: enabled=1
 #display_library: x, options="gui_debug"
 memory: guest=512, host=256
+com1: enabled=1, mode=file, dev=serial.txt

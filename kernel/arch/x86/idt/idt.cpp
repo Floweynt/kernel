@@ -1,4 +1,6 @@
 #include "idt.h"
+#include "asm/asm_cpp.h"
+#include "driver/tty.h"
 
 static idt_entry idt_entries[256] = {};
 uintptr_t idt_handler_entries[256];
@@ -14,22 +16,35 @@ void init_idt()
     {
         uint64_t handler = (uint64_t)idt_entry_start + i * sizeof_handler;
     	idt_entries[i].offset_low = (uint64_t)handler;
-        idt_entries[i].offset_mid = (uint64_t)handler >> 32;
-    	idt_entries[i].offset_high = ((uint64_t)handler) >> 48;
+        idt_entries[i].offset_mid = (uint64_t)handler >> 16;
+    	idt_entries[i].offset_high = ((uint64_t)handler) >> 32;
     }
 }
 
 void install_idt()
 {
     idt_descriptor descriptor = {
-        .offset = (uint64_t)idt_handler_entries,
-        .size = sizeof(idt_handler_entries)
+        .size = sizeof(idt_entries),
+        .offset = (uint64_t)idt_entries
     };
     asm volatile("lidtq %0" : : "m"(descriptor));
 }
 
-void register_idt(interrupt_handler handler, uint8_t attr, size_t num)
+inline void putitoa(uint64_t a, uint8_t base)
 {
+    while(a)
+    {
+        char buf[2] = {"012345567890abcdef"[a % base], 0};
+        early_dbg(buf);
+        a = a / base;
+    }
+}
+
+void register_idt(interrupt_handler handler, size_t num, uint8_t type, uint8_t dpl)
+{
+    asm volatile("xchg %bx, %bx");
+    early_dbg("Registering idt\n");
     idt_handler_entries[num] = (uintptr_t)handler;
-	idt_entries[num].flags = attr | 0x8000;
+	idt_entries[num].flags = ((uint16_t)type << 8) | 0x8000 | (type << 13);
+    putitoa(idt_entries[num].flags, 16);
 }

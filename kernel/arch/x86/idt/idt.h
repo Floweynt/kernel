@@ -29,7 +29,7 @@ struct idt_descriptor
 
 void init_idt();
 void install_idt();
-void register_idt(interrupt_handler handler, uint8_t attrs, size_t num);
+void register_idt(interrupt_handler handler, size_t num, uint8_t type = 0b1110, uint8_t dpl = 0x0);
 
 #pragma pack(pop)
 #endif

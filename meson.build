@@ -17,6 +17,7 @@ add_project_arguments(
     '-I' + (meson.source_root() / 'kernel/'),
     '-I' + (meson.source_root() / 'kernel/arch/x86/'),
     '-I' + (meson.source_root() / 'kernel/arch/interface/'),
+    '-fno-threadsafe-statics',
     language: 'cpp'
 )
 

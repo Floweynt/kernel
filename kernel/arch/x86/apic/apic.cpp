@@ -1,5 +1,5 @@
 #include "apic.h"
-
+/*
 namespace apic
 {
     bool check_apic()
@@ -32,3 +32,4 @@ namespace apic
         write_reg(0xF0, ReadRegister(0xF0) | 0x100);
     }
 }
+*/

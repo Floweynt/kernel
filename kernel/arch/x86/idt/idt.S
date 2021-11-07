@@ -60,7 +60,7 @@ idt_0:
     push $0
     pushq $0
     jmp idt_common
-
+idt_entry_end:
 
 idt_1:
     push $0
