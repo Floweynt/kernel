@@ -20,7 +20,9 @@ uint64_t align(uint64_t t)
 }
 
 #define MAGIC_BREAK asm volatile("xchg %bx, %bx")
-
+#define MARKER_BREAK(V) asm volatile("xchg %bx, %bx"); \
+    asm volatile("nopw %cs:" V "(%rax,%rax,1)")
+#define LOAD_VARNAME(V) asm volatile("mov %0, %%rax" : : "r"(V) : "rax")
 constexpr auto KERNEL_SPACE_CS = 0x8;
 constexpr auto KERNEL_SPACE_DS = 0x10;
 

@@ -3,32 +3,32 @@
 #include "utils.h"
 #define KDEBUG
 
-class tty_startup_driver
+namespace driver
 {
-public:
-    virtual void puts(const char* c) = 0;
-};
+    class tty_startup_driver
+    {
+    public:
+        virtual void puts(const char* c) = 0;
+    };
 
-extern tty_startup_driver* driver;
-extern tty_startup_driver* early_tty_driver;
+    extern tty_startup_driver* tty_dvr_startup;
+
+}
 
 inline void puts(const char* ch)
 {
-    driver->puts(ch);
+    MARKER_BREAK("0x10");
+    driver::tty_dvr_startup->puts(ch);
 }
 
-inline void early_puts(const char* ch)
-{
-    early_tty_driver->puts(ch);
-}
-
-inline void early_dbg(const char* ch)
+inline void print_dbg(const char* ch)
 {
 //#ifdef KDEBUG
-    MAGIC_BREAK;
-    early_puts("DEBUG: ");
-    early_puts(ch);
+    MARKER_BREAK("0x11");
+    puts("DEBUG: ");
+    puts(ch);
 //#endif
 }
+
 
 #endif

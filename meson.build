@@ -16,7 +16,7 @@ add_project_arguments(
     '-fcf-protection=none',
     '-I' + (meson.source_root() / 'kernel/'),
     '-I' + (meson.source_root() / 'kernel/arch/x86/'),
-    '-I' + (meson.source_root() / 'kernel/arch/interface/'),
+    '-I' + (meson.source_root() / 'kernel/arch/'),
     '-fno-threadsafe-statics',
     language: 'cpp'
 )

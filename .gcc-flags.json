@@ -1,0 +1,5 @@
+{
+    "execPath": "/usr/bin/g++",
+    "gccDefaultCppFlags": "-Wno-ignored-attributes -Wall -fsyntax-only",
+    "gccIncludePaths": "../kernel/,./kernel/arch/interface/",
+}

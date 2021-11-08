@@ -1,4 +1,4 @@
-#include "init.h"
+#include "interface/init.h"
 
 int main ()
 {

@@ -1,6 +1,6 @@
 #include "idt.h"
 #include "asm/asm_cpp.h"
-#include "driver/tty.h"
+#include "interface/driver/tty.h"
 
 static idt_entry idt_entries[256] = {};
 uintptr_t idt_handler_entries[256];
@@ -35,16 +35,19 @@ inline void putitoa(uint64_t a, uint8_t base)
     while(a)
     {
         char buf[2] = {"012345567890abcdef"[a % base], 0};
-        early_dbg(buf);
+        print_dbg(buf);
         a = a / base;
     }
 }
 
 void register_idt(interrupt_handler handler, size_t num, uint8_t type, uint8_t dpl)
 {
-    asm volatile("xchg %bx, %bx");
-    early_dbg("Registering idt\n");
+    MARKER_BREAK("2");
+    LOAD_VARNAME(driver::tty_dvr_startup);
+    print_dbg("Registering idt\n");
+    MARKER_BREAK("3");
     idt_handler_entries[num] = (uintptr_t)handler;
 	idt_entries[num].flags = ((uint16_t)type << 8) | 0x8000 | (type << 13);
     putitoa(idt_entries[num].flags, 16);
+    MARKER_BREAK("4");
 }
