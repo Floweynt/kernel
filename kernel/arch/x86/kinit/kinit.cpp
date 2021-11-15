@@ -1,4 +1,5 @@
 #include "idt/idt.h"
+#include "gdt/gdt.h"
 #include "asm/asm_cpp.h"
 #include "paging/paging.h"
 #include "kinit.h"
@@ -44,19 +45,20 @@ __attribute__((section(".text.init"))) void start(const uint64_t loaded_pos)
     l2_addr[VIDX_OF(2)] = set_ptr(0, l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
     l3_addr[VIDX_OF(3)] = set_ptr(0, (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
     write_cr3((uint64_t)GET_PHYSICAL_POINTER_ADDR(root_table, loaded_pos));
-    setstack((uint64_t)tmp_stack);
+    setstack((uint64_t)(&tmp_stack[sizeof(tmp_stack) - 1]));
     _lpos = loaded_pos;
     ljmp((void*)setup);
     __builtin_unreachable();
 }
+
+using namespace gdt;
+using namespace idt;
 
 static void setup()
 {
     static driver::serial_tty_driver serial;
     serial.init();
     driver::tty_dvr_startup = &serial;
-    MARKER_BREAK("1");
-    LOAD_VARNAME(driver::tty_dvr_startup);
     pre_kernel_init();
 
     // mark function as unreachable, because pre_kernel_init never returns
@@ -127,17 +129,16 @@ bool v = false;
 
 void pre_kernel_init()
 {
-    MARKER_BREAK("1");
-    LOAD_VARNAME(driver::tty_dvr_startup);
+    install_gdt();
     init_idt();
     register_idt([](uint64_t vec, void* stack) {
         // context switch
         ctx[(int)v].load_ctx(stack);
         v = !v;
         ctx[(int)v].restore_ctx(stack);
-    }, 0b11100001, 0x80);
+    }, 0x80);
     install_idt();
-
+    MAGIC_BREAK;
     asm volatile("int $0x80");
 }
 

@@ -17,15 +17,13 @@ namespace driver
 
 inline void puts(const char* ch)
 {
-    MARKER_BREAK("0x10");
     driver::tty_dvr_startup->puts(ch);
 }
 
 inline void print_dbg(const char* ch)
 {
 //#ifdef KDEBUG
-    MARKER_BREAK("0x11");
-    puts("DEBUG: ");
+    puts("[DEBUG]: ");
     puts(ch);
 //#endif
 }

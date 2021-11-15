@@ -1,5 +1,3 @@
-#ifndef __ARCH_X86_ASM_IO_H__
-#define __ARCH_X86_ASM_IO_H__
 #include <cstdint>
 
 inline void outb(uint16_t port, uint8_t val)
@@ -47,5 +45,3 @@ inline void io_wait(void)
 {
     outb(0x80, 0);
 }
-
-#endif

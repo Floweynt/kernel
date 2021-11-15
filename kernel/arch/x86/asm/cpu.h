@@ -1,7 +1,3 @@
-#ifndef __ARCH_X86_ASM_CPU_H__
-#define __ARCH_X86_ASM_CPU_H__
-#include <cstdint>
-
 inline void cpuid(int code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
 {
     uint32_t tmp = 0;
@@ -78,5 +74,3 @@ inline void ljmp(void* addr)
 {
     asm volatile("push %0\nret" : : "r"(addr));
 }
-
-#endif
