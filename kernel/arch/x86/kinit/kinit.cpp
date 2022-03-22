@@ -9,50 +9,74 @@
 #include "utils.h"
 #include "kinit_paging.h"
 #include "driver/kinit/serial.h"
+#include "stivale2.h"
+ 
+static uint8_t stack[8192];
 
-#define VIDX(n) (get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION) >> ((4 - n) * 9 + 12))
-#define VIDX_OF(n) (get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(loaded_pos) >> ((4 - n) * 9 + 12))
-#define INIT_FN inline __attribute__ ((always_inline, section(".place.in.front")))
-#pragma GCC diagnostic ignored "-Warray-bounds"
+static stivale2_header_tag_terminal terminal_hdr_tag = {
+    .tag = {
+        .identifier = STIVALE2_HEADER_TAG_TERMINAL_ID,
+        .next = 0
+    },
+    .flags = 0
+};
+ 
+static stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
+    .tag = {
+        .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
+        .next = (uint64_t)&terminal_hdr_tag
+    },
+    .framebuffer_width  = 0,
+    .framebuffer_height = 0,
+    .framebuffer_bpp    = 0
+};
+ 
+static stivale2_header stivale_hdr [[gnu::section("stivale2hdr"), gnu::used]] = {
+    .entry_point = 0,
+    .stack = (uintptr_t)stack + sizeof(stack),
+    .flags = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
+    .tags = (uintptr_t)&framebuffer_hdr_tag
+};
 
-bootloader_packet* PLACE_AT_START packet = nullptr;
-bootloader_packet* get_bootloader_packet() { return packet; }
-
-namespace driver
+template<typename H>
+H* stivale2_get_tag(struct stivale2_struct *stivale2_struct, uint64_t id) 
 {
-    tty_startup_driver* tty_dvr_startup;
+    struct stivale2_tag *current_tag = (stivale2_tag*) stivale2_struct->tags;
+    while(true)
+    {
+        if (current_tag == nullptr)
+            return nullptr;
+        if (current_tag->identifier == id)
+            return (H*) current_tag;
+        current_tag = (stivale2_tag*)current_tag->next;
+    }
+}
+ 
+[[noreturn]] void _start(stivale2_struct *stivale2_struct) 
+{
+    auto term_tag = stivale2_get_tag<stivale2_header_tag_terminal>(stivale2_struct, STIVALE2_STRUCT_TAG_TERMINAL_ID);
+ 
+    if (!term_tag) 
+        while(1) __asm__ __volatile__("hlt");
+ 
+    // Let's get the address of the terminal write function.
+    void *term_write_ptr = (void *)term_str_tag->term_write;
+ 
+    // Now, let's assign this pointer to a function pointer which
+    // matches the prototype described in the stivale2 specification for
+    // the stivale2_term_write function.
+    void (*term_write)(const char *string, size_t length) = term_write_ptr;
+ 
+    // We should now be able to call the above function pointer to print out
+    // a simple "Hello World" to screen.
+    term_write("Hello World", 11);
+ 
+    // We're done, just hang...
+    for (;;) {
+        asm ("hlt");
+    }
 }
 
-void main();
-static uint64_t _lpos;
-static uint64_t tmp_stack[0x100];
-
-static void setup();
-
-__attribute__((section(".text.init"))) void start(const uint64_t loaded_pos)
-{
-    using namespace paging;
-
-    uint64_t* l1_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(root_table, loaded_pos);
-    uint64_t* l2_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(kernel_l2, loaded_pos);
-    uint64_t* l3_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(kernel_l3, loaded_pos);
-    l1_addr[VIDX(1)] = set_ptr(0, l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
-    l2_addr[VIDX(2)] = set_ptr(0, l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
-    l3_addr[VIDX(3)] = set_ptr(0, (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
-    l2_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(identity_l2, loaded_pos);
-    l3_addr = (uint64_t*)GET_PHYSICAL_POINTER_ADDR(identity_l3, loaded_pos);
-    l1_addr[VIDX_OF(1)] = set_ptr(0, l2_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
-    l2_addr[VIDX_OF(2)] = set_ptr(0, l3_addr, MASK_TABLE_POINTER) | RD_WR | PRESENT;
-    l3_addr[VIDX_OF(3)] = set_ptr(0, (void*)loaded_pos, MASK_TABLE_MEDIUM) | RD_WR | PRESENT | PAGE_SIZE;
-    write_cr3((uint64_t)GET_PHYSICAL_POINTER_ADDR(root_table, loaded_pos));
-    setstack((uint64_t)(&tmp_stack[sizeof(tmp_stack) - 1]));
-    _lpos = loaded_pos;
-    ljmp((void*)setup);
-    __builtin_unreachable();
-}
-
-using namespace gdt;
-using namespace idt;
 
 static void setup()
 {

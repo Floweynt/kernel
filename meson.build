@@ -32,11 +32,21 @@ add_project_arguments(
     language: 'c'
 )
 
-c = run_command('glob_match_source.sh')
-sources = c.stdout().strip().split('\n')
+kernel_source = [
+    'kernel/arch/x86/idt/idt.cpp',
+    'kernel/arch/x86/apic/apic.cpp',
+    'kernel/arch/x86/kinit/kinit.cpp',
+    'kernel/arch/x86/gdt/gdt.cpp',
+    'kernel/arch/x86/paging/paging.cpp',
+    'kernel/arch/x86/driver/kinit/serial.cpp',
+    'kernel/kernel.cpp',
+    'lib/cxxabi.cpp',
+    'kernel/arch/x86/idt/idt.S',
+    'kernel/arch/x86/kinit/kinit.S'
+]
 
 kernel = executable('kernel.bin',
-    sources,
+    kernel_source,
     link_args: [
         '-T' + (meson.source_root() / 'kernel/kernel.lds'),
         '-static',
@@ -49,7 +59,7 @@ kernel = executable('kernel.bin',
 )
 
 kernel_debug = executable('kernel.o',
-    sources,
+    kernel_source,
     link_args: [
         '-T' + (meson.source_root() / 'debug.lds'),
         '-static',
@@ -61,40 +71,4 @@ kernel_debug = executable('kernel.o',
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-g']
 )
 
-boot = executable('boot.bin',
-    'boot/boot.S',
-    link_args: [
-        '-T' + (meson.source_root() / 'boot/boot.lds'),
-        '-static',
-        '-nostdlib',
-        '-m16'
-    ],
-    c_args: ['-m16', '-march=i386'],
-    cpp_args: ['-m16', '-march=i386']
-)
 
-stage2 = executable('stage2.bin',
-    'stage2/main.cpp',
-    link_args: [
-        '-T' + (meson.source_root() / 'stage2/link.lds'),
-        '-static',
-        '-nostdlib',
-        '-m16'
-    ],
-    c_args: ['-m16', '-march=i386'],
-    cpp_args: ['-m16', '-march=i386']
-)
-
-kernelimg = custom_target(
-    'kernel',
-    output : 'kernel.img',
-    input : [boot, stage2, kernel],
-    command : [kernel_gen, '@BUILD_ROOT@', '@INPUT0@', '@INPUT1@', '@INPUT2@', '@OUTPUT@']
-)
-
-bochs = find_program('bochs')
-run = run_target(
-    'run',
-    depends : [kernelimg],
-    command : [bochs]
-)

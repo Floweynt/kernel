@@ -1,4 +1,4 @@
-ata0-master: type=disk, path="build/kernel.img", mode=flat
+ata0-master: type=disk, path="build/bootloader.img", mode=flat
 boot: disk
 magic_break: enabled=1
 #display_library: x, options="gui_debug"

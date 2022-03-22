@@ -12,21 +12,6 @@ namespace driver
     };
 
     extern tty_startup_driver* tty_dvr_startup;
-
 }
-
-inline void puts(const char* ch)
-{
-    driver::tty_dvr_startup->puts(ch);
-}
-
-inline void print_dbg(const char* ch)
-{
-//#ifdef KDEBUG
-    puts("[DEBUG]: ");
-    puts(ch);
-//#endif
-}
-
 
 #endif

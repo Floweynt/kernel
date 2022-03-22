@@ -1,48 +1,46 @@
-OUTPUT_FORMAT("binary")
-ENTRY(main);
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_start)
+ 
+PHDRS
+{
+    null    PT_NULL    FLAGS(0);
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2));
+    rodata  PT_LOAD    FLAGS((1 << 2));
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2));
+}
+
 SECTIONS
 {
-    . = 0xFFFFFFFF80000000;
-
-    kstart = .;
-
+    . = 0xffffffff80000000;
+ 
     .text :
-	{
-		code = .;
-        *(.text.preinit)
-        *(.text.init)
-        *(.place.in.front)
-		*(.text*)
-	}
-
-	.rodata BLOCK(1) :
-	{
-		*(.rodata)
-	}
-
-	.data BLOCK(1) :
-	{
-		data = .;
-		*(.data)
-	}
-
-	.bss BLOCK(1) :
-	{
-		PROVIDE(_bss_start = .);
-		bss = .;
-		*(COMMON)
-		*(.bss)
-		*(.stack)
-		PROVIDE(_bss_end = .);
-	}
-
-	kend = .;
-    PROVIDE(KERNEL_LENGTH = kend - kstart);
-
-    /DISCARD/ :
     {
-        *(.comment)
-        *(.eh_frame)
-        *(.note.gnu.build-id)
-    }
+        *(.text .text.*)
+    } :text
+ 
+    . += CONSTANT(MAXPAGESIZE);
+ 
+    .stivale2hdr : 
+    {
+        KEEP(*(.stivale2hdr))
+    } :rodata
+ 
+    .rodata : 
+    {
+        *(.rodata .rodata.*)
+    } :rodata
+ 
+    . += CONSTANT(MAXPAGESIZE);
+ 
+    .data : 
+    {
+        *(.data .data.*)
+    } :data
+ 
+    .bss : 
+    {
+        *(COMMON)
+        *(.bss .bss.*)
+    } :data
 }
