@@ -5,13 +5,12 @@
 
 struct process_priority
 {
-	uint64_t last_scheduled_ticked;
-	uint8_t priority;
+    uint64_t last_scheduled_ticked;
+    uint8_t priority;
 };
 
 class scheduler
 {
-
 };
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include "utils/utils.h"
-#include <cstdint>
+#include <cstdint.h>
 
 namespace paging
 {
@@ -30,6 +30,6 @@ namespace paging
     {
         return (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
     }
-};
+}; // namespace paging
 
 #endif

@@ -1,7 +1,6 @@
 #ifndef __ARCH_X86_CONTEXT_H__
 #define __ARCH_X86_CONTEXT_H__
-#include <cstdint>
-#include "config.h"
+#include <cstdint.h>
 
 // this is a fully restorable execution context
 struct context
@@ -14,7 +13,14 @@ struct context
         RDX,
         RSI,
         RDI,
-        R8, R9, R10, R11, R12, R13, R14, R15
+        R8,
+        R9,
+        R10,
+        R11,
+        R12,
+        R13,
+        R14,
+        R15
     };
 
     uint64_t ss;
@@ -47,7 +53,7 @@ struct context
         uint64_t* stack = (uint64_t*)stackpos;
         rbp = *stack--;
 
-        for(int i = 13; i != -1; i--)
+        for (int i = 13; i != -1; i--)
             rgp[i] = *stack--;
         stack--;
         stack--;
@@ -65,7 +71,7 @@ struct context
         uint64_t* stack = (uint64_t*)stackpos;
         *stack-- = rbp;
 
-        for(int i = 13; i != -1; i--)
+        for (int i = 13; i != -1; i--)
             *stack-- = rgp[i];
         stack -= 3;
         *stack-- = rip;

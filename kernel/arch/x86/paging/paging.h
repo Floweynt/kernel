@@ -1,8 +1,8 @@
 #ifndef __ARCH_X86_PAGING_H__
 #define __ARCH_X86_PAGING_H__
-#include "utils/utils.h"
 #include "paging_entries.h"
 #include "utils.h"
+#include "utils/utils.h"
 namespace paging
 {
     enum page_type
@@ -23,6 +23,6 @@ namespace paging
     void* get_page(uint64_t physical_address, uint64_t len);
 
     using page_table = alignas(4096) uint64_t[512];
-}
+} // namespace paging
 
 #endif

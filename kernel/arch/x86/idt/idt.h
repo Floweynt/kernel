@@ -1,9 +1,10 @@
 #ifndef __X86_IDT_H__
 #define __X86_IDT_H__
-#include <cstdint>
-#include <cstddef>
+#include <cstddef.h>
+#include <cstdint.h>
 
-namespace idt {
+namespace idt
+{
     using interrupt_handler = void (*)(uint64_t, void*);
 
     constexpr uint64_t MASK_DPL_R0 = 0x0;
@@ -12,6 +13,6 @@ namespace idt {
 
     void init_idt();
     void install_idt();
-    void register_idt(interrupt_handler handler, size_t num, uint8_t type = 0b1110, uint8_t dpl = 0x0);
-}
+    void register_idt(interrupt_handler handler, std::size_t num, uint8_t type = 0b1110, uint8_t dpl = 0x0);
+} // namespace idt
 #endif

@@ -1,6 +1,6 @@
 #include "interface/init.h"
 
-int main ()
+int main()
 {
     pre_kernel_init();
     kernel_init();

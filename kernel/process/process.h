@@ -41,11 +41,11 @@ struct process_registers
 
 struct idt_stack_regs
 {
-     uint64_t rip;
-     uint64_t cs;
-     flags_t rflags;
-     uint64_t rsp;
-     uint64_t ss;
+    uint64_t rip;
+    uint64_t cs;
+    flags_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
 }
 
 #endif

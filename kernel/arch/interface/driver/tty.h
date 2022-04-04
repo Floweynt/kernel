@@ -8,10 +8,10 @@ namespace driver
     class tty_startup_driver
     {
     public:
-        virtual void puts(const char* c) = 0;
+        virtual void putc(char c) = 0;
     };
 
-    extern tty_startup_driver* tty_dvr_startup;
-}
+    void set_tty_startup_driver(tty_startup_driver*);
+} // namespace driver
 
 #endif

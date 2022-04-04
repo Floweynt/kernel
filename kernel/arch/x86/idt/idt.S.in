@@ -6,7 +6,7 @@
 
 idt_common:
     cld
-	pushq %rax
+    pushq %rax
     movq 0x10(%rsp), %rax
     pushq %rbx
     pushq %rcx
@@ -33,7 +33,7 @@ idt_common:
     // parameters
     movq %rax, %rsi
     movq %rbp, %rdi
-	call *idt_handler_entries(%rax)
+    call *idt_handler_entries(%rax)
 
     popq %rbp
     popq %r15
