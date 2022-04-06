@@ -1,68 +1,104 @@
 [
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/lib_src_cstring.cpp.o -MF kernel.bin.p/lib_src_cstring.cpp.o.d -o kernel.bin.p/lib_src_cstring.cpp.o -c ../lib/src/cstring.cpp",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_idt_idt.cpp.o -MF kernel.elf.p/arch_x86_idt_idt.cpp.o.d -o kernel.elf.p/arch_x86_idt_idt.cpp.o -c ../arch/x86/idt/idt.cpp",
+    "file": "../arch/x86/idt/idt.cpp",
+    "output": "kernel.elf.p/arch_x86_idt_idt.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_apic_apic.cpp.o -MF kernel.elf.p/arch_x86_apic_apic.cpp.o.d -o kernel.elf.p/arch_x86_apic_apic.cpp.o -c ../arch/x86/apic/apic.cpp",
+    "file": "../arch/x86/apic/apic.cpp",
+    "output": "kernel.elf.p/arch_x86_apic_apic.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_kinit_kinit.cpp.o -MF kernel.elf.p/arch_x86_kinit_kinit.cpp.o.d -o kernel.elf.p/arch_x86_kinit_kinit.cpp.o -c ../arch/x86/kinit/kinit.cpp",
+    "file": "../arch/x86/kinit/kinit.cpp",
+    "output": "kernel.elf.p/arch_x86_kinit_kinit.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_gdt_gdt.cpp.o -MF kernel.elf.p/arch_x86_gdt_gdt.cpp.o.d -o kernel.elf.p/arch_x86_gdt_gdt.cpp.o -c ../arch/x86/gdt/gdt.cpp",
+    "file": "../arch/x86/gdt/gdt.cpp",
+    "output": "kernel.elf.p/arch_x86_gdt_gdt.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_paging_paging.cpp.o -MF kernel.elf.p/arch_x86_paging_paging.cpp.o.d -o kernel.elf.p/arch_x86_paging_paging.cpp.o -c ../arch/x86/paging/paging.cpp",
+    "file": "../arch/x86/paging/paging.cpp",
+    "output": "kernel.elf.p/arch_x86_paging_paging.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_pmm_pmm.cpp.o -MF kernel.elf.p/arch_x86_pmm_pmm.cpp.o.d -o kernel.elf.p/arch_x86_pmm_pmm.cpp.o -c ../arch/x86/pmm/pmm.cpp",
+    "file": "../arch/x86/pmm/pmm.cpp",
+    "output": "kernel.elf.p/arch_x86_pmm_pmm.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_interface_driver_tty.cpp.o -MF kernel.elf.p/arch_interface_driver_tty.cpp.o.d -o kernel.elf.p/arch_interface_driver_tty.cpp.o -c ../arch/interface/driver/tty.cpp",
+    "file": "../arch/interface/driver/tty.cpp",
+    "output": "kernel.elf.p/arch_interface_driver_tty.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/kernel.cpp.o -MF kernel.elf.p/kernel.cpp.o.d -o kernel.elf.p/kernel.cpp.o -c ../kernel.cpp",
+    "file": "../kernel.cpp",
+    "output": "kernel.elf.p/kernel.cpp.o"
+  },
+  {
+    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/lib_src_cstring.cpp.o -MF kernel.elf.p/lib_src_cstring.cpp.o.d -o kernel.elf.p/lib_src_cstring.cpp.o -c ../lib/src/cstring.cpp",
     "file": "../lib/src/cstring.cpp",
-    "output": "kernel.bin.p/lib_src_cstring.cpp.o"
+    "output": "kernel.elf.p/lib_src_cstring.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/lib_src_new.cpp.o -MF kernel.bin.p/lib_src_new.cpp.o.d -o kernel.bin.p/lib_src_new.cpp.o -c ../lib/src/new.cpp",
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/lib_src_new.cpp.o -MF kernel.elf.p/lib_src_new.cpp.o.d -o kernel.elf.p/lib_src_new.cpp.o -c ../lib/src/new.cpp",
     "file": "../lib/src/new.cpp",
-    "output": "kernel.bin.p/lib_src_new.cpp.o"
+    "output": "kernel.elf.p/lib_src_new.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_idt_idt.cpp.o -MF kernel.bin.p/kernel_arch_x86_idt_idt.cpp.o.d -o kernel.bin.p/kernel_arch_x86_idt_idt.cpp.o -c ../kernel/arch/x86/idt/idt.cpp",
-    "file": "../kernel/arch/x86/idt/idt.cpp",
-    "output": "kernel.bin.p/kernel_arch_x86_idt_idt.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/lib_src_backtrace.cpp.o -MF kernel.elf.p/lib_src_backtrace.cpp.o.d -o kernel.elf.p/lib_src_backtrace.cpp.o -c ../lib/src/backtrace.cpp",
+    "file": "../lib/src/backtrace.cpp",
+    "output": "kernel.elf.p/lib_src_backtrace.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_apic_apic.cpp.o -MF kernel.bin.p/kernel_arch_x86_apic_apic.cpp.o.d -o kernel.bin.p/kernel_arch_x86_apic_apic.cpp.o -c ../kernel/arch/x86/apic/apic.cpp",
-    "file": "../kernel/arch/x86/apic/apic.cpp",
-    "output": "kernel.bin.p/kernel_arch_x86_apic_apic.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/lib_cxxabi.cpp.o -MF kernel.elf.p/lib_cxxabi.cpp.o.d -o kernel.elf.p/lib_cxxabi.cpp.o -c ../lib/cxxabi.cpp",
+    "file": "../lib/cxxabi.cpp",
+    "output": "kernel.elf.p/lib_cxxabi.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_kinit_kinit.cpp.o -MF kernel.bin.p/kernel_arch_x86_kinit_kinit.cpp.o.d -o kernel.bin.p/kernel_arch_x86_kinit_kinit.cpp.o -c ../kernel/arch/x86/kinit/kinit.cpp",
-    "file": "../kernel/arch/x86/kinit/kinit.cpp",
-    "output": "kernel.bin.p/kernel_arch_x86_kinit_kinit.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/libimpl_memory-allocator_linked-list-memory-allocator_alloc.cpp.o -MF kernel.elf.p/libimpl_memory-allocator_linked-list-memory-allocator_alloc.cpp.o.d -o kernel.elf.p/libimpl_memory-allocator_linked-list-memory-allocator_alloc.cpp.o -c ../libimpl/memory-allocator/linked-list-memory-allocator/alloc.cpp",
+    "file": "../libimpl/memory-allocator/linked-list-memory-allocator/alloc.cpp",
+    "output": "kernel.elf.p/libimpl_memory-allocator_linked-list-memory-allocator_alloc.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_gdt_gdt.cpp.o -MF kernel.bin.p/kernel_arch_x86_gdt_gdt.cpp.o.d -o kernel.bin.p/kernel_arch_x86_gdt_gdt.cpp.o -c ../kernel/arch/x86/gdt/gdt.cpp",
-    "file": "../kernel/arch/x86/gdt/gdt.cpp",
-    "output": "kernel.bin.p/kernel_arch_x86_gdt_gdt.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/libimpl_cxxabi.cpp.o -MF kernel.elf.p/libimpl_cxxabi.cpp.o.d -o kernel.elf.p/libimpl_cxxabi.cpp.o -c ../libimpl/cxxabi.cpp",
+    "file": "../libimpl/cxxabi.cpp",
+    "output": "kernel.elf.p/libimpl_cxxabi.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_paging_paging.cpp.o -MF kernel.bin.p/kernel_arch_x86_paging_paging.cpp.o.d -o kernel.bin.p/kernel_arch_x86_paging_paging.cpp.o -c ../kernel/arch/x86/paging/paging.cpp",
-    "file": "../kernel/arch/x86/paging/paging.cpp",
-    "output": "kernel.bin.p/kernel_arch_x86_paging_paging.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/libimpl_implement.cpp.o -MF kernel.elf.p/libimpl_implement.cpp.o.d -o kernel.elf.p/libimpl_implement.cpp.o -c ../libimpl/implement.cpp",
+    "file": "../libimpl/implement.cpp",
+    "output": "kernel.elf.p/libimpl_implement.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_interface_driver_tty.cpp.o -MF kernel.bin.p/kernel_arch_interface_driver_tty.cpp.o.d -o kernel.bin.p/kernel_arch_interface_driver_tty.cpp.o -c ../kernel/arch/interface/driver/tty.cpp",
-    "file": "../kernel/arch/interface/driver/tty.cpp",
-    "output": "kernel.bin.p/kernel_arch_interface_driver_tty.cpp.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/utils_panic.cpp.o -MF kernel.elf.p/utils_panic.cpp.o.d -o kernel.elf.p/utils_panic.cpp.o -c ../utils/panic.cpp",
+    "file": "../utils/panic.cpp",
+    "output": "kernel.elf.p/utils_panic.cpp.o"
   },
   {
     "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_kernel.cpp.o -MF kernel.bin.p/kernel_kernel.cpp.o.d -o kernel.bin.p/kernel_kernel.cpp.o -c ../kernel/kernel.cpp",
-    "file": "../kernel/kernel.cpp",
-    "output": "kernel.bin.p/kernel_kernel.cpp.o"
-  },
-  {
-    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_cxxabi.cpp.o -MF kernel.bin.p/kernel_cxxabi.cpp.o.d -o kernel.bin.p/kernel_cxxabi.cpp.o -c ../kernel/cxxabi.cpp",
-    "file": "../kernel/cxxabi.cpp",
-    "output": "kernel.bin.p/kernel_cxxabi.cpp.o"
-  },
-  {
-    "directory": "/home/flowey/dev/kernel-dev/kernel/build",
-    "command": "c++ -Ikernel.bin.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/kernel/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.bin.p/kernel_arch_x86_idt_idt.S.o -MF kernel.bin.p/kernel_arch_x86_idt_idt.S.o.d -o kernel.bin.p/kernel_arch_x86_idt_idt.S.o -c ../kernel/arch/x86/idt/idt.S",
-    "file": "../kernel/arch/x86/idt/idt.S",
-    "output": "kernel.bin.p/kernel_arch_x86_idt_idt.S.o"
+    "command": "c++ -Ikernel.elf.p -I. -I.. -I/home/flowey/dev/kernel-dev/kernel/ -I/home/flowey/dev/kernel-dev/kernel/arch/x86/ -I/home/flowey/dev/kernel-dev/kernel/arch/ -I/home/flowey/dev/kernel-dev/kernel/lib/ -I/home/flowey/dev/kernel-dev/kernel/lib/include/ -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -O0 -g -fno-rtti -fno-exceptions -Os -ffreestanding -fno-PIC -no-pie -fno-exceptions -Wno-ignored-attributes -std=c++17 -Wall -fcf-protection=none -fno-threadsafe-statics -mno-sse -mno-sse2 -nostdinc -mno-mmx -mno-80387 -m64 -march=x86-64 -mcmodel=kernel -MD -MQ kernel.elf.p/arch_x86_idt_idt.S.o -MF kernel.elf.p/arch_x86_idt_idt.S.o.d -o kernel.elf.p/arch_x86_idt_idt.S.o -c ../arch/x86/idt/idt.S",
+    "file": "../arch/x86/idt/idt.S",
+    "output": "kernel.elf.p/arch_x86_idt_idt.S.o"
   }
 ]

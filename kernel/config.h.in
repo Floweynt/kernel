@@ -1,9 +1,0 @@
-#ifndef __ARCH_CONFIG_H__
-#define __ARCH_CONFIG_H__
-
-#mesondefine VERSION
-#mesondefine ARCH
-#mesondefine ARCH_PATH
-#mesondefine MALLOC_IMPL_PATH
-
-#endif
