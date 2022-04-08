@@ -5,7 +5,7 @@
 
 namespace paging
 {
-    static page_table_entry root_table alignas(4096) [512];
+    static page_table_entry root_table alignas(4096)[512];
 
     bool request_page(page_type pt, void* root, uint64_t virtual_addr, uint64_t physical_address, bool overwrite)
     {

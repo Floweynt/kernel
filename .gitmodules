@@ -1,9 +1,6 @@
 [submodule "lib"]
 	path = lib
 	url = git@github.com:FloweyTheFlower420/nostd.git
-[submodule "kernel/libimpl/memory-allocator"]
-	path = kernel/libimpl/memory-allocator
-	url = https://github.com/FloweyTheFlower420/memory-allocator/
 [submodule "libimpl/memory-allocator"]
 	path = libimpl/memory-allocator
-	url = https://github.com/FloweyTheFlower420/memory-allocator/
+	url = git@github.com:FloweyTheFlower420/memory-allocator.git

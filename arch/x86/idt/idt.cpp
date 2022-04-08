@@ -1,5 +1,5 @@
-#include <asm/asm_cpp.h>
 #include "idt.h"
+#include <asm/asm_cpp.h>
 
 uintptr_t idt_handler_entries[256];
 

@@ -1,8 +1,8 @@
 #ifndef __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
 #define __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
 #include "stivale2.h"
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 class boot_resource
 {
@@ -13,10 +13,10 @@ public:
     boot_resource(stivale2_struct*);
     static boot_resource& instance();
 
-    template<typename T>
+    template <typename T>
     void iterator_mmap(T cb)
     {
-        for(int i = 0; i < mmap_length; i++)
+        for (int i = 0; i < mmap_length; i++)
             cb(mmap_entries[i]);
     }
 };

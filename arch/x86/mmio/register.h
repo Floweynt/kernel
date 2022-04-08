@@ -37,4 +37,4 @@ namespace mmio
     struct alignas(alignment) register_reserved
     {
     };
-}
+} // namespace mmio

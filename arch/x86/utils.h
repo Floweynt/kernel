@@ -24,7 +24,7 @@ constexpr long long ceil_logbase2(long long x)
     int y = (((x & (x - 1)) == 0) ? 0 : 1);
     int j = 32;
     int k = 0;
-    
+
     k = (((x & t[0]) == 0) ? 0 : j);
     y += k;
     x >>= k;
