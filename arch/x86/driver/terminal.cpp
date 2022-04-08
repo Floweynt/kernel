@@ -6,6 +6,15 @@ namespace driver
     {
         if(this->buffer.framebuffer_addr < 0xffff800000000000)
             this->buffer.framebuffer_addr += 0xffff800000000000;
+        this->buffer.framebuffer_bpp >>= 3;
+
+        // blank screen
+        for(std::size_t i = 0; i < buffer.framebuffer_height; i++)
+        {
+            char* current_pixel = (char*)pixel_at(x * f.width(), y * f.height() + i);
+            for(std::size_t j = 0; j < buffer.framebuffer_height * buffer.framebuffer_bpp; j++)
+                current_pixel[j] = 0;
+        }
     }
 
     void simple_tty::scrollup()
@@ -22,26 +31,26 @@ namespace driver
                       (((((1ull << buffer.green_mask_size) - 1) * color.g) / 255) << buffer.green_mask_shift) |
                       (((((1ull << buffer.blue_mask_size) - 1) * color.b) / 255) << buffer.blue_mask_shift);
         
-        char* current_pixel = (char*)pixel_at(x * f.width(), y * f.height());
-        char* current_char = (char*)f.char_at(c);
+        unsigned char* current_char = (unsigned char*)f.char_at(c);
         uint8_t bit_index = 0;
-        for(int i = 0; i < f.height(); i++)
+        for(std::size_t i = 0; i < f.height(); i++)
         {
-            for(int j = 0; j < f.width(); j++)
+            char* current_pixel = (char*)pixel_at(x * f.width(), y * f.height() + i);
+
+            for(std::size_t j = 0; j < f.width(); j++)
             {
-                if(*current_char & (1<< bit_index))
+                if(*current_char & (0x80 >> bit_index))
                 {
                     char* pixel_buffer = (char*)&px;
-                    for(int i = 0; i < buffer.framebuffer_bpp; i++)
-                        *current_pixel++ = *pixel_buffer++;
+                    for(int k = 0; k < buffer.framebuffer_bpp; k++)
+                        current_pixel[k] = *pixel_buffer++;
                 }
 
+                current_pixel += buffer.framebuffer_bpp;
                 bit_index++;
                 current_char += bit_index / 8;
                 bit_index %= 8;
             }
-
-            current_pixel += (buffer.framebuffer_pitch - f.width() * buffer.framebuffer_bpp);
         }
     }
 
@@ -49,14 +58,16 @@ namespace driver
     {
         switch(c)
         {
-        case ' ':
-            x++;
+        case '\0':
             break;
         case '\n':
             y++;
+            x = 0;
             break;
         default:
-            render_character(c);
+            render_character(c, x, y);
+        case ' ':
+            x++;
         }
 
         if(x == cols())
@@ -66,12 +77,8 @@ namespace driver
         }
 
         if(y == lines())
-        {
             y--;
-            
-            
-
-
-        }
     }
+
+    simple_tty::~simple_tty() {}
 }

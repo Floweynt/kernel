@@ -1,26 +1,26 @@
 project('kernel', 'cpp')
 
 add_project_arguments(
-    '-fno-rtti',
     '-fno-exceptions',
-    '-Os',
-    '-ffreestanding',
     '-fno-PIC',
-    '-no-pie',
-    '-fno-exceptions',
-    '-Wno-ignored-attributes',
-    '-std=c++17',
-    '-Wall',
     '-fcf-protection=none',
+    '-fno-rtti',
+    '-fno-stack-protector',
+    '-fno-threadsafe-statics',
+    '-O0',
+    '-ffreestanding',
+    '-std=c++17',
+    '-no-pie',
+    '-nostdinc',
+    '-Wall',
+    '-Wno-ignored-attributes',
     '-I' + (meson.source_root() + '/'),
     '-I' + (meson.source_root() + '/arch/x86/'),
     '-I' + (meson.source_root() + '/arch/'),
     '-I' + (meson.source_root() + '/lib/'),
     '-I' + (meson.source_root() + '/lib/include/'),
-    '-fno-threadsafe-statics',
     '-mno-sse',
     '-mno-sse2',
-    '-nostdinc',
     '-mno-mmx',
     '-mno-80387',
     language: 'cpp'
@@ -40,11 +40,11 @@ kernel_source = [
     './arch/x86/gdt/gdt.cpp',
     './arch/x86/paging/paging.cpp',
     './arch/x86/pmm/pmm.cpp',
+    './arch/x86/driver/terminal.cpp',
     './arch/common/driver/tty.cpp',
     './lib/src/cstring.cpp',
     './lib/src/new.cpp',
     './lib/src/backtrace.cpp',
-    './lib/cxxabi.cpp',
     './libimpl/memory-allocator/linked-list-memory-allocator/alloc.cpp',
     './libimpl/cxxabi.cpp',
     './libimpl/implement.cpp',
@@ -57,7 +57,7 @@ conf = configuration_data()
 conf.set('VERSION', '"0.0.1"')
 conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
-conf.set('MALLOC_IMPL_PATH', '"memory-allocator/linked-list-memory-allocator/alloc.h"')
+conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
 configure_file(input : 'config.h.in',
                output : 'config.h',
                configuration : conf)
@@ -80,6 +80,7 @@ kernel = executable('kernel.elf',
 # required program for generating disk image
 qemu = find_program('qemu-system-x86_64')
 generate_image = find_program('./build-resources/generate_image.sh')
+run_image = find_program('./build-resources/run_image.sh')
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',
@@ -87,13 +88,13 @@ kernel_img = custom_target('kernel_img',
     depends: [kernel],
     command: [
         generate_image, 
-        meson.build_root() + 'kernel.img', 
-        meson.source_root() + './build-resources/kernel-template.img',
-        meson.build_root() + 'kernel.elf'
+        meson.build_root() + '/kernel.img', 
+        meson.source_root() + '/build-resources/kernel-template.img',
+        meson.build_root() + '/kernel.elf'
     ]
 )
 
 run = run_target('run',
     depends: [kernel_img],
-    command: [qemu, '-bios', '/usr/share/ovmf/x64/OVMF.fd', '-hda', meson.build_root() + 'kernel.img']
+    command: [run_image, meson.build_root() + '/kernel.img', meson.build_root() + '/kernel.elf']
 )

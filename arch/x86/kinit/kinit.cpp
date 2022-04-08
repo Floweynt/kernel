@@ -6,10 +6,10 @@
 #include <gdt/gdt.h>
 #include <printf.h>
 #include <new>
+#include <config.h>
+#include MALLOC_IMPL_PATH
 
 static uint8_t stack[8192];
-
-static_assert(__has_builtin(__is_trivially_destructible));
 
 static stivale2_tag unmap_null_tag = {.identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID, .next = 0};
 
@@ -23,7 +23,7 @@ static stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
     .framebuffer_bpp = 0};
 
 static stivale2_header stivale_hdr
-    [[gnu::section("stivale2hdr"), gnu::used]] = {.entry_point = 0,
+    [[gnu::section(".stivale2hdr"), gnu::used]] = {.entry_point = 0,
                                                   .stack = (uintptr_t)stack + sizeof(stack),
                                                   .flags = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
                                                   .tags = (uintptr_t)&framebuffer_hdr_tag};
@@ -59,14 +59,35 @@ void init_tty(stivale2_struct_tag_framebuffer* buffer)
     driver::set_tty_startup_driver(&tmp);
 }
 
-[[noreturn]] void _start(stivale2_struct* root)
+
+extern "C"
 {
-    init_tty(stivale2_get_tag<stivale2_struct_tag_framebuffer>(root, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID));
+    [[noreturn]] void _start(stivale2_struct* root)
+    {
+        // basic kernel initalization services
+        init_tty(stivale2_get_tag<stivale2_struct_tag_framebuffer>(root, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID));
+        new (buf) boot_resource(root);
+        boot_resource::instance().iterator_mmap([](const stivale2_mmap_entry& e) {
+            if(e.type == 1)
+                alloc::add_region((void*)e.base, e.length);
+        });
 
-    printf("kinit: _start() started tty");
+        std::printf("kinit: _start() started tty\n");
+        std::printf("memory map:\n");
 
-    new (buf) boot_resource(root);
-    gdt::install_gdt();
-    while (1)
-        __asm__ __volatile__("hlt");
+        boot_resource::instance().iterator_mmap([](const stivale2_mmap_entry& e) {
+            switch(e.type)
+            {
+            case 1:
+                std::printf("[\033cg;USABLE\033]: 0x%lu-0x%lu length=0x%lu\n", e.base, e.base + e.length, e.length);
+            }
+        });
+
+        std::printf("\033cr;RED TEXT\033");
+
+        new (buf) boot_resource(root);
+        gdt::install_gdt();
+        while (1)
+            __asm__ __volatile__("hlt");
+    }
 }

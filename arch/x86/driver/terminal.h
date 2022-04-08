@@ -11,7 +11,6 @@ namespace driver
     {
         stivale2_struct_tag_framebuffer buffer;
         tty::romfont f;
-        tty::rgb color;
         char* screen_buffer;
         std::size_t rotate_offset;
         std::size_t x;
@@ -43,6 +42,8 @@ namespace driver
             i = (rotate_offset + i) % lines();
             return screen_buffer[i * cols() + j];
         }
+    
+        ~simple_tty();
     };
 } // namespace driver
 

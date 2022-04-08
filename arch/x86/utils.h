@@ -16,22 +16,45 @@ uint64_t align(uint64_t t)
     return (t + (1 << n) - 1) & (~(1 << n));
 }
 
-long long ceil_logbase2(long long x)
+constexpr long long ceil_logbase2(long long x)
 {
-    static const unsigned long long t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull, 0x000000000000FF00ull,
-                                            0x00000000000000F0ull, 0x000000000000000Cull, 0x0000000000000002ull};
+    constexpr unsigned long long t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull, 0x000000000000FF00ull,
+                                         0x00000000000000F0ull, 0x000000000000000Cull, 0x0000000000000002ull};
 
     int y = (((x & (x - 1)) == 0) ? 0 : 1);
     int j = 32;
-    int i;
+    int k = 0;
+    
+    k = (((x & t[0]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
 
-    for (i = 0; i < 6; i++)
-    {
-        int k = (((x & t[i]) == 0) ? 0 : j);
-        y += k;
-        x >>= k;
-        j >>= 1;
-    }
+    k = (((x & t[1]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+
+    k = (((x & t[2]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+
+    k = (((x & t[3]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+
+    k = (((x & t[4]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+
+    k = (((x & t[5]) == 0) ? 0 : j);
+    y += k;
+    x >>= k;
+    j >>= 1;
+
     return y;
 }
 
