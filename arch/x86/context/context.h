@@ -1,6 +1,6 @@
 #ifndef __ARCH_X86_CONTEXT_H__
 #define __ARCH_X86_CONTEXT_H__
-#include <cstdint.h>
+#include <cstdint>
 
 // this is a fully restorable execution context
 struct context

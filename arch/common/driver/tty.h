@@ -56,13 +56,32 @@ namespace driver
         char command_buffer[32][8];
 
         friend void std::detail::putc(char ch);
-
         void handle_color1();
+        inline void handle_scrollup() { scrollup(); }
+        inline void handle_rerender() { rerender(); }
 
         using handler_type = void (tty_startup_driver::*)();
-
-        static constexpr handler_type handlers[26][8] = {{}, {}, {&tty_startup_driver::handle_color1}};
-
+        static constexpr handler_type handlers[26][8] = {
+            {},
+            {},
+            {&tty_startup_driver::handle_color1},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {&tty_startup_driver::handle_rerender},
+            {&tty_startup_driver::handle_scrollup},
+        };
         void putc_handle_escape(char c);
 
     protected:
@@ -70,6 +89,9 @@ namespace driver
 
     public:
         virtual void putc(char c) = 0;
+        virtual void scrollup() = 0;
+        virtual void rerender() = 0;
+
         virtual ~tty_startup_driver() = 0;
     };
 

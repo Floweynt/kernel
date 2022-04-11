@@ -1,5 +1,9 @@
 #include "terminal.h"
 #include <cstring>
+#include <pmm/pmm.h>
+#include <paging/paging.h>
+#include <asm/asm_cpp.h>
+
 namespace driver
 {
     simple_tty::simple_tty(const stivale2_struct_tag_framebuffer& buffer, tty::romfont f) : buffer(buffer), f(f)
@@ -15,18 +19,44 @@ namespace driver
             for (std::size_t j = 0; j < buffer.framebuffer_height * buffer.framebuffer_bpp; j++)
                 current_pixel[j] = 0;
         }
+
+        std::size_t pages = std::detail::div_roundup(cols() * lines() * sizeof(screen_character), 4096ul);
+        for(std::size_t i = 0; i < pages; i++)
+        {
+            auto p = pmm::pmm_allocate();
+            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096, (uint64_t)p, 0b00000001);
+            invlpg((void*)(0xffff900000000000 + i * 4096));
+        }
+
+        screen_buffer = (screen_character*) 0xffff900000000000;
     }
 
     void simple_tty::scrollup()
     {
-        std::memset(screen_buffer, 0, cols());
-        rotate_offset += cols();
+        for (std::size_t i = 0; i < cols(); i++)
+            screen_buffer[i] = {0, {0, 0, 0}};
+        rotate_offset++;
+        simple_tty::rerender();
+    }
 
-        // TODO: impl
+    void simple_tty::rerender()
+    {
+        tty::rgb save = color;
+        for (std::size_t i = 0; i < cols(); i++)
+        {
+            for (std::size_t j = 0; j < lines(); j++)
+            {
+                auto [ch, tmp] = char_at(i, j);
+                color = tmp;
+                render_character(ch, i, j);
+            }
+        }
+        color = save;
     }
 
     void simple_tty::render_character(char c, std::size_t x, std::size_t y)
     {
+        char_at(x, y) = {c, color};
         uint64_t px = (((((1ull << buffer.red_mask_size) - 1) * color.r) / 255) << buffer.red_mask_shift) |
                       (((((1ull << buffer.green_mask_size) - 1) * color.g) / 255) << buffer.green_mask_shift) |
                       (((((1ull << buffer.blue_mask_size) - 1) * color.b) / 255) << buffer.blue_mask_shift);

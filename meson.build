@@ -41,6 +41,7 @@ kernel_source = [
     './arch/x86/paging/paging.cpp',
     './arch/x86/pmm/pmm.cpp',
     './arch/x86/driver/terminal.cpp',
+    './arch/x86/paging/pgfault.h',
     './arch/common/driver/tty.cpp',
     './lib/src/cstring.cpp',
     './lib/src/new.cpp',
@@ -79,8 +80,8 @@ kernel = executable('kernel.elf',
 
 # required program for generating disk image
 qemu = find_program('qemu-system-x86_64')
+gdb = find_program('gdb')
 generate_image = find_program('./build-resources/generate_image.sh')
-run_image = find_program('./build-resources/run_image.sh')
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',
@@ -96,5 +97,35 @@ kernel_img = custom_target('kernel_img',
 
 run = run_target('run',
     depends: [kernel_img],
-    command: [run_image, meson.build_root() + '/kernel.img', meson.build_root() + '/kernel.elf']
+    command: [
+        qemu, 
+        '-bios', 
+        '/usr/share/ovmf/x64/OVMF.fd',
+        '-hda', 
+        meson.build_root() + '/kernel.img',
+        '-no-reboot',
+        '-monitor',
+        'stdio',
+        '-d',
+        'int',
+        '-D',
+        'qemu.log' ,
+        '-no-shutdown',
+        '-s',
+        '-S',
+        '-M',
+        'smm=off'
+    ]
+)
+
+attach_debugger = run_target('attach',
+    depends: [kernel_img],
+    command: [
+        gdb,
+        meson.build_root() + '/kernel.elf',
+        '-ex', 'target remote localhost:1234',
+        '-ex', 'b _start', 
+        '-ex', 'c',
+        '-ex', 'tui enable'
+    ]
 )

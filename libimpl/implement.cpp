@@ -1,5 +1,6 @@
 #include <bits/user_implement.h>
 #include <config.h>
+#include <panic.h>
 #include MALLOC_IMPL_PATH
 
 namespace std::detail
@@ -10,11 +11,15 @@ namespace std::detail
 
     namespace errors
     {
-        [[noreturn]] void __stdexcept_out_of_range() {}
-        [[noreturn]] void __stdexcept_bad_alloc() {}
-        [[noreturn]] void __stdexcept_bad_variant_access() {}
-        [[noreturn]] void __printf_argument_notfound() {}
-        [[noreturn]] void __printf_undefined_specifier_for_length() {}
-        [[noreturn]] void __halt() {}
+        [[noreturn]] void __stdexcept_out_of_range() { std::panic("stdexcept out of range"); }
+        [[noreturn]] void __stdexcept_bad_alloc() { std::panic("stdexcept bad alloc"); }
+        [[noreturn]] void __stdexcept_bad_variant_access() { std::panic("stdexcept bad variant access"); }
+        [[noreturn]] void __printf_argument_notfound() { std::panic("what"); }
+        [[noreturn]] void __printf_undefined_specifier_for_length() { std::panic("printf undefined specifier for length"); }
+        [[noreturn]] void __halt()
+        {
+            while (1)
+                __asm__ __volatile__("hlt");
+        }
     } // namespace errors
 } // namespace std::detail

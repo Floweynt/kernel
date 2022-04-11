@@ -6,20 +6,25 @@ namespace paging
 {
     enum page_type
     {
-        SMALL,  // 4KiB
-        MEDIUM, // 2 MiB
-        BIG     // 1 GiB
+        SMALL = 0, // 4KiB
+        MEDIUM,    // 2 MiB
+        BIG        // 1 GiB
     };
+
+    void install();
 
     template <uint8_t t>
     constexpr uint16_t get_page_entry(uint64_t virtual_addr)
     {
-        return std::get_bits<(4 - t) * 9 + 12, (4 - t) * 9 + 20>(virtual_addr) >> ((4 - t) * 9 + 12);
+        return std::get_bits<(3 - t) * 9 + 12, (3 - t) * 9 + 20>(virtual_addr) >> ((3 - t) * 9 + 12);
     }
 
-    bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, bool override);
+    constexpr uint16_t get_page_entry(uint64_t virtual_addr, uint8_t t)
+    {
+        return std::get_bits(virtual_addr, (3 - t) * 9 + 12, (3 - t) * 9 + 20) >> ((3 - t) * 9 + 12);
+    }
 
-    void* get_page(uint64_t physical_address, uint64_t len);
+    bool request_page(page_type pt, uint64_t vaddr, uint64_t paddr, uint8_t flags, bool overwrite = false);
 
     using page_table_entry = uint64_t;
 } // namespace paging

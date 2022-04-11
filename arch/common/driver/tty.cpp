@@ -37,7 +37,7 @@ void driver::tty_startup_driver::handle_color1()
     case 0x776f6c6c6579:
         color = tty::YELLOW;
         break;
-    case 0x77:
+    case 0x63:
     case 0x6E617963:
         color = tty::CYAN;
         break;

@@ -46,6 +46,12 @@ WRITE_CR(4)
 
 inline void invlpg(void* m) { asm volatile("invlpg (%0)" : : "b"(m) : "memory"); }
 
+
+namespace msr
+{
+    inline constexpr uint64_t IA32_EFER = 0xC0000080;
+}
+
 inline void wrmsr(uint64_t msr, uint64_t value)
 {
     uint32_t low = value & 0xFFFFFFFF;
