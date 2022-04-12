@@ -24,7 +24,7 @@ namespace driver
         for(std::size_t i = 0; i < pages; i++)
         {
             auto p = pmm::pmm_allocate();
-            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096, (uint64_t)p, 0b00000001);
+            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096,pmm::make_physical(p), 0b00000001);
             invlpg((void*)(0xffff900000000000 + i * 4096));
         }
 
@@ -34,32 +34,35 @@ namespace driver
     void simple_tty::scrollup()
     {
         for (std::size_t i = 0; i < cols(); i++)
-            screen_buffer[i] = {0, {0, 0, 0}};
+            char_at(i, 0) = {0, {0, 0, 0}};
         rotate_offset++;
         simple_tty::rerender();
     }
 
     void simple_tty::rerender()
     {
-        tty::rgb save = color;
+        tty::rgb save_fg = fg_color;
         for (std::size_t i = 0; i < cols(); i++)
         {
             for (std::size_t j = 0; j < lines(); j++)
             {
                 auto [ch, tmp] = char_at(i, j);
-                color = tmp;
+                fg_color = tmp;
                 render_character(ch, i, j);
             }
         }
-        color = save;
+        fg_color = save_fg;
     }
 
     void simple_tty::render_character(char c, std::size_t x, std::size_t y)
     {
-        char_at(x, y) = {c, color};
-        uint64_t px = (((((1ull << buffer.red_mask_size) - 1) * color.r) / 255) << buffer.red_mask_shift) |
-                      (((((1ull << buffer.green_mask_size) - 1) * color.g) / 255) << buffer.green_mask_shift) |
-                      (((((1ull << buffer.blue_mask_size) - 1) * color.b) / 255) << buffer.blue_mask_shift);
+        uint64_t fg = (((((1ull << buffer.red_mask_size) - 1) * fg_color.r) / 255) << buffer.red_mask_shift) |
+                      (((((1ull << buffer.green_mask_size) - 1) * fg_color.g) / 255) << buffer.green_mask_shift) |
+                      (((((1ull << buffer.blue_mask_size) - 1) * fg_color.b) / 255) << buffer.blue_mask_shift);
+        uint64_t bg = (((((1ull << buffer.red_mask_size) - 1) * bg_color.r) / 255) << buffer.red_mask_shift) |
+                      (((((1ull << buffer.green_mask_size) - 1) * bg_color.g) / 255) << buffer.green_mask_shift) |
+                      (((((1ull << buffer.blue_mask_size) - 1) * bg_color.b) / 255) << buffer.blue_mask_shift);
+
 
         unsigned char* current_char = (unsigned char*)f.char_at(c);
         uint8_t bit_index = 0;
@@ -69,13 +72,11 @@ namespace driver
 
             for (std::size_t j = 0; j < f.width(); j++)
             {
-                if (*current_char & (0x80 >> bit_index))
-                {
-                    char* pixel_buffer = (char*)&px;
-                    for (int k = 0; k < buffer.framebuffer_bpp; k++)
-                        current_pixel[k] = *pixel_buffer++;
-                }
-
+                uint64_t px = *current_char & (0x80 >> bit_index) ? fg : bg;
+                char* pixel_buffer = (char*)&px;
+                for (int k = 0; k < buffer.framebuffer_bpp; k++)
+                    current_pixel[k] = *pixel_buffer++;
+ 
                 current_pixel += buffer.framebuffer_bpp;
                 bit_index++;
                 current_char += bit_index / 8;
@@ -95,6 +96,7 @@ namespace driver
             x = 0;
             break;
         default:
+            char_at(x, y) = {c, fg_color};
             render_character(c, x, y);
         case ' ':
             x++;

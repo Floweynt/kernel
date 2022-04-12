@@ -12,12 +12,19 @@
 #include <printf.h>
 #include <pmm/pmm.h>
 #include <asm/asm_cpp.h>
+#include <acpi/acpi.h>
+#include <sync/spinlock.h>
 
 #include MALLOC_IMPL_PATH
 
 static uint8_t stack[4096];
 
-static stivale2_tag unmap_null_tag = {.identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID, .next = 0};
+static stivale2_header_tag_smp smp_tag {
+    .tag = {.identifier = STIVALE2_HEADER_TAG_SMP_ID, .next = 0},
+    .flags = 0
+};
+
+static stivale2_tag unmap_null_tag = {.identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID, .next = (uint64_t)&smp_tag};
 
 static stivale2_header_tag_terminal terminal_hdr_tag = {
     .tag = {.identifier = STIVALE2_HEADER_TAG_TERMINAL_ID, .next = (uint64_t)&unmap_null_tag}, .flags = 0};
@@ -55,11 +62,13 @@ boot_resource::boot_resource(stivale2_struct* root)
 {
     auto mmap_tag = stivale2_get_tag<stivale2_struct_tag_memmap>(root, STIVALE2_STRUCT_TAG_MEMMAP_ID);
     mmap_length = mmap_tag->entries;
-    for (int i = 0; i < mmap_length; i++)
+    for (std::size_t i = 0; i < mmap_length; i++)
         mmap_entries[i] = mmap_tag->memmap[i];
     ksize = stivale2_get_tag<stivale2_struct_tag_kernel_file_v2>(root, STIVALE2_STRUCT_TAG_KERNEL_FILE_V2_ID)->kernel_size;
     phys_addr = stivale2_get_tag<stivale2_struct_tag_kernel_base_address>(root, STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID)
                     ->physical_base_address;
+    root_table = (acpi::rsdp_descriptor*)stivale2_get_tag<stivale2_struct_tag_rsdp>(
+            root, STIVALE2_STRUCT_TAG_RSDP_ID)->rsdp;
 }
 
 static void init_tty(stivale2_struct* root)
@@ -74,6 +83,8 @@ static void init_tty(stivale2_struct* root)
 
 static void init_paging()
 {
+    wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
+
     std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), 4096ul);
 
     for (std::size_t i = 0; i < kpages; i++)
@@ -82,7 +93,7 @@ static void init_paging()
         paging::request_page(paging::page_type::SMALL, vaddr, pmm::make_physical_kern(vaddr), 0b00010001, true);
     }
     
-    boot_resource::instance().iterator_mmap([](const stivale2_mmap_entry& e) {
+    boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
         uint64_t current_addr = e.base;
         std::size_t len = e.length / 4069ul;
 
@@ -123,6 +134,8 @@ static void init_paging()
         }
     });
     paging::install();
+
+    // we should initalize for **all** cores1
 }
 
 extern "C"
@@ -131,19 +144,18 @@ extern "C"
     {
         new (buf) boot_resource(root);
 
-        boot_resource::instance().iterator_mmap([](const stivale2_mmap_entry& e) {
+        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             if(e.type == 1)
                 pmm::add_region((void*)(e.base | 0xffff800000000000), e.length / 4096);
         });
 
-        wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
         init_paging();
 
         init_tty(root);
         std::printf("kinit: _start() started tty\n");
         std::printf("memory map:\n");
 
-        boot_resource::instance().iterator_mmap([](const stivale2_mmap_entry& e) {
+        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             switch (e.type)
             {
             case 0x1:
@@ -174,11 +186,26 @@ extern "C"
                 std::printf("[\033cG;UNKNOWN     \033]: ");
             }
             std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
+        }); 
+
+        auto rsdp = boot_resource::instance().rsdp();
+
+        std::printf("ACPI info:\n", rsdp->xsdt_address);
+        std::printf("  rsdp data:\n");
+        std::printf("    revision=%d\n", (int)rsdp->revision);
+        std::printf("    length=%d\n", (int)rsdp->length);
+
+        boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
+            paging::request_page(paging::page_type::BIG, pmm::make_virtual((uint64_t)entry), (uint64_t)entry, 0);
+            entry = pmm::make_virtual<acpi::acpi_sdt_header>((uint64_t) entry);
+            invlpg((void*)entry);
+            std::printf("entry: (sig=0x%08u)\n", entry->signature);
         });
         
+        // TODO: bootstrap SMP
         gdt::install_gdt();
         idt::install_idt();
-        
+
         while (1)
             __asm__ __volatile__("hlt");
     }

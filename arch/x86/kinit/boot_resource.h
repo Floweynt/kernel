@@ -3,6 +3,7 @@
 #include "stivale2.h"
 #include <cstddef>
 #include <cstdint>
+#include <acpi/acpi.h>
 
 class boot_resource
 {
@@ -10,19 +11,29 @@ class boot_resource
     uint64_t ksize;
     std::size_t mmap_length;
     stivale2_mmap_entry mmap_entries[0x100];
-
+    acpi::rsdp_descriptor* root_table;
 public:
     boot_resource(stivale2_struct*);
     static boot_resource& instance();
 
-    constexpr uint64_t kernel_phys_addr() { return phys_addr; }
-    constexpr uint64_t kernel_size() { return ksize; }
+    constexpr uint64_t kernel_phys_addr() const { return phys_addr; }
+    constexpr uint64_t kernel_size() const { return ksize; }
+    constexpr acpi::rsdp_descriptor* rsdp() const { return root_table; }
 
     template <typename T>
-    void iterator_mmap(T cb)
+    void iterate_mmap(T cb)
     {
         for (int i = 0; i < mmap_length; i++)
             cb(mmap_entries[i]);
+    }
+
+    template<typename T>
+    void iterate_xsdt(T cb)
+    {
+        acpi::xsdt* table = (acpi::xsdt*) (root_table->xsdt_address + 0xffff800000000000ul);
+        std::size_t n = (table->h.length - sizeof(acpi::acpi_sdt_header)) / 8;
+        for(std::size_t i = 0; i < n; i++)
+            cb(table->table[i]);
     }
 };
 

@@ -36,10 +36,11 @@ namespace driver
 
         constexpr std::size_t cols() { return buffer.framebuffer_width / f.width(); }
 
-        inline screen_character char_at(std::size_t i, std::size_t j)
+        inline screen_character& char_at(std::size_t i, std::size_t j)
         {
-            i = (rotate_offset + i) % lines();
-            return screen_buffer[i * cols() + j];
+            
+            j = (rotate_offset + j) % lines();
+            return screen_buffer[i * lines() + j];
         }
 
         void scrollup() override;

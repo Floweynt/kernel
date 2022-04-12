@@ -15,35 +15,35 @@ void driver::tty_startup_driver::handle_color1()
     {
     case 0x72:
     case 0x646572:
-        color = tty::RED;
+        fg_color = tty::RED;
         break;
     case 0x67:
     case 0x6e65657267:
-        color = tty::GREEN;
+        fg_color = tty::GREEN;
         break;
     case 0x62:
     case 0x65756c62:
-        color = tty::BLUE;
+        fg_color = tty::BLUE;
         break;
     case 0x42:
     case 0x6b63616c62:
-        color = tty::BLACK;
+        fg_color = tty::BLACK;
         break;
     case 0x57:
     case 0x6574696877:
-        color = tty::WHITE;
+        fg_color = tty::WHITE;
         break;
     case 0x79:
     case 0x776f6c6c6579:
-        color = tty::YELLOW;
+        fg_color = tty::YELLOW;
         break;
     case 0x63:
     case 0x6E617963:
-        color = tty::CYAN;
+        fg_color = tty::CYAN;
         break;
     case 0x47:
     case 0x79657267:
-        color = tty::GREY;
+        fg_color = tty::GREY;
         break;
     }
 }
@@ -60,7 +60,7 @@ void driver::tty_startup_driver::putc_handle_escape(char c)
             {
                 if (c == '\x1b')
                 {
-                    color = tty::WHITE;
+                    fg_color = tty::WHITE;
                     is_command = false;
                     is_text = false;
                     return;

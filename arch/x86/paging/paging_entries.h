@@ -53,6 +53,8 @@ namespace paging
     }
 
     constexpr auto make_page_small = make_page_pointer;
+
+    using page_table_entry = uint64_t;
 }; // namespace paging
 
 #endif

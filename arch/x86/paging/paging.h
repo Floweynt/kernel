@@ -25,8 +25,6 @@ namespace paging
     }
 
     bool request_page(page_type pt, uint64_t vaddr, uint64_t paddr, uint8_t flags, bool overwrite = false);
-
-    using page_table_entry = uint64_t;
 } // namespace paging
 
 #endif

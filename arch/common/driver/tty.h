@@ -40,7 +40,7 @@ namespace tty
     inline constexpr rgb GREEN = {0, 255, 0};
     inline constexpr rgb BLUE = {0, 0, 255};
     inline constexpr rgb YELLOW = {255, 255, 0};
-    inline constexpr rgb CYAN = {0, 255, 255};
+    inline constexpr rgb CYAN = {0, 230, 230};
 } // namespace tty
 
 namespace driver
@@ -85,7 +85,8 @@ namespace driver
         void putc_handle_escape(char c);
 
     protected:
-        tty::rgb color = tty::WHITE;
+        tty::rgb fg_color = tty::WHITE;
+        tty::rgb bg_color = tty::BLACK;
 
     public:
         virtual void putc(char c) = 0;

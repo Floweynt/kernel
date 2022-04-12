@@ -33,14 +33,14 @@ namespace paging
                 auto r = pmm::pmm_allocate();
                 if (r == nullptr)
                     std::panic("cannot allocate physical memory for paging");
+                std::memset(r, 0, 4096);
                 e = make_page_pointer(pmm::make_physical(r), 0b00000001);
             }
 
             current_ent =
                 pmm::make_virtual<page_table_entry>(current_ent[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
         }
-
-        // write last entry
+        // writelast entry
         current_ent += get_page_entry(virtual_addr, 3 - pt);
         if (*current_ent && !overwrite)
             return false;
