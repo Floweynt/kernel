@@ -9,11 +9,12 @@
 #include <new>
 #include <paging/paging.h>
 #include <panic.h>
-#include <printf.h>
+#include <io_wrappers.h>
 #include <pmm/pmm.h>
 #include <asm/asm_cpp.h>
 #include <acpi/acpi.h>
 #include <sync/spinlock.h>
+#include <smp/smp.h>
 
 #include MALLOC_IMPL_PATH
 
@@ -69,6 +70,10 @@ boot_resource::boot_resource(stivale2_struct* root)
                     ->physical_base_address;
     root_table = (acpi::rsdp_descriptor*)stivale2_get_tag<stivale2_struct_tag_rsdp>(
             root, STIVALE2_STRUCT_TAG_RSDP_ID)->rsdp;
+    auto smp = stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID);
+    cores = smp->cpu_count;
+    bsp_id_lapic = smp->bsp_lapic_id;
+
 }
 
 static void init_tty(stivale2_struct* root)
@@ -77,8 +82,6 @@ static void init_tty(stivale2_struct* root)
         *stivale2_get_tag<stivale2_struct_tag_framebuffer>(root, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID),
         tty::romfont(8, 8, (void*)font));
     driver::set_tty_startup_driver(&tmp);
-
-    // lets PMM::a
 }
 
 static void init_paging()
@@ -133,9 +136,58 @@ static void init_paging()
             current_addr += 0x200000;
         }
     });
-    paging::install();
+    
+    paging::install(); 
+}
 
-    // we should initalize for **all** cores1
+static void init_smp(stivale2_struct_tag_smp* smp)
+{
+    io::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
+    io::printf("  cpus: %lu\n", smp->cpu_count);
+
+    std::size_t index;
+
+    for(std::size_t i = 0; i < smp->cpu_count; i++)
+    {
+        io::printf("initalizing core: %lu\n", i);
+        smp->smp_info[i].extra_argument = i;
+
+        if(smp->smp_info[i].lapic_id == smp->bsp_lapic_id)
+        {
+            index = i;
+            continue;
+        }
+
+        smp->smp_info[i].target_stack = (uint64_t)pmm::pmm_allocate();
+        smp::core_local::get(i).pagemap = (paging::page_table_entry*)pmm::pmm_allocate() + 512;
+        std::memcpy(
+            smp::core_local::get(i).pagemap + 256,
+            smp::core_local::get(smp->bsp_lapic_id).pagemap + 256,
+            256 * sizeof(paging::page_table_entry)
+        );
+        smp->smp_info[i].goto_address = (uint64_t)smp::initalize_smp;
+    }
+    
+    // initalize myself too!
+    smp::initalize_smp(&smp->smp_info[index]);
+}
+
+namespace alloc::detail
+{
+    void* start()
+    {
+        return (void*)HEAP_START;
+    }
+
+    std::size_t extend(void* buf, std::size_t n)
+    {
+        void* d;
+        if((d = pmm::pmm_allocate()))
+            std::panic("cannot get memory for heap");
+
+        paging::request_page(paging::page_type::SMALL, (uint64_t)buf, (uint64_t) buf, 1);
+        return 4096;
+    }
 }
 
 extern "C"
@@ -148,64 +200,63 @@ extern "C"
             if(e.type == 1)
                 pmm::add_region((void*)(e.base | 0xffff800000000000), e.length / 4096);
         });
-
-        init_paging();
-
+        
+        smp::core_local::create();
+        wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
         init_tty(root);
-        std::printf("kinit: _start() started tty\n");
-        std::printf("memory map:\n");
+        init_paging();
+        io::printf("kinit: _start() started tty\n");
+        io::printf("memory map:\n");
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             switch (e.type)
             {
             case 0x1:
-                std::printf("[\033cg;USABLE      \033]: ");
+                io::printf("[\033cg;USABLE      \033]: ");
                 break;
             case 0x2:
-                std::printf("[\033cr;RESERVED    \033]: ");
+                io::printf("[\033cr;RESERVED    \033]: ");
                 break;
             case 0x3:
-                std::printf("[\033cy;ACPI RECLAIM\033]: ");
+                io::printf("[\033cy;ACPI RECLAIM\033]: ");
                 break;
             case 0x4:
-                std::printf("[\033cy;ACPI NVS    \033]: ");
+                io::printf("[\033cy;ACPI NVS    \033]: ");
                 break;
             case 0x5:
-                std::printf("[\033cr;BAD         \033]: ");
+                io::printf("[\033cr;BAD         \033]: ");
                 break;
             case 0x1000:
-                std::printf("[\033cy;BTL RECLAIM \033]: ");
+                io::printf("[\033cy;BTL RECLAIM \033]: ");
                 break;
             case 0x1001:
-                std::printf("[\033cc;KERN MODULE \033]: ");
+                io::printf("[\033cc;KERN MODULE \033]: ");
                 break;
             case 0x1002:
-                std::printf("[\033cc;FRAMEBUFFER \033]: ");
+                io::printf("[\033cc;FRAMEBUFFER \033]: ");
                 break;
             default:
-                std::printf("[\033cG;UNKNOWN     \033]: ");
+                io::printf("[\033cG;UNKNOWN     \033]: ");
             }
-            std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
+            io::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
         }); 
 
         auto rsdp = boot_resource::instance().rsdp();
 
-        std::printf("ACPI info:\n", rsdp->xsdt_address);
-        std::printf("  rsdp data:\n");
-        std::printf("    revision=%d\n", (int)rsdp->revision);
-        std::printf("    length=%d\n", (int)rsdp->length);
+        io::printf("ACPI info:\n", rsdp->xsdt_address);
+        io::printf("  rsdp data:\n");
+        io::printf("    revision=%d\n", (int)rsdp->revision);
+        io::printf("    length=%d\n", (int)rsdp->length);
 
         boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
             paging::request_page(paging::page_type::BIG, pmm::make_virtual((uint64_t)entry), (uint64_t)entry, 0);
             entry = pmm::make_virtual<acpi::acpi_sdt_header>((uint64_t) entry);
             invlpg((void*)entry);
-            std::printf("entry: (sig=0x%08u)\n", entry->signature);
+            io::printf("entry: (sig=0x%08u)\n", entry->signature);
         });
-        
-        // TODO: bootstrap SMP
-        gdt::install_gdt();
-        idt::install_idt();
 
+        init_smp(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
+        
         while (1)
             __asm__ __volatile__("hlt");
     }

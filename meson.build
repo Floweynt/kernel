@@ -34,22 +34,23 @@ add_project_arguments(
 )
 
 kernel_source = [
-    './arch/x86/idt/idt.cpp',
-    './arch/x86/apic/apic.cpp',
-    './arch/x86/kinit/kinit.cpp',
-    './arch/x86/gdt/gdt.cpp',
-    './arch/x86/paging/paging.cpp',
-    './arch/x86/pmm/pmm.cpp',
-    './arch/x86/driver/terminal.cpp',
-    './arch/x86/paging/pgfault.h',
-    './arch/common/driver/tty.cpp',
-    './lib/src/cstring.cpp',
-    './lib/src/new.cpp',
-    './lib/src/backtrace.cpp',
-    './libimpl/memory-allocator/linked-list-memory-allocator/alloc.cpp',
-    './libimpl/cxxabi.cpp',
-    './libimpl/implement.cpp',
-    './lib/src/panic.cpp',
+    'arch/common/driver/tty.cpp',
+    'arch/x86/idt/idt.cpp',
+    'arch/x86/apic/apic.cpp',
+    'arch/x86/kinit/kinit.cpp',
+    'arch/x86/gdt/gdt.cpp',
+    'arch/x86/paging/paging.cpp',
+    'arch/x86/paging/pgfault.cpp',
+    'arch/x86/pmm/pmm.cpp',
+    'arch/x86/smp/smp.cpp',
+    'arch/x86/driver/terminal.cpp',
+    'lib/src/cstring.cpp',
+    'lib/src/panic.cpp',
+    'lib/src/new.cpp',
+    'lib/src/backtrace.cpp',
+    'libimpl/memory-allocator/linked-list-memory-allocator/extend_alloc.cpp',
+    'libimpl/cxxabi.cpp',
+    'libimpl/implement.cpp',
     'arch/x86/idt/idt.S',
 ]
 
@@ -59,6 +60,7 @@ conf.set('VERSION', '"0.0.1"')
 conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
 conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
+conf.set('HEAP_START', '0xffff900080000000')
 configure_file(input : 'config.h.in',
                output : 'config.h',
                configuration : conf)
@@ -114,7 +116,8 @@ run = run_target('run',
         '-s',
         '-S',
         '-M',
-        'smm=off'
+        'smm=off',
+        '-smp', '2'
     ]
 )
 

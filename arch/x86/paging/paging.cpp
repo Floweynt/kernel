@@ -2,14 +2,13 @@
 #include <asm/asm_cpp.h>
 #include <panic.h>
 #include <pmm/pmm.h>
+#include <smp/smp.h>
 
 #define GET_VIRTUAL_POS(n) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION)
 
 namespace paging
 {
-    static page_table_entry root_table alignas(4096)[512];
-
-    void install() { write_cr3(pmm::make_physical_kern(root_table)); }
+    void install() { write_cr3(pmm::make_physical(smp::core_local::get().pagemap)); }
 
     static inline constexpr uint64_t type2align[] = {
         0xfff,
@@ -24,7 +23,10 @@ namespace paging
         physical_address &= ~type2align[pt];
 
         // obtain pointer to entry
-        page_table_entry* current_ent = root_table;
+        page_table_entry* current_ent = smp::core_local::get().pagemap;
+        if(current_ent == nullptr)
+            current_ent = smp::core_local::get().pagemap = (page_table_entry*)pmm::pmm_allocate();
+
         for (int i = 0; i < (3 - pt); i++)
         {
             uint64_t& e = current_ent[get_page_entry(virtual_addr, i)];

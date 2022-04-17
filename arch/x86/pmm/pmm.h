@@ -5,7 +5,7 @@
 #include <cstring>
 #include <utils.h>
 #include <kinit/boot_resource.h>
-
+#include <sync/spinlock.h>
 namespace pmm
 {
     class pmm_region
@@ -14,6 +14,7 @@ namespace pmm
         uint64_t* data_start;
         std::size_t len;
         std::size_t s;
+        lock::spinlock lock;
 
     public:
         inline pmm_region() : pmm_region(nullptr, 0) {}

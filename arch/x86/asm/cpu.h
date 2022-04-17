@@ -46,10 +46,14 @@ WRITE_CR(4)
 
 inline void invlpg(void* m) { asm volatile("invlpg (%0)" : : "b"(m) : "memory"); }
 
+inline void disable_interrupt() { __asm__ __volatile__("cli"); }
+inline void enable_interrupt() { __asm__ __volatile__("sti"); }
 
 namespace msr
 {
-    inline constexpr uint64_t IA32_EFER = 0xC0000080;
+    inline constexpr uint64_t IA32_EFER = 0xc0000080;
+    inline constexpr uint64_t IA32_FS_BASE = 0xc0000100;
+    inline constexpr uint64_t IA32_GS_BASE = 0xc0000101;
 }
 
 inline void wrmsr(uint64_t msr, uint64_t value)

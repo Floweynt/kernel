@@ -9,18 +9,31 @@ namespace lock
     public:
         constexpr spinlock() : l(0) {}
         
-        [[gnu::always_inline]]
         void lock()
         {
             while(!__sync_bool_compare_and_swap(&l, 0, 1));
             __sync_synchronize();
         }
 
-        [[gnu::always_inline]]
         void release()
         {
             __sync_synchronize();
             l = 0;
+        }
+    };
+
+    class spinlock_guard
+    {
+        spinlock& lock;
+    public:
+        inline spinlock_guard(spinlock& s) : lock(s)
+        {
+            lock.lock();
+        }
+
+        inline ~spinlock_guard()
+        {
+            lock.release();
         }
     };
 };

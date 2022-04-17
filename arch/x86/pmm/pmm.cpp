@@ -27,6 +27,7 @@ namespace pmm
         std::size_t metadata_size = len & ~63;
         for (std::size_t i = 0; i < metadata_size; i++)
         {
+            lock::spinlock_guard guard { lock };
             if (region_start[i])
             {
                 std::size_t bitindex = __builtin_clzll(region_start[i]);

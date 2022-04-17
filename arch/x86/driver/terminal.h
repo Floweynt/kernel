@@ -3,6 +3,7 @@
 #include <common/driver/tty.h>
 #include <cstddef>
 #include <kinit/stivale2.h>
+#include <sync/spinlock.h>
 
 namespace driver
 {

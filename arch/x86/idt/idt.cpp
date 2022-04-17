@@ -1,7 +1,6 @@
 #include "idt.h"
 #include <asm/asm_cpp.h>
-
-uintptr_t idt_handler_entries[256];
+#include <smp/smp.h>
 
 extern char idt_entry_start[];
 
@@ -13,17 +12,8 @@ namespace idt
         uint64_t offset;
     };
 
-    struct [[gnu::packed]] idt_entry
-    {
-        uint16_t offset_low;
-        uint16_t cs = 0x8;
-        uint16_t flags;
-        uint16_t offset_mid;
-        uint32_t offset_high;
-        uint32_t reserved;
-    } __attribute__((packed));
+    idt::idt_entry idt_entries[256] = {};
 
-    static idt_entry idt_entries[256] = {};
 
     void init_idt()
     {
@@ -44,7 +34,7 @@ namespace idt
 
     void register_idt(interrupt_handler handler, std::size_t num, uint8_t type, uint8_t dpl)
     {
-        idt_handler_entries[num] = (uintptr_t)handler;
+        smp::core_local::get().idt_handler_entries[num] = (uintptr_t)handler;
         idt_entries[num].flags = 0x8000 | ((uint16_t)dpl << 13) | ((uint16_t)type << 8);
     }
 } // namespace idt

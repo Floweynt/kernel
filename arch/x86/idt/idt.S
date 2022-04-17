@@ -33,7 +33,7 @@ idt_common:
     // parameters
     movq %rax, %rsi
     movq %rbp, %rdi
-    call *idt_handler_entries(%rax)
+    // call *idt_handler_entries(%rax)
 
     popq %rbp
     popq %r15

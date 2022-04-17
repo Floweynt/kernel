@@ -5,5 +5,5 @@
 #mesondefine ARCH
 #mesondefine ARCH_PATH
 #mesondefine MALLOC_IMPL_PATH
-
+#mesondefine HEAP_START
 #endif
