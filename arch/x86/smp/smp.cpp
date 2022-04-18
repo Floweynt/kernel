@@ -3,7 +3,7 @@
 #include <gdt/gdt.h>
 #include <paging/paging.h>
 #include <pmm/pmm.h>
-#include <io_wrappers.h>
+#include <sync_wrappers.h>
 
 namespace smp
 { 
@@ -25,7 +25,7 @@ namespace smp
         gdt::install_gdt();
         idt::install_idt();
 
-        io::printf("SMP started from core %lu\n", info->lapic_id);
+        sync::printf("SMP started from core %lu\n", info->lapic_id);
 
         while(1) 
             __asm__ __volatile__("hlt");

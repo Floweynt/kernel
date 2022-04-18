@@ -9,7 +9,7 @@
 #include <new>
 #include <paging/paging.h>
 #include <panic.h>
-#include <io_wrappers.h>
+#include <printf.h>
 #include <pmm/pmm.h>
 #include <asm/asm_cpp.h>
 #include <acpi/acpi.h>
@@ -89,8 +89,9 @@ static void init_paging()
     wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
     std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), 4096ul);
-
-    for (std::size_t i = 0; i < kpages; i++)
+    
+    // workaround for weird stuff
+    for (std::size_t i = 0; i < kpages + 10; i++)
     {
         uint64_t vaddr = 0xffffffff80000000 + i * 4096;
         paging::request_page(paging::page_type::SMALL, vaddr, pmm::make_physical_kern(vaddr), 0b00010001, true);
@@ -99,18 +100,38 @@ static void init_paging()
     boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
         uint64_t current_addr = e.base;
         std::size_t len = e.length / 4069ul;
+        uint8_t flags;
+        switch(e.type) 
+        {
+        case 1:
+        case 3:
+        case 0x1000:
+        case 0x1002:
+            flags = 0b00000001;
+            break;
+        case 2:
+        case 4:
+        case 5:
+            flags = 0;
+            break;
+        case 0x1001:
+            flags = 0b00010001;
+            break;
+        default:
+            return;
+        }
 
         while(current_addr % 0x200000)
         {
             if(len-- == 0)
                 return;
-            paging::request_page(paging::page_type::SMALL, pmm::make_virtual(current_addr), current_addr, 0b00010001);
+            paging::request_page(paging::page_type::SMALL, pmm::make_virtual(current_addr), current_addr, flags);
             current_addr += 4096;
         }
 
         while((len >= 0x200) && (current_addr % 0x40000000))
         {
-            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, 0b00010001);
+            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, flags);
             current_addr += 0x200000;
             len -= 0x200;
         }
@@ -118,21 +139,21 @@ static void init_paging()
         // okay, this is aligned...
         while(len >= 0x40000)
         {
-            paging::request_page(paging::page_type::BIG, pmm::make_virtual(current_addr), current_addr, 0b00010001);
+            paging::request_page(paging::page_type::BIG, pmm::make_virtual(current_addr), current_addr, flags);
             current_addr += 0x40000000;
             len -= 0x40000;
         }
 
         while(len >= 0x200)
         {
-            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, 0b00010001);
+            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, flags);
             current_addr += 0x200000;
             len -= 0x200;
         }
 
         while(len--)
         {
-            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, 0b00010001);
+            paging::request_page(paging::page_type::MEDIUM, pmm::make_virtual(current_addr), current_addr, flags);
             current_addr += 0x200000;
         }
     });
@@ -142,14 +163,14 @@ static void init_paging()
 
 static void init_smp(stivale2_struct_tag_smp* smp)
 {
-    io::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
-    io::printf("  cpus: %lu\n", smp->cpu_count);
+    std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
+    std::printf("  cpus: %lu\n", smp->cpu_count);
 
     std::size_t index;
 
     for(std::size_t i = 0; i < smp->cpu_count; i++)
     {
-        io::printf("initalizing core: %lu\n", i);
+        std::printf("initalizing core: %lu\n", i);
         smp->smp_info[i].extra_argument = i;
 
         if(smp->smp_info[i].lapic_id == smp->bsp_lapic_id)
@@ -205,54 +226,54 @@ extern "C"
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
         init_tty(root);
         init_paging();
-        io::printf("kinit: _start() started tty\n");
-        io::printf("memory map:\n");
+        std::printf("kinit: _start() started tty\n");
+        std::printf("memory map:\n");
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             switch (e.type)
             {
             case 0x1:
-                io::printf("[\033cg;USABLE      \033]: ");
+                std::printf("[\033cg;USABLE      \033]: ");
                 break;
             case 0x2:
-                io::printf("[\033cr;RESERVED    \033]: ");
+                std::printf("[\033cr;RESERVED    \033]: ");
                 break;
             case 0x3:
-                io::printf("[\033cy;ACPI RECLAIM\033]: ");
+                std::printf("[\033cy;ACPI RECLAIM\033]: ");
                 break;
             case 0x4:
-                io::printf("[\033cy;ACPI NVS    \033]: ");
+                std::printf("[\033cy;ACPI NVS    \033]: ");
                 break;
             case 0x5:
-                io::printf("[\033cr;BAD         \033]: ");
+                std::printf("[\033cr;BAD         \033]: ");
                 break;
             case 0x1000:
-                io::printf("[\033cy;BTL RECLAIM \033]: ");
+                std::printf("[\033cy;BTL RECLAIM \033]: ");
                 break;
             case 0x1001:
-                io::printf("[\033cc;KERN MODULE \033]: ");
+                std::printf("[\033cc;KERN MODULE \033]: ");
                 break;
             case 0x1002:
-                io::printf("[\033cc;FRAMEBUFFER \033]: ");
+                std::printf("[\033cc;FRAMEBUFFER \033]: ");
                 break;
             default:
-                io::printf("[\033cG;UNKNOWN     \033]: ");
+                std::printf("[\033cG;UNKNOWN     \033]: ");
             }
-            io::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
+            std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
         }); 
 
         auto rsdp = boot_resource::instance().rsdp();
 
-        io::printf("ACPI info:\n", rsdp->xsdt_address);
-        io::printf("  rsdp data:\n");
-        io::printf("    revision=%d\n", (int)rsdp->revision);
-        io::printf("    length=%d\n", (int)rsdp->length);
+        std::printf("ACPI info:\n", rsdp->xsdt_address);
+        std::printf("  rsdp data:\n");
+        std::printf("    revision=%d\n", (int)rsdp->revision);
+        std::printf("    length=%d\n", (int)rsdp->length);
 
         boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
             paging::request_page(paging::page_type::BIG, pmm::make_virtual((uint64_t)entry), (uint64_t)entry, 0);
             entry = pmm::make_virtual<acpi::acpi_sdt_header>((uint64_t) entry);
             invlpg((void*)entry);
-            io::printf("entry: (sig=0x%08u)\n", entry->signature);
+            std::printf("  entry: (sig=0x%08u)\n", entry->signature);
         });
 
         init_smp(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));

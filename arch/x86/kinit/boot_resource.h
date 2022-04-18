@@ -27,7 +27,7 @@ public:
     template <typename T>
     void iterate_mmap(T cb)
     {
-        for (int i = 0; i < mmap_length; i++)
+        for (std::size_t i = 0; i < mmap_length; i++)
             cb(mmap_entries[i]);
     }
 

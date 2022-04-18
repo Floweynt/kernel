@@ -4,6 +4,7 @@
 #include <idt/idt.h>
 #include <cstddef>
 #include <kinit/stivale2.h>
+#include <context/context.h>
 
 namespace smp
 {
@@ -11,6 +12,7 @@ namespace smp
     {
         inline static core_local** entries;
     public:
+        context* ctxbuffer;
         paging::page_table_entry* pagemap;
         uintptr_t idt_handler_entries[256];
 

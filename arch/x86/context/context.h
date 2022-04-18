@@ -28,7 +28,6 @@ struct context
     uint64_t rflags;
     uint64_t cs;
     uint64_t rip;
-
     uint64_t rgp[14];
     uint64_t rbp;
 
@@ -48,37 +47,5 @@ struct context
     // 0xB0: RBP            <- stackpos
     // 0xB8: Call RIP
     //  returns: error code
-    inline uint64_t load_ctx(void* stackpos)
-    {
-        uint64_t* stack = (uint64_t*)stackpos;
-        rbp = *stack--;
-
-        for (int i = 13; i != -1; i--)
-            rgp[i] = *stack--;
-        stack--;
-        stack--;
-        uint64_t ret = *stack--;
-        rip = *stack--;
-        cs = *stack--;
-        rflags = *stack--;
-        rsp = *stack--;
-        ss = *stack--;
-        return ret;
-    }
-
-    inline uint64_t restore_ctx(void* stackpos)
-    {
-        uint64_t* stack = (uint64_t*)stackpos;
-        *stack-- = rbp;
-
-        for (int i = 13; i != -1; i--)
-            *stack-- = rgp[i];
-        stack -= 3;
-        *stack-- = rip;
-        *stack-- = cs;
-        *stack-- = rflags;
-        *stack-- = rsp;
-        *stack-- = ss;
-    }
-};
+ };
 #endif

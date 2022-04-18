@@ -4,7 +4,7 @@
 #include <printf.h>
 #include <utility>
 
-namespace io
+namespace sync
 {
     template<typename... Args>
     auto printf(const char* fmt, Args... args)

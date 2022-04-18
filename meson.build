@@ -1,4 +1,4 @@
-project('kernel', 'cpp')
+project('kernel', 'c', 'cpp', default_options: ['c_std=c11', 'cpp_std=c++17', 'warning_level=3'])
 
 add_project_arguments(
     '-fno-exceptions',
@@ -7,12 +7,9 @@ add_project_arguments(
     '-fno-rtti',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
-    '-O0',
     '-ffreestanding',
-    '-std=c++17',
     '-no-pie',
     '-nostdinc',
-    '-Wall',
     '-Wno-ignored-attributes',
     '-I' + (meson.source_root() + '/'),
     '-I' + (meson.source_root() + '/arch/x86/'),
@@ -27,7 +24,6 @@ add_project_arguments(
 )
 
 add_project_arguments(
-    '-Os',
     '-ffreestanding',
     '-fno-PIC',
     language: 'c'
@@ -81,19 +77,32 @@ kernel = executable('kernel.elf',
 )
 
 # required program for generating disk image
-qemu = find_program('qemu-system-x86_64')
 gdb = find_program('gdb')
+strip = find_program('strip')
+qemu = find_program('qemu-system-x86_64')
 generate_image = find_program('./build-resources/generate_image.sh')
+
+kernel_stripped = custom_target('kernel_stripped',
+    output: 'kernel_stripped.elf',
+    input: kernel,
+    depends:  [kernel],
+    command: [
+        strip,
+        meson.build_root() + '/kernel.elf',
+        '-o',
+        meson.build_root() + '/kernel_stripped.elf'
+    ]
+)
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',
-    input: kernel,
-    depends: [kernel],
+    input: kernel_stripped,
+    depends: [kernel_stripped],
     command: [
         generate_image, 
         meson.build_root() + '/kernel.img', 
         meson.source_root() + '/build-resources/kernel-template.img',
-        meson.build_root() + '/kernel.elf'
+        meson.build_root() + '/kernel_stripped.elf'
     ]
 )
 
