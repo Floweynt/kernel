@@ -33,7 +33,7 @@ namespace paging
 
     // flags order
     // bit from 0-7
-    // rw, us, pwt, pcd, exec 
+    // rw, us, pwt, pcd, exec
     constexpr uint64_t make_page_pointer(uint64_t target, uint8_t flags)
     {
         flags &= 0b00001111;

@@ -6,4 +6,6 @@
 #mesondefine ARCH_PATH
 #mesondefine MALLOC_IMPL_PATH
 #mesondefine HEAP_START
+#mesondefine PMM_COUNT
+
 #endif

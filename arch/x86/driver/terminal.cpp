@@ -1,8 +1,8 @@
 #include "terminal.h"
-#include <cstring>
-#include <pmm/pmm.h>
-#include <paging/paging.h>
 #include <asm/asm_cpp.h>
+#include <cstring>
+#include <mm/pmm.h>
+#include <paging/paging.h>
 
 namespace driver
 {
@@ -21,14 +21,14 @@ namespace driver
         }
 
         std::size_t pages = std::detail::div_roundup(cols() * lines() * sizeof(screen_character), 4096ul);
-        for(std::size_t i = 0; i < pages; i++)
+        for (std::size_t i = 0; i < pages; i++)
         {
-            auto p = pmm::pmm_allocate();
-            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096,pmm::make_physical(p), 0b00000001);
+            auto p = mm::pmm_allocate();
+            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096, mm::make_physical(p), 0b00000001);
             invlpg((void*)(0xffff900000000000 + i * 4096));
         }
 
-        screen_buffer = (screen_character*) 0xffff900000000000;
+        screen_buffer = (screen_character*)0xffff900000000000;
     }
 
     void simple_tty::scrollup()
@@ -63,7 +63,6 @@ namespace driver
                       (((((1ull << buffer.green_mask_size) - 1) * bg_color.g) / 255) << buffer.green_mask_shift) |
                       (((((1ull << buffer.blue_mask_size) - 1) * bg_color.b) / 255) << buffer.blue_mask_shift);
 
-
         unsigned char* current_char = (unsigned char*)f.char_at(c);
         uint8_t bit_index = 0;
         for (std::size_t i = 0; i < f.height(); i++)
@@ -76,7 +75,7 @@ namespace driver
                 char* pixel_buffer = (char*)&px;
                 for (int k = 0; k < buffer.framebuffer_bpp; k++)
                     current_pixel[k] = *pixel_buffer++;
- 
+
                 current_pixel += buffer.framebuffer_bpp;
                 bit_index++;
                 current_char += bit_index / 8;

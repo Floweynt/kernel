@@ -14,7 +14,6 @@ namespace idt
 
     idt::idt_entry idt_entries[256] = {};
 
-
     void init_idt()
     {
         for (int i = 0; i < 256; i++)

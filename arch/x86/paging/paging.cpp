@@ -1,14 +1,14 @@
 #include "paging.h"
 #include <asm/asm_cpp.h>
+#include <mm/pmm.h>
 #include <panic.h>
-#include <pmm/pmm.h>
 #include <smp/smp.h>
 
 #define GET_VIRTUAL_POS(n) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION)
 
 namespace paging
 {
-    void install() { write_cr3(pmm::make_physical(smp::core_local::get().pagemap)); }
+    void install() { write_cr3(mm::make_physical(smp::core_local::get().pagemap)); }
 
     static inline constexpr uint64_t type2align[] = {
         0xfff,
@@ -24,23 +24,23 @@ namespace paging
 
         // obtain pointer to entry
         page_table_entry* current_ent = smp::core_local::get().pagemap;
-        if(current_ent == nullptr)
-            current_ent = smp::core_local::get().pagemap = (page_table_entry*)pmm::pmm_allocate();
+        if (current_ent == nullptr)
+            current_ent = smp::core_local::get().pagemap = (page_table_entry*)mm::pmm_allocate();
 
         for (int i = 0; i < (3 - pt); i++)
         {
             uint64_t& e = current_ent[get_page_entry(virtual_addr, i)];
             if (!e)
             {
-                auto r = pmm::pmm_allocate();
+                auto r = mm::pmm_allocate();
                 if (r == nullptr)
                     std::panic("cannot allocate physical memory for paging");
                 std::memset(r, 0, 4096);
-                e = make_page_pointer(pmm::make_physical(r), 0b00000001);
+                e = make_page_pointer(mm::make_physical(r), 0b00000001);
             }
 
             current_ent =
-                pmm::make_virtual<page_table_entry>(current_ent[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
+                mm::make_virtual<page_table_entry>(current_ent[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
         }
         // writelast entry
         current_ent += get_page_entry(virtual_addr, 3 - pt);

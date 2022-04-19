@@ -8,20 +8,23 @@ idt_common:
     cld
     pushq %rax
     pushq %rbx
-    movq 0x10(%rsp), %rax
-
     swapgs
 
     movq %gs:0, %rbx
     movq (%rbx), %rbx
     
-    // save the other registers
+    // save rcx to use for storing other values
     movq %rcx, (0x28 + 0x8 * 2)(%rbx)
-    // use cx to save ax
+    
+    // save the top of the stack (%rbx)
     popq %rcx
     movq %rcx, (0x28 + 0x8 * 1)(%rbx)
+
+    // save the top of the stack (is now %rax)
     popq %rcx
     movq %rcx, (0x28 + 0x8 * 0)(%rbx) 
+
+    // save rdx-r15 and rbp
     movq %rdx, (0x28 + 0x8 * 3)(%rbx)
     movq %rsi, (0x28 + 0x8 * 4)(%rbx)
     movq %rdi, (0x28 + 0x8 * 5)(%rbx)
@@ -34,8 +37,9 @@ idt_common:
     movq %r14, (0x28 + 0x8 * 12)(%rbx)
     movq %r15, (0x28 + 0x8 * 13)(%rbx)
     movq %rbp, (0x28 + 0x8 * 14)(%rbx)
-
-    movq (%rbp), %rcx
+ 
+    // save rip
+    movq (%rsp), %rcx
     movq %rcx, 0x20(%rbx)
 
     movq 0x8(%rbp), %rcx
@@ -51,13 +55,14 @@ idt_common:
     movq %rcx, 0(%rbx)
 
     // setup stack frame
-    pushq %rbp
+    andq $~0x7, %rsp
     movq %rsp, %rbp
 
-    // parameters
-    movq %rax, %rsi
-    movq %rbp, %rdi
-    call *idt_handler_entries(%rax)1
+    // argument 0 (int number)
+    movq 0(%rsp), %rsi
+    movq 0x8(%rsp), %rdi
+    // idt_handler_entries[%rax](intno, errno)
+    call *idt_handler_entries(%rax)
 
     popq %rbp
     popq %r15

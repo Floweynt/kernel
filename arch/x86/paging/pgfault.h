@@ -13,6 +13,6 @@ namespace paging
 
         std::panic("unexcepted page fault");
     }
-};
+}; // namespace paging
 
 #endif

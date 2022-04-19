@@ -37,7 +37,8 @@ kernel_source = [
     'arch/x86/gdt/gdt.cpp',
     'arch/x86/paging/paging.cpp',
     'arch/x86/paging/pgfault.cpp',
-    'arch/x86/pmm/pmm.cpp',
+    'arch/x86/mm/mm.cpp',
+    'arch/x86/mm/pmm.cpp',
     'arch/x86/smp/smp.cpp',
     'arch/x86/driver/terminal.cpp',
     'lib/src/cstring.cpp',
@@ -57,6 +58,8 @@ conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
 conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
 conf.set('HEAP_START', '0xffff900080000000')
+conf.set('PMM_COUNT', '0x20')
+
 configure_file(input : 'config.h.in',
                output : 'config.h',
                configuration : conf)
@@ -78,7 +81,7 @@ kernel = executable('kernel.elf',
 
 # required program for generating disk image
 gdb = find_program('gdb')
-strip = find_program('strip')
+objcopy = find_program('objcopy')
 qemu = find_program('qemu-system-x86_64')
 generate_image = find_program('./build-resources/generate_image.sh')
 
@@ -87,12 +90,25 @@ kernel_stripped = custom_target('kernel_stripped',
     input: kernel,
     depends:  [kernel],
     command: [
-        strip,
+        objcopy,
+        '--strip-debug', 
         meson.build_root() + '/kernel.elf',
-        '-o',
         meson.build_root() + '/kernel_stripped.elf'
     ]
 )
+
+kernel_dbg = custom_target('kernel_dbg',
+    output: 'kernel.dbg',
+    input: kernel,
+    depends:  [kernel],
+    command: [
+        objcopy,
+        '--only-keep-debug',
+        meson.build_root() + '/kernel.elf',
+        meson.build_root() + '/kernel.dbg'
+    ]
+)
+
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',
@@ -131,10 +147,10 @@ run = run_target('run',
 )
 
 attach_debugger = run_target('attach',
-    depends: [kernel_img],
+    depends: [kernel_dbg],
     command: [
         gdb,
-        meson.build_root() + '/kernel.elf',
+        meson.build_root() + '/kernel.dbg',
         '-ex', 'target remote localhost:1234',
         '-ex', 'b _start', 
         '-ex', 'c',

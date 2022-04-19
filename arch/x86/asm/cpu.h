@@ -54,7 +54,7 @@ namespace msr
     inline constexpr uint64_t IA32_EFER = 0xc0000080;
     inline constexpr uint64_t IA32_FS_BASE = 0xc0000100;
     inline constexpr uint64_t IA32_GS_BASE = 0xc0000101;
-}
+} // namespace msr
 
 inline void wrmsr(uint64_t msr, uint64_t value)
 {

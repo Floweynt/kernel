@@ -1,11 +1,11 @@
 #ifndef __ARCH_X86_ACPI_ACPI_H__
 #define __ARCH_X86_ACPI_ACPI_H__
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace acpi
 {
-    struct [[gnu::packed]] rsdp_descriptor 
+    struct [[gnu::packed]] rsdp_descriptor
     {
         char signature[8];
         uint8_t checksum;
@@ -18,7 +18,7 @@ namespace acpi
         uint8_t reserved[3];
     };
 
-    struct acpi_sdt_header 
+    struct acpi_sdt_header
     {
         uint32_t signature;
         uint32_t length;
@@ -94,7 +94,7 @@ namespace acpi
         uint8_t lint;
     };
 
-    struct [[gnu::packed]] madt_local_apic_address_override 
+    struct [[gnu::packed]] madt_local_apic_address_override
     {
         inline constexpr static uint32_t SIGNATURE = 5;
         uint16_t reserved;
@@ -109,46 +109,46 @@ namespace acpi
         uint32_t flags;
         uint32_t acpi_id;
     };
-    
-    template<typename T>
+
+    template <typename T>
     bool check(T* desc)
     {
         char* ptr = (char*)desc;
         uint64_t sum = 0;
 
-        for(std::size_t i = 0; i < sizeof(T); i++)
+        for (std::size_t i = 0; i < sizeof(T); i++)
             sum += ptr[i];
 
         return sum % 0x100 == 0;
     }
 
-    template<typename T>
+    template <typename T>
     T* get_table(xsdt* table)
     {
         std::size_t n = (table->h.length - sizeof(acpi_sdt_header)) / 8;
-        for(std::size_t i = 0; i < n; i++)
-            if(table->table[i]->signature == T::SIGNATURE)
-                return (T*) table->table[i];
+        for (std::size_t i = 0; i < n; i++)
+            if (table->table[i]->signature == T::SIGNATURE)
+                return (T*)table->table[i];
     }
 
-    template<typename T>
+    template <typename T>
     T* madt_get_entry(madt* table)
     {
         // iterate entries
         madt_entry_descriptor* entry = (madt_entry_descriptor*)(table + 1);
 
-        while((uint64_t)entry < ((uint64_t) table + table->parent.length))
+        while ((uint64_t)entry < ((uint64_t)table + table->parent.length))
         {
-            if(T::SIGNATURE == entry->type)
+            if (T::SIGNATURE == entry->type)
                 return (T*)(entry + 1);
 
             entry = (madt_entry_descriptor*)((uint8_t*)entry + entry->length);
         }
     }
-    
+
     inline constexpr uint32_t BGRT_SIGNATURE = 0x54524742; // "BGRT"
     inline constexpr uint32_t BERT_SIGNATURE = 0x54524542; // "BERT"
     inline constexpr uint32_t CPEP_SIGNATURE = 0x50455043; // "CPEP"
-}
+} // namespace acpi
 
 #endif

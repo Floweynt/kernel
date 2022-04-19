@@ -20,16 +20,16 @@ struct context
         R12,
         R13,
         R14,
-        R15
+        R15,
+        RBP
     };
 
-    uint64_t ss;
-    uint64_t rsp;
-    uint64_t rflags;
-    uint64_t cs;
     uint64_t rip;
-    uint64_t rgp[14];
-    uint64_t rbp;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
+    uint64_t rgp[15];
 
     // yoinked from intel docs
     // high
@@ -40,12 +40,5 @@ struct context
     // 0x20: RIP
     // 0x28: ERROR ?? 0
     // 0x30: interrupt #
-    // 0x38: filler
-    // 0x40: RAX - RDX
-    // 0x60: RSI, RDI
-    // 0x70: R8-R15
-    // 0xB0: RBP            <- stackpos
-    // 0xB8: Call RIP
-    //  returns: error code
- };
+};
 #endif

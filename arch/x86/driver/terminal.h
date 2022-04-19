@@ -39,7 +39,7 @@ namespace driver
 
         inline screen_character& char_at(std::size_t i, std::size_t j)
         {
-            
+
             j = (rotate_offset + j) % lines();
             return screen_buffer[i * lines() + j];
         }
