@@ -7,5 +7,6 @@
 #mesondefine MALLOC_IMPL_PATH
 #mesondefine HEAP_START
 #mesondefine PMM_COUNT
+#mesondefine PRE_ALLOCATE_PAGES
 
 #endif

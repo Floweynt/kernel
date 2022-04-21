@@ -1,39 +1,76 @@
 .text
 
-.global idt_handler_entries
 .global idt_entry_start
 .global idt_entry_end
 
 idt_common:
     cld
     pushq %rax
-    movq 0x10(%rsp), %rax
     pushq %rbx
-    pushq %rcx
-    pushq %rdx
-    pushq %rsi
-    pushq %rdi
-    pushq %r8
-    pushq %r9
-    pushq %r10
-    pushq %r11
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
-    pushq %rbp
+    swapgs
 
-    movq %rsp, %rdi
-    andq $~0x7, %rsp
+    movq %gs:0, %rbx
+    movq (%rbx), %rbx
+    
+    // save rcx to use for storing other values
+    movq %rcx, (0x28 + 0x8 * 2)(%rbx)
+    
+    // save the top of the stack (%rbx)
+    popq %rcx
+    movq %rcx, (0x28 + 0x8 * 1)(%rbx)
+
+    // save the top of the stack (is now %rax)
+    popq %rcx
+    movq %rcx, (0x28 + 0x8 * 0)(%rbx) 
+
+    // save rdx-r15 and rbp
+    movq %rdx, (0x28 + 0x8 * 3)(%rbx)
+    movq %rsi, (0x28 + 0x8 * 4)(%rbx)
+    movq %rdi, (0x28 + 0x8 * 5)(%rbx)
+    movq %r8, (0x28 + 0x8 * 6)(%rbx)
+    movq %r9, (0x28 + 0x8 * 7)(%rbx)
+    movq %r10, (0x28 + 0x8 * 8)(%rbx)
+    movq %r11, (0x28 + 0x8 * 9)(%rbx)
+    movq %r12, (0x28 + 0x8 * 10)(%rbx)
+    movq %r13, (0x28 + 0x8 * 11)(%rbx)
+    movq %r14, (0x28 + 0x8 * 12)(%rbx)
+    movq %r15, (0x28 + 0x8 * 13)(%rbx)
+    movq %rbp, (0x28 + 0x8 * 14)(%rbx)
+ 
+    // save rip
+    movq (%rsp), %rcx
+    movq %rcx, 0x20(%rbx)
+
+    movq 0x8(%rbp), %rcx
+    movq %rcx, 0x18(%rbx)
+
+    movq 0x10(%rbp), %rcx
+    movq %rcx, 0x10(%rbx)
+
+    movq 0x18(%rbp), %rcx
+    movq %rcx, 0x8(%rbx)
+
+    movq 0x20(%rbp), %rcx
+    movq %rcx, 0(%rbx)
 
     // setup stack frame
-    pushq %rbp
+    andq $~0x7, %rsp
     movq %rsp, %rbp
 
-    // parameters
-    movq %rax, %rsi
-    movq %rbp, %rdi
-    // call *idt_handler_entries(%rax)
+    // argument 0 (int number)
+    movq 0(%rsp), %rsi
+    movq 0x8(%rsp), %rdi
+    // idt_handler_entries[%rax](intno, errno)
+
+    // do gs stuff
+    movq %gs:0, %rax
+    movq 8(%rax,%rsi,8), %rax
+
+    call *(%rax)
+
+.L0:
+    hlt
+    jmp .L0
 
     popq %rbp
     popq %r15

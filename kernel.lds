@@ -43,4 +43,15 @@ SECTIONS
         *(COMMON)
         *(.bss .bss.*)
     } :data
+
+    .init_array : 
+    {
+        . = ALIGN(16);
+        PROVIDE (__start_init_array = .);
+        KEEP(*(.init_array))
+        KEEP(*(.init_array.*))
+        KEEP(*(.ctors))
+        KEEP(*(.ctors.*))
+        __end_init_array = .;
+    }
 }

@@ -12,9 +12,6 @@ namespace mm
     {
         uint64_t* buf;
         std::size_t len;
-
-        lock::spinlock lock;
-
     public:
         static constexpr std::size_t metadata_size_pages(std::size_t n)
         {

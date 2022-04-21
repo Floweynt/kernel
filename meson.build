@@ -59,6 +59,7 @@ conf.set('ARCH_PATH', '"x86"')
 conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
 conf.set('HEAP_START', '0xffff900080000000')
 conf.set('PMM_COUNT', '0x20')
+conf.set('PRE_ALLOCATE_PAGES', '100')
 
 configure_file(input : 'config.h.in',
                output : 'config.h',

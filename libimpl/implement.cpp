@@ -1,13 +1,30 @@
 #include <bits/user_implement.h>
 #include <config.h>
 #include <panic.h>
+#include <sync/spinlock.h>
+
 #include MALLOC_IMPL_PATH
 
 namespace std::detail
 {
-    void* malloc(size_t size) { return ::alloc::malloc(size); }
-    void* aligned_malloc(size_t size, size_t align) { return ::alloc::aligned_malloc(size, align); }
-    void free(void* ptr) { return ::alloc::free(ptr); }
+    static lock::spinlock l;
+    void* malloc(size_t size) 
+    {
+        lock::spinlock_guard g(l);
+        return ::alloc::malloc(size); 
+    }
+
+    void* aligned_malloc(size_t size, size_t align) 
+    { 
+        lock::spinlock_guard g(l);
+        return ::alloc::aligned_malloc(size, align); 
+    }
+
+    void free(void* ptr) 
+    { 
+        lock::spinlock_guard g(l);
+        return ::alloc::free(ptr); 
+    }
 
     namespace errors
     {

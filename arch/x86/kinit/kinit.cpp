@@ -153,6 +153,14 @@ static void init_paging()
         }
     });
 
+    for(std::size_t i = 0; i < PRE_ALLOCATE_PAGES; i++)
+    {
+        void* d;
+        if (!(d = mm::pmm_allocate_pre_smp()))
+            std::panic("cannot get memory for heap");
+        paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d) , 1);
+    }
+
     paging::install();
 }
 
@@ -191,24 +199,51 @@ namespace alloc::detail
 
     std::size_t extend(void* buf, std::size_t n)
     {
-        void* d;
-        if ((d = mm::pmm_allocate()))
-            std::panic("cannot get memory for heap");
+        static bool is_first = true;
+        if(is_first)
+        {
+            is_first = false;
+            return 4096 * PRE_ALLOCATE_PAGES; 
+        }
 
-        paging::request_page(paging::page_type::SMALL, (uint64_t)buf, (uint64_t)buf, 1);
-        return 4096;
+        std::size_t pages = std::detail::div_roundup(n, 4096ul);
+
+        for(std::size_t i = 0; i < pages; i++)
+        {
+            void* d;
+            if (!(d = mm::pmm_allocate_pre_smp()))
+                std::panic("cannot get memory for heap");
+            paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * 4097, mm::make_physical(d) , 1);
+            invlpg(buf);
+        }
+
+        return 4096 * pages;
     }
 } // namespace alloc::detail
 
+
 extern "C"
 {
+    extern uint64_t __start_init_array[];
+    extern uint64_t __end_init_array[];
+
+    static void init_array()
+    {
+        using init_array_t = void (*)();
+        for(uint64_t* i = (uint64_t*) &__start_init_array; i < (uint64_t*) &__end_init_array; i++)
+            if(*i != 0 && *i != -1ul)
+                ((init_array_t) *i)();
+    }
+
     [[noreturn]] void _start(stivale2_struct* root)
     {
+        init_array();
+
         new (buf) boot_resource(root);
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             if (e.type == 1)
-                mm::add_region((void*)(e.base | 0xffff800000000000), e.length / 4096);
+                mm::add_region_pre_smp((void*)(e.base | 0xffff800000000000), e.length / 4096);
         });
 
         smp::core_local::create();

@@ -25,7 +25,6 @@ namespace mm
         std::size_t metadata_size = std::detail::div_roundup(len, 64ul);
         for (std::size_t i = 0; i < metadata_size; i++)
         {
-            lock::spinlock_guard guard{lock};
             if (buf[i])
             {
                 std::size_t bitindex = __builtin_clzll(buf[i]);

@@ -17,7 +17,9 @@ namespace mm
     };
 
     void add_region(void*, std::size_t);
+    void add_region_pre_smp(void*, std::size_t);
     void* pmm_allocate();
+    void* pmm_allocate_pre_smp();
 } // namespace mm
 
 #endif

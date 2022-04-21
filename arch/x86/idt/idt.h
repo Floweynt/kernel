@@ -5,7 +5,7 @@
 
 namespace idt
 {
-    using interrupt_handler = void (*)(uint64_t, void*);
+    using interrupt_handler = void (*)(uint64_t, uint64_t);
 
     constexpr uint64_t MASK_DPL_R0 = 0x0;
     constexpr uint64_t MASK_DPL_R3 = 0x3;

@@ -16,12 +16,14 @@ namespace paging
         0x3fffffff,
     };
 
+    static lock::spinlock l;
+
     bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, uint8_t flags, bool overwrite)
     {
-        // virtual_addr should be aligned
         virtual_addr &= ~type2align[pt];
         physical_address &= ~type2align[pt];
 
+        lock::spinlock_guard g(l);
         // obtain pointer to entry
         page_table_entry* current_ent = smp::core_local::get().pagemap;
         if (current_ent == nullptr)
@@ -60,5 +62,15 @@ namespace paging
         }
 
         return true;
+    }
+
+    void sync(uint64_t virtual_addr)
+    {
+        lock::spinlock_guard g(l);
+        uint16_t index = paging::get_page_entry<3>(virtual_addr);
+        uint64_t value = smp::core_local::get().pagemap[index];
+
+        for(std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
+            smp::core_local::get(i).pagemap[index] = value;
     }
 } // namespace paging
