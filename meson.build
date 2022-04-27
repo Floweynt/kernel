@@ -40,12 +40,14 @@ kernel_source = [
     'arch/x86/mm/mm.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/smp/smp.cpp',
+    'arch/x86/idt/handlers/handle_gp.cpp',
     'arch/x86/driver/terminal.cpp',
     'lib/src/cstring.cpp',
     'lib/src/panic.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
     'libimpl/memory-allocator/linked-list-memory-allocator/extend_alloc.cpp',
+    'arch/x86/idt/handlers/handle_timer.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
     'arch/x86/idt/idt.S',
@@ -57,9 +59,13 @@ conf.set('VERSION', '"0.0.1"')
 conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
 conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
-conf.set('HEAP_START', '0xffff900080000000')
 conf.set('PMM_COUNT', '0x20')
 conf.set('PRE_ALLOCATE_PAGES', '100')
+
+
+conf.set('HHDM_START', '0xffff800000000000')
+conf.set('SCROLLBACK_START', '0xffff900000000000')
+conf.set('HEAP_START', '0xffff900080000000')
 
 configure_file(input : 'config.h.in',
                output : 'config.h',

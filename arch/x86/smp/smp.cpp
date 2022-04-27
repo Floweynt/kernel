@@ -3,6 +3,7 @@
 #include <gdt/gdt.h>
 #include <mm/pmm.h>
 #include <paging/paging.h>
+#include <idt/handlers/handlers.h>
 #include <sync_wrappers.h>
 
 namespace smp
@@ -15,37 +16,49 @@ namespace smp
         // point entries
     }
 
+    static void initalize_apic(smp::core_local& local)
+    {
+        uint64_t l = local.apic.get_apic_base();
+        paging::map_hhdm_phys(paging::page_type::SMALL, l);
+        local.apic.enable();
+        sync::printf("APIC: ticks per ms: %lu\n", local.apic.calibrate());
+        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 1000);
+    }
+
     [[noreturn]] void initalize_smp(stivale2_smp_info* info)
     {
         disable_interrupt();
-        info = (stivale2_smp_info*)((uint64_t)info | 0xffff800000000000);
+        info = mm::make_virtual<stivale2_smp_info>((uint64_t)info);
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(info->extra_argument));
-        wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(info->extra_argument));
+        wrmsr(msr::IA32_KERNEL_GS_BASE, smp::core_local::gs_of(info->extra_argument));
+        wrmsr(msr::IA32_PAT, 0x706050403020100);
 
         paging::install();
-        smp::core_local::get().ctxbuffer = new (sync::pre_smp) context;
-        smp::core_local::get().coreid = info->extra_argument;
+        smp::core_local& local = smp::core_local::get();
+        local.ctxbuffer = new (sync::pre_smp) context;
+        local.idt_handler_entries = new (sync::pre_smp) uintptr_t[256];
+        local.idt_entries = new (sync::pre_smp) idt::idt_entry[256];
+        local.coreid = info->extra_argument;
 
         gdt::install_gdt();
+        idt::init_idt();
         idt::install_idt();
 
         sync::printf("SMP started from core %lu\n", info->lapic_id);
 
-        if(info->lapic_id == 0)
-        {
-            idt::register_idt([](uint64_t i1, uint64_t i2) {
-                std::printf("function parameter i1=%lx, i2=%lx\n", i1, i2);
-                std::printf("rip=%lu\n", smp::core_local::get().ctxbuffer->rip);
-                std::printf("cs=%lu\n", smp::core_local::get().ctxbuffer->cs);
-                std::printf("rflags=%lu\n", smp::core_local::get().ctxbuffer->rflags);
-                std::printf("rsp=%lu\n", smp::core_local::get().ctxbuffer->rsp);
-                std::printf("ss=%lu\n", smp::core_local::get().ctxbuffer->ss);
+        if(info->extra_argument != 0)
+            while (1)
+                __asm__ __volatile__("hlt");
 
-                for(int i = 0; i < 15; i++)
-                    std::printf("reg=%lu\n", smp::core_local::get().ctxbuffer->rgp[i]);
-            }, 69);
-            __asm__ __volatile__("int $69");
-        }
+        local.irq_allocator = mm::bitmask_allocator(local.irq_allocator_buffer, 256);
+
+        for(std::size_t i = 0; i < 32; i++)
+            if(!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
+                std::panic("failed to allocate");
+
+        // initalize apic
+        initalize_apic(local);
+        enable_interrupt();
 
         while (1)
             __asm__ __volatile__("hlt");

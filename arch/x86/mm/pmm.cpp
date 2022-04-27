@@ -1,5 +1,7 @@
 #include "pmm.h"
 #include <config.h>
+#include <sync/spinlock.h>
+
 namespace mm
 {
     pmm_region region[PMM_COUNT];

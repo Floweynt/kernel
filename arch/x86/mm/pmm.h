@@ -14,6 +14,13 @@ namespace mm
             return (void*)(((uint8_t*)get_buffer()) +
                            ((bitmask_allocator::allocate() + bitmask_allocator::metadata_size_pages(size())) * 4096));
         }
+
+        inline void free(void* index)
+        {
+            std::ptrdiff_t diff = (uint8_t*)index - 
+                ((uint8_t*)get_buffer() + bitmask_allocator::metadata_size_pages(size()));
+            bitmask_allocator::free(diff);
+        }
     };
 
     void add_region(void*, std::size_t);

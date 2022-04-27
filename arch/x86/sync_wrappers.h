@@ -22,10 +22,17 @@ namespace sync
 
 } // namespace sync
 
-void* operator new (std::size_t size, const sync::pre_smp_t&)
+inline void* operator new (std::size_t size, const sync::pre_smp_t&)
 {
     static lock::spinlock l;
-    lock::spinlock_guard(l, 0);
+    lock::spinlock_guard g(l, 0);
+    return alloc::malloc(size); 
+}
+
+inline void* operator new[](std::size_t size, const sync::pre_smp_t&)
+{
+    static lock::spinlock l;
+    lock::spinlock_guard g(l, 0);
     return alloc::malloc(size); 
 }
 

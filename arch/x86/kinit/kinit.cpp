@@ -82,6 +82,7 @@ static void init_tty(stivale2_struct* root)
 static void init_paging()
 {
     wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
+    // wrmsr(msr::IA32_PAT, 0x706050403020100);
 
     std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), 4096ul);
 
@@ -89,28 +90,26 @@ static void init_paging()
     for (std::size_t i = 0; i < kpages + 10; i++)
     {
         uint64_t vaddr = 0xffffffff80000000 + i * 4096;
-        paging::request_page(paging::page_type::SMALL, vaddr, mm::make_physical_kern(vaddr), 0b00010001, true);
+        paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), { .x = true  }, true);
     }
 
     boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
         uint64_t current_addr = e.base;
         std::size_t len = e.length / 4069ul;
-        uint8_t flags;
+        paging::page_prop flags;
+    
         switch (e.type)
         {
         case 1:
         case 3:
         case 0x1000:
+        case 0x1001:
         case 0x1002:
-            flags = 0b00000001;
             break;
         case 2:
         case 4:
         case 5:
-            flags = 0;
-            break;
-        case 0x1001:
-            flags = 0b00010001;
+            flags.rw = false;
             break;
         default:
             return;
@@ -120,13 +119,13 @@ static void init_paging()
         {
             if (len-- == 0)
                 return;
-            paging::request_page(paging::page_type::SMALL, mm::make_virtual(current_addr), current_addr, flags);
+            paging::map_hhdm_phys(paging::page_type::SMALL, current_addr, flags);
             current_addr += 4096;
         }
 
         while ((len >= 0x200) && (current_addr % 0x40000000))
         {
-            paging::request_page(paging::page_type::MEDIUM, mm::make_virtual(current_addr), current_addr, flags);
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
             current_addr += 0x200000;
             len -= 0x200;
         }
@@ -134,21 +133,21 @@ static void init_paging()
         // okay, this is aligned...
         while (len >= 0x40000)
         {
-            paging::request_page(paging::page_type::BIG, mm::make_virtual(current_addr), current_addr, flags);
+            paging::map_hhdm_phys(paging::page_type::BIG, current_addr, flags);
             current_addr += 0x40000000;
             len -= 0x40000;
         }
 
         while (len >= 0x200)
         {
-            paging::request_page(paging::page_type::MEDIUM, mm::make_virtual(current_addr), current_addr, flags);
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
             current_addr += 0x200000;
             len -= 0x200;
         }
 
         while (len--)
         {
-            paging::request_page(paging::page_type::MEDIUM, mm::make_virtual(current_addr), current_addr, flags);
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
             current_addr += 0x200000;
         }
     });
@@ -158,7 +157,7 @@ static void init_paging()
         void* d;
         if (!(d = mm::pmm_allocate_pre_smp()))
             std::panic("cannot get memory for heap");
-        paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d) , 1);
+        paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d));
     }
 
     paging::install();
@@ -199,12 +198,9 @@ namespace alloc::detail
 
     std::size_t extend(void* buf, std::size_t n)
     {
-        static bool is_first = true;
-        if(is_first)
-        {
-            is_first = false;
-            return 4096 * PRE_ALLOCATE_PAGES; 
-        }
+        static uint64_t heap_start = HEAP_START + 4096 * PRE_ALLOCATE_PAGES;;
+        if((uint64_t) buf < heap_start)
+            return 4096 * std::detail::div_roundup(n, 4096ul);
 
         std::size_t pages = std::detail::div_roundup(n, 4096ul);
 
@@ -213,7 +209,7 @@ namespace alloc::detail
             void* d;
             if (!(d = mm::pmm_allocate_pre_smp()))
                 std::panic("cannot get memory for heap");
-            paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * 4097, mm::make_physical(d) , 1);
+            paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * 4097, mm::make_physical(d));
             invlpg(buf);
         }
 
@@ -243,7 +239,7 @@ extern "C"
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             if (e.type == 1)
-                mm::add_region_pre_smp((void*)(e.base | 0xffff800000000000), e.length / 4096);
+                mm::add_region_pre_smp(mm::make_virtual<void>(e.base), e.length / 4096);
         });
 
         smp::core_local::create();
@@ -294,7 +290,7 @@ extern "C"
         std::printf("    length=%d\n", (int)rsdp->length);
 
         boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-            paging::request_page(paging::page_type::BIG, mm::make_virtual((uint64_t)entry), (uint64_t)entry, 0);
+            paging::request_page(paging::page_type::MEDIUM, mm::make_virtual((uint64_t)entry), (uint64_t)entry);
             entry = mm::make_virtual<acpi::acpi_sdt_header>((uint64_t)entry);
             invlpg((void*)entry);
             std::printf("  entry: (sig=0x%08u)\n", entry->signature);

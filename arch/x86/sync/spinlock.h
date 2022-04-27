@@ -8,7 +8,6 @@ namespace lock
     class spinlock
     {
         volatile unsigned l;
-        static inline unsigned r = 0xdeadbeef;
     public:
         constexpr spinlock() : l(0) {}
 

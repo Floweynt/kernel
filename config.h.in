@@ -5,8 +5,12 @@
 #mesondefine ARCH
 #mesondefine ARCH_PATH
 #mesondefine MALLOC_IMPL_PATH
-#mesondefine HEAP_START
 #mesondefine PMM_COUNT
 #mesondefine PRE_ALLOCATE_PAGES
+
+// kernel memory layout
+#mesondefine HHDM_START
+#mesondefine SCROLLBACK_START
+#mesondefine HEAP_START
 
 #endif

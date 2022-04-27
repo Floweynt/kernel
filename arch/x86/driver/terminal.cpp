@@ -3,13 +3,13 @@
 #include <cstring>
 #include <mm/pmm.h>
 #include <paging/paging.h>
+#include <config.h>
 
 namespace driver
 {
     simple_tty::simple_tty(const stivale2_struct_tag_framebuffer& buffer, tty::romfont f) : buffer(buffer), f(f)
     {
-        if (this->buffer.framebuffer_addr < 0xffff800000000000)
-            this->buffer.framebuffer_addr += 0xffff800000000000;
+        this->buffer.framebuffer_addr = mm::make_virtual(this->buffer.framebuffer_addr);
         this->buffer.framebuffer_bpp >>= 3;
 
         // blank screen
@@ -24,11 +24,10 @@ namespace driver
         for (std::size_t i = 0; i < pages; i++)
         {
             auto p = mm::pmm_allocate();
-            paging::request_page(paging::page_type::SMALL, 0xffff900000000000 + i * 4096, mm::make_physical(p), 0b00000001);
-            invlpg((void*)(0xffff900000000000 + i * 4096));
+            paging::request_page(paging::page_type::SMALL, SCROLLBACK_START + i * 4096, mm::make_physical(p));
         }
 
-        screen_buffer = (screen_character*)0xffff900000000000;
+        screen_buffer = (screen_character*) SCROLLBACK_START;
     }
 
     void simple_tty::scrollup()

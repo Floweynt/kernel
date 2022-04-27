@@ -15,8 +15,6 @@ namespace apic
         using register_wronly = mmio::register_wronly<uint32_t, 16>;
         using register_reserved = mmio::register_reserved<uint32_t, 16>;
 
-        static inline constexpr auto IA32_APIC_BASE_MSR = 0x1B;
-        static inline constexpr auto IA32_APIC_BASE_MSR_BSP = 0x100;
         static inline constexpr auto IA32_APIC_BASE_MSR_ENABLE = 0x800;
 
         struct apic_registers
@@ -24,7 +22,7 @@ namespace apic
             register_reserved r0[2];
             register_rw id;
             register_rdonly version;
-            register_reserved r1[3];
+            register_reserved r1[4];
             register_rw task_priority;
             register_rdonly arbitration_priority;
             register_rdonly processor_priority;
@@ -40,10 +38,10 @@ namespace apic
             register_reserved r2[6];
             register_rw cmci;
             register_rw interrupt_command[2];
-            register_rw timer;
-            register_rw thermal;
-            register_rw performance_monitoring_counters;
-            register_rw lint[2];
+            register_rw lvt_timer;
+            register_rw lvt_thermal;
+            register_rw lvt_performance_monitoring_counters;
+            register_rw lvt_lint[2];
             register_rw lvt_error;
             register_rw inital_timer_count;
             register_rdonly current_timer_count;
@@ -54,16 +52,16 @@ namespace apic
 
     private:
         apic_registers* reg_start = nullptr;
-
+        uint64_t ticks_per_ms;
     public:
         static bool check_apic();
-
         void enable();
         void disable();
+        uint64_t calibrate();
 
+        void set_tick(uint8_t irq, std::size_t ms);
         void set_apic_base(uintptr_t apic);
         uintptr_t get_apic_base();
-
         constexpr apic_registers& mmio_register() { return *reg_start; }
     };
 } // namespace apic

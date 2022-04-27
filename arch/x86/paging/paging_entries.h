@@ -31,28 +31,70 @@ namespace paging
         return (table & ~MASK_PROT_KEY) | ((((uint64_t)table) << 59) & MASK_PROT_KEY);
     }
 
-    // flags order
-    // bit from 0-7
-    // rw, us, pwt, pcd, exec
-    constexpr uint64_t make_page_pointer(uint64_t target, uint8_t flags)
+    enum cache_permissions : uint8_t
     {
-        flags &= 0b00001111;
-        return 1 | ((uint32_t)flags << 1) | (target & MASK_TABLE_POINTER) | (((uint64_t)flags & 0x80) << 63);
+        UC = 0,
+        WC,
+        RESERVED0,
+        RESERVED1,
+        WT,
+        WP,
+        WB,
+        UCM,
+    };
+
+    struct page_prop
+    {
+        cache_permissions cache = UC;
+        bool rw = true;
+        bool us = false;
+        bool x = false;
+    };
+
+    constexpr uint64_t make_page_pointer(uint64_t target, page_prop flags)
+    {
+        return 1 |
+            ((uint8_t) flags.rw << 1) |
+            ((uint8_t) flags.us << 2) |
+            ((uint64_t) !flags.x << 63) |
+            (target & MASK_TABLE_POINTER);
     }
 
-    constexpr uint64_t make_page_medium(uint64_t target, uint8_t flags)
+    constexpr uint64_t make_page_small(uint64_t target, page_prop flags)
     {
-        flags &= 0b00001111;
-        return 1 | PAGE_SIZE | ((uint32_t)flags << 1) | (target & MASK_TABLE_MEDIUM) | (((uint64_t)flags & 0x80) << 63);
+        return 1 |
+            PAGE_SIZE |
+            ((uint8_t) flags.rw << 1) |
+            ((uint8_t) flags.us << 2) |
+            ((uint64_t) !flags.x << 63) |
+            ((flags.cache) & 0b011 << 3) |
+            ((flags.cache) & 0b100 << 7) |
+            (target & MASK_TABLE_SMALL);
     }
 
-    constexpr uint64_t make_page_large(uint64_t target, uint8_t flags)
+    constexpr uint64_t make_page_medium(uint64_t target, page_prop flags)
     {
-        flags &= 0b00001111;
-        return 1 | PAGE_SIZE | ((uint32_t)flags << 1) | (target & MASK_TABLE_LARGE) | (((uint64_t)flags & 0x80) << 63);
+        return 1 |
+            PAGE_SIZE |
+            ((uint8_t) flags.rw << 1) |
+            ((uint8_t) flags.us << 2) |
+            ((uint64_t) !flags.x << 63) |
+            ((flags.cache) & 0b011 << 3) |
+            ((flags.cache) & 0b100 << 12) |
+            (target & MASK_TABLE_MEDIUM);
     }
 
-    constexpr auto make_page_small = make_page_pointer;
+    constexpr uint64_t make_page_large(uint64_t target, page_prop flags)
+    {
+        return 1 |
+            PAGE_SIZE |
+            ((uint8_t) flags.rw << 1) |
+            ((uint8_t) flags.us << 2) |
+            ((uint64_t) !flags.x << 63) |
+            ((flags.cache) & 0b011 << 3) |
+            ((flags.cache) & 0b100 << 12) |
+            (target & MASK_TABLE_LARGE);
+    }
 
     using page_table_entry = uint64_t;
 }; // namespace paging

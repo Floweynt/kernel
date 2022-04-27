@@ -3,6 +3,7 @@
 #include <mm/pmm.h>
 #include <panic.h>
 #include <smp/smp.h>
+#include <sync/spinlock.h>
 
 #define GET_VIRTUAL_POS(n) get_bits<(4 - n) * 9 + 12, (4 - n) * 9 + 20>(VIRT_LOAD_POSITION)
 
@@ -18,7 +19,7 @@ namespace paging
 
     static lock::spinlock l;
 
-    bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, uint8_t flags, bool overwrite)
+    bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, page_prop flags, bool overwrite)
     {
         virtual_addr &= ~type2align[pt];
         physical_address &= ~type2align[pt];
@@ -38,7 +39,7 @@ namespace paging
                 if (r == nullptr)
                     std::panic("cannot allocate physical memory for paging");
                 std::memset(r, 0, 4096);
-                e = make_page_pointer(mm::make_physical(r), 0b00000001);
+                e = make_page_pointer(mm::make_physical(r), flags);
             }
 
             current_ent =

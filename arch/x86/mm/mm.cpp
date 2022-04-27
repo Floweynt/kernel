@@ -36,4 +36,16 @@ namespace mm
         }
         return -1ul;
     }
+
+    bool bitmask_allocator::allocate(std::size_t index)
+    {
+        bool ret = buf[index / 64] & (1 << (index % 64));
+        std::set_bit(buf[index / 64], false, index % 64);
+        return ret;
+    }
+
+    void bitmask_allocator::free(std::size_t index)
+    {
+        buf[index / 64] |= (1 << (index % 64));
+    }
 } // namespace mm

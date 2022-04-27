@@ -7,7 +7,12 @@ idt_common:
     cld
     pushq %rax
     pushq %rbx
+
+    xorq %rbx, %rbx
+    cmp 0x40(%rsp), %rbx
+    jne .L0
     swapgs
+.L0:
 
     movq %gs:0, %rbx
     movq (%rbx), %rbx
@@ -37,57 +42,61 @@ idt_common:
     movq %r15, (0x28 + 0x8 * 13)(%rbx)
     movq %rbp, (0x28 + 0x8 * 14)(%rbx)
  
+    // setup arguments argument 0 (int number)
+    popq %rdi
+    popq %rsi
+
     // save rip
     movq (%rsp), %rcx
-    movq %rcx, 0x20(%rbx)
+    movq %rcx, (%rbx)
 
-    movq 0x8(%rbp), %rcx
-    movq %rcx, 0x18(%rbx)
+    movq 0(%rsp), %rcx
+    movq %rcx, 0(%rbx)
 
-    movq 0x10(%rbp), %rcx
-    movq %rcx, 0x10(%rbx)
-
-    movq 0x18(%rbp), %rcx
+    movq 0x8(%rsp), %rcx
     movq %rcx, 0x8(%rbx)
 
-    movq 0x20(%rbp), %rcx
-    movq %rcx, 0(%rbx)
+    movq 0x10(%rsp), %rcx
+    movq %rcx, 0x10(%rbx)
+
+    movq 0x18(%rsp), %rcx
+    movq %rcx, 0x18(%rbx)
 
     // setup stack frame
     andq $~0x7, %rsp
     movq %rsp, %rbp
 
-    // argument 0 (int number)
-    movq 0(%rsp), %rsi
-    movq 0x8(%rsp), %rdi
-    // idt_handler_entries[%rax](intno, errno)
-
     // do gs stuff
     movq %gs:0, %rax
-    movq 8(%rax,%rsi,8), %rax
+    movq 8(%rax), %rax
+    movq (%rax,%rdi,8), %rax
 
-    call *(%rax)
+    subq $0, %rax
+    je .L1
+    // idt_handler_entries[%rax](intno, errno)
+    call *%rax
+.L1:
 
-.L0:
-    hlt
-    jmp .L0
+    movq %gs:0, %rax
+    movq (%rax), %rax
 
-    popq %rbp
-    popq %r15
-    popq %r14
-    popq %r13
-    popq %r12
-    popq %r11
-    popq %r10
-    popq %r9
-    popq %r8
-    popq %rdi
-    popq %rsi
-    popq %rdx
-    popq %rcx
-    popq %rbx
-    popq %rax
-    subq $0x18, %rsp
+    movq (0x28 + 0x8 * 1)(%rax), %rbx
+    movq (0x28 + 0x8 * 2)(%rax), %rcx
+    movq (0x28 + 0x8 * 3)(%rax), %rdx
+    movq (0x28 + 0x8 * 4)(%rax), %rsi
+    movq (0x28 + 0x8 * 5)(%rax), %rdi
+    movq (0x28 + 0x8 * 6)(%rax), %r8
+    movq (0x28 + 0x8 * 7)(%rax), %r9
+    movq (0x28 + 0x8 * 8)(%rax), %r10
+    movq (0x28 + 0x8 * 9)(%rax), %r11
+    movq (0x28 + 0x8 * 10)(%rax), %r12
+    movq (0x28 + 0x8 * 11)(%rax), %r13
+    movq (0x28 + 0x8 * 12)(%rax), %r14
+    movq (0x28 + 0x8 * 13)(%rax), %r15
+    movq (0x28 + 0x8 * 14)(%rax), %rbp
+    movq (0x28 + 0x8 + 0)(%rax), %rax
+
+    subq $0x10, %rsp
     iretq
 
 .align 0x10

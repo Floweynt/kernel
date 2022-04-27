@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <cstring>
 #include <kinit/boot_resource.h>
-#include <sync/spinlock.h>
 #include <utils.h>
+#include <config.h>
 namespace mm
 {
     class bitmask_allocator
@@ -31,9 +31,11 @@ namespace mm
         constexpr bool test(std::size_t i) { return buf[i / 64] & (1 << (63 - i % 64)); }
 
         std::size_t allocate();
+        bool allocate(std::size_t);
+        void free(std::size_t);
     };
 
-    constexpr uint64_t make_physical(uint64_t virt) { return virt - 0xffff800000000000; }
+    constexpr uint64_t make_physical(uint64_t virt) { return virt & ~HHDM_START; }
 
     template <typename T>
     uint64_t make_physical(T* virt)
@@ -52,7 +54,7 @@ namespace mm
         return make_physical_kern(uint64_t(virt));
     }
 
-    constexpr uint64_t make_virtual(uint64_t phy) { return phy + 0xffff800000000000; }
+    constexpr uint64_t make_virtual(uint64_t phy) { return phy | HHDM_START; }
 
     template <typename T>
     constexpr T* make_virtual(uint64_t phy)
