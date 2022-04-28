@@ -22,7 +22,13 @@ namespace smp
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
         sync::printf("APIC: ticks per ms: %lu\n", local.apic.calibrate());
-        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 1000);
+        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 10);
+    }
+
+    static void idle(uint64_t)
+    {
+        enable_interrupt();
+        std::detail::errors::__halt();
     }
 
     [[noreturn]] void initalize_smp(stivale2_smp_info* info)
@@ -35,7 +41,7 @@ namespace smp
 
         paging::install();
         smp::core_local& local = smp::core_local::get();
-        local.ctxbuffer = new (sync::pre_smp) context;
+        local.ctxbuffer = &proc::get_process(0).threads[0].ctx;
         local.idt_handler_entries = new (sync::pre_smp) uintptr_t[256];
         local.idt_entries = new (sync::pre_smp) idt::idt_entry[256];
         local.coreid = info->extra_argument;
@@ -56,11 +62,14 @@ namespace smp
             if(!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
                 std::panic("failed to allocate");
 
-        // initalize apic
-        initalize_apic(local);
-        enable_interrupt();
+        // create idle
+        proc::make_kthread(idle, 0);
+        proc::make_kthread(+[](uint64_t a) {
+            sync::printf("value: %lu\n", a);
+            idle(0);
+        }, 12321);
 
-        while (1)
-            __asm__ __volatile__("hlt");
+        initalize_apic(smp::core_local::get());
+        idle(0);
     }
 } // namespace smp

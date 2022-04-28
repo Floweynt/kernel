@@ -7,6 +7,7 @@
 #include <apic/apic.h>
 #include <mm/mm.h>
 #include <paging/paging_entries.h>
+#include <process/scheduler/scheduler.h>
 
 namespace smp
 {
@@ -22,6 +23,10 @@ namespace smp
         mm::bitmask_allocator irq_allocator;
         uint64_t irq_allocator_buffer[4];
         paging::page_table_entry* pagemap;
+        
+        // scheduler stuff
+        proc::task_id current_tid;
+        scheduler::task_queue tasks;
 
         inline static core_local& get()
         {

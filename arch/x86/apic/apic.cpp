@@ -52,7 +52,7 @@ namespace apic
                 break;
         }
 
-        mmio_register().lvt_timer.write(mmio_register().lvt_timer | ~(1 << 16));
+        mmio_register().lvt_timer.write(mmio_register().lvt_timer | (1 << 16));
         uint64_t ticks = 0xffffffff - mmio_register().current_timer_count;
 
         return ticks_per_ms = ticks;
@@ -61,9 +61,12 @@ namespace apic
     void local_apic::set_tick(uint8_t irq, std::size_t ms)
     {
         mmio_register().timer_divide.write(3);
-        mmio_register().lvt_timer.write((mmio_register().lvt_timer & ~(0b11 << 17)) | ((uint8_t)1 << 17));
+        uint32_t timer = mmio_register().lvt_timer;
+        timer &= ~(0b11 << 17);
+        timer |= 1 << 17;
+        mmio_register().lvt_timer.write(timer);
         mmio_register().lvt_timer.write((mmio_register().lvt_timer & 0xFFFFFF00) | irq);
-        mmio_register().inital_timer_count.write( ticks_per_ms * ms);
+        mmio_register().inital_timer_count.write(ticks_per_ms * ms);
         mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
     }
 } // namespace apic

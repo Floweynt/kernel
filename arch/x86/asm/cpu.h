@@ -77,4 +77,5 @@ inline uint64_t rdmsr(uint64_t msr)
 
 inline void setstack(uint64_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
+[[noreturn]]
 inline void ljmp(void* addr) { asm volatile("push %0\nret" : : "r"(addr)); }

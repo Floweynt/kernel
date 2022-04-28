@@ -63,6 +63,7 @@ namespace apic
         void set_apic_base(uintptr_t apic);
         uintptr_t get_apic_base();
         constexpr apic_registers& mmio_register() { return *reg_start; }
+        inline void end() { mmio_register().eoi.write(0); }
     };
 } // namespace apic
 

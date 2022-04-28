@@ -9,7 +9,7 @@ idt_common:
     pushq %rbx
 
     xorq %rbx, %rbx
-    cmp 0x40(%rsp), %rbx
+    cmp 0x48(%rsp), %rbx
     jne .L0
     swapgs
 .L0:
@@ -50,9 +50,6 @@ idt_common:
     movq (%rsp), %rcx
     movq %rcx, (%rbx)
 
-    movq 0(%rsp), %rcx
-    movq %rcx, 0(%rbx)
-
     movq 0x8(%rsp), %rcx
     movq %rcx, 0x8(%rbx)
 
@@ -61,6 +58,9 @@ idt_common:
 
     movq 0x18(%rsp), %rcx
     movq %rcx, 0x18(%rbx)
+
+    movq 0x20(%rsp), %rcx
+    movq %rcx, 0x20(%rbx)
 
     // setup stack frame
     andq $~0x7, %rsp
@@ -80,6 +80,22 @@ idt_common:
     movq %gs:0, %rax
     movq (%rax), %rax
 
+    // load the things on the stack
+    movq (%rax), %rbx
+    movq %rbx, (%rsp)
+
+    movq 0x8(%rax), %rbx
+    movq %rbx, 0x8(%rsp)
+
+    movq 0x10(%rax), %rbx
+    movq %rbx, 0x10(%rsp)
+
+    movq 0x18(%rax), %rbx
+    movq %rbx, 0x18(%rsp)
+
+    movq 0x20(%rax), %rbx
+    movq %rbx, 0x20(%rsp)
+
     movq (0x28 + 0x8 * 1)(%rax), %rbx
     movq (0x28 + 0x8 * 2)(%rax), %rcx
     movq (0x28 + 0x8 * 3)(%rax), %rdx
@@ -96,7 +112,6 @@ idt_common:
     movq (0x28 + 0x8 * 14)(%rax), %rbp
     movq (0x28 + 0x8 + 0)(%rax), %rax
 
-    subq $0x10, %rsp
     iretq
 
 .align 0x10
