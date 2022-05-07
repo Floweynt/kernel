@@ -12,14 +12,6 @@ namespace driver
         this->buffer.framebuffer_addr = mm::make_virtual(this->buffer.framebuffer_addr);
         this->buffer.framebuffer_bpp >>= 3;
 
-        // blank screen
-        for (std::size_t i = 0; i < buffer.framebuffer_height; i++)
-        {
-            char* current_pixel = (char*)pixel_at(x * f.width(), y * f.height() + i);
-            for (std::size_t j = 0; j < buffer.framebuffer_height * buffer.framebuffer_bpp; j++)
-                current_pixel[j] = 0;
-        }
-
         std::size_t pages = std::detail::div_roundup(cols() * lines() * sizeof(screen_character), 4096ul);
         for (std::size_t i = 0; i < pages; i++)
         {

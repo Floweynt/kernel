@@ -1,18 +1,18 @@
 #include "smp.h"
 #include <asm/asm_cpp.h>
 #include <gdt/gdt.h>
+#include <idt/handlers/handlers.h>
 #include <mm/pmm.h>
 #include <paging/paging.h>
-#include <idt/handlers/handlers.h>
 #include <sync_wrappers.h>
 
 namespace smp
 {
     void core_local::create()
     {
-        entries = (core_local**) mm::pmm_allocate_pre_smp();
+        entries = (core_local**)mm::pmm_allocate_pre_smp();
         for (std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
-            entries[i] = (core_local*) mm::pmm_allocate_pre_smp();
+            entries[i] = new (mm::pmm_allocate_pre_smp()) core_local;
         // point entries
     }
 
@@ -25,7 +25,7 @@ namespace smp
         local.apic.set_tick(idt::register_idt(handlers::handle_timer), 10);
     }
 
-    static void idle(uint64_t)
+    [[noreturn]] static void idle(uint64_t)
     {
         enable_interrupt();
         std::detail::errors::__halt();
@@ -38,6 +38,7 @@ namespace smp
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(info->extra_argument));
         wrmsr(msr::IA32_KERNEL_GS_BASE, smp::core_local::gs_of(info->extra_argument));
         wrmsr(msr::IA32_PAT, 0x706050403020100);
+        wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
         paging::install();
         smp::core_local& local = smp::core_local::get();
@@ -52,22 +53,19 @@ namespace smp
 
         sync::printf("SMP started from core %lu\n", info->lapic_id);
 
-        if(info->extra_argument != 0)
-            while (1)
-                __asm__ __volatile__("hlt");
+        for (std::size_t i = 0; i < 32; i++)
+            if (!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
+                std::panic("failed to allocate irq");
 
-        local.irq_allocator = mm::bitmask_allocator(local.irq_allocator_buffer, 256);
-
-        for(std::size_t i = 0; i < 32; i++)
-            if(!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
-                std::panic("failed to allocate");
-
-        // create idle
         proc::make_kthread(idle, 0);
-        proc::make_kthread(+[](uint64_t a) {
-            sync::printf("value: %lu\n", a);
-            idle(0);
-        }, 12321);
+
+        if (local.coreid == 0)
+            proc::make_kthread(
+                +[](uint64_t a) {
+                    sync::printf("value: %lu\n", a);
+                    idle(0);
+                },
+                12321);
 
         initalize_apic(smp::core_local::get());
         idle(0);

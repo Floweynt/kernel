@@ -11,7 +11,11 @@ namespace paging
         MEDIUM,    // 2 MiB
         BIG        // 1 GiB
     };
-    
+
+    inline constexpr std::size_t PAGE_SMALL_SIZE = 0x1000;
+    inline constexpr std::size_t PAGE_MEDIUM_SIZE = 0x200000;
+    inline constexpr std::size_t PAGE_LARGE_SIZE = 0x40000000;
+ 
     void install();
 
     template <uint8_t t>

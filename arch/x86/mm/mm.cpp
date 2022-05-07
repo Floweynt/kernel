@@ -30,7 +30,7 @@ namespace mm
                 std::size_t bitindex = __builtin_clzll(buf[i]);
                 std::set_bit(buf[i], false, 63 - bitindex);
 
-                std::size_t offset = (64 * i + 63 - bitindex);
+                std::size_t offset = (64 * i + bitindex);
                 return offset;
             }
         }
@@ -39,13 +39,13 @@ namespace mm
 
     bool bitmask_allocator::allocate(std::size_t index)
     {
-        bool ret = buf[index / 64] & (1 << (index % 64));
-        std::set_bit(buf[index / 64], false, index % 64);
+        bool ret = test(index);
+        std::set_bit(buf[index / 64], false, 63 - index % 64);
         return ret;
     }
 
     void bitmask_allocator::free(std::size_t index)
     {
-        buf[index / 64] |= (1 << (index % 64));
+        std::set_bit(buf[index / 64], true, 63 - index % 64);
     }
 } // namespace mm

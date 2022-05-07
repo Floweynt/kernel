@@ -5,10 +5,9 @@
 #include <idt/idt.h>
 #include <kinit/stivale2.h>
 #include <apic/apic.h>
-#include <mm/mm.h>
 #include <paging/paging_entries.h>
 #include <process/scheduler/scheduler.h>
-
+#include <id_allocator.h>
 namespace smp
 {
     class core_local
@@ -20,8 +19,7 @@ namespace smp
         idt::idt_entry* idt_entries;
         std::size_t coreid;
         apic::local_apic apic;
-        mm::bitmask_allocator irq_allocator;
-        uint64_t irq_allocator_buffer[4];
+        id_allocator<256> irq_allocator;
         paging::page_table_entry* pagemap;
         
         // scheduler stuff

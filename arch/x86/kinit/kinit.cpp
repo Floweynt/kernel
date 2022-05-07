@@ -24,11 +24,8 @@ static stivale2_header_tag_smp smp_tag{.tag = {.identifier = STIVALE2_HEADER_TAG
 
 static stivale2_tag unmap_null_tag = {.identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID, .next = (uint64_t)&smp_tag};
 
-static stivale2_header_tag_terminal terminal_hdr_tag = {
-    .tag = {.identifier = STIVALE2_HEADER_TAG_TERMINAL_ID, .next = (uint64_t)&unmap_null_tag}, .flags = 0};
-
 static stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
-    .tag = {.identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID, .next = (uint64_t)&terminal_hdr_tag},
+    .tag = {.identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID, .next = (uint64_t)&unmap_null_tag},
     .framebuffer_width = 0,
     .framebuffer_height = 0,
     .framebuffer_bpp = 0};
@@ -89,13 +86,13 @@ static void init_paging()
     // workaround for weird stuff
     for (std::size_t i = 0; i < kpages + 10; i++)
     {
-        uint64_t vaddr = 0xffffffff80000000 + i * 4096;
+        uint64_t vaddr = 0xffffffff80000000 + i * paging::PAGE_SMALL_SIZE;
         paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), { .x = true  }, true);
     }
 
     boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
         uint64_t current_addr = e.base;
-        std::size_t len = e.length / 4069ul;
+        int64_t len = e.length / paging::PAGE_SMALL_SIZE;
         paging::page_prop flags;
     
         switch (e.type)
@@ -115,18 +112,18 @@ static void init_paging()
             return;
         }
 
-        while (current_addr % 0x200000)
+        while (current_addr % paging::PAGE_MEDIUM_SIZE)
         {
             if (len-- == 0)
                 return;
             paging::map_hhdm_phys(paging::page_type::SMALL, current_addr, flags);
-            current_addr += 4096;
+            current_addr += paging::PAGE_SMALL_SIZE;
         }
 
-        while ((len >= 0x200) && (current_addr % 0x40000000))
+        while ((len >= 0x200) && (current_addr % paging::PAGE_LARGE_SIZE))
         {
             paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
-            current_addr += 0x200000;
+            current_addr += paging::PAGE_MEDIUM_SIZE;
             len -= 0x200;
         }
 
@@ -134,21 +131,21 @@ static void init_paging()
         while (len >= 0x40000)
         {
             paging::map_hhdm_phys(paging::page_type::BIG, current_addr, flags);
-            current_addr += 0x40000000;
+            current_addr += paging::PAGE_LARGE_SIZE;
             len -= 0x40000;
         }
 
         while (len >= 0x200)
         {
             paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
-            current_addr += 0x200000;
+            current_addr += paging::PAGE_MEDIUM_SIZE;
             len -= 0x200;
         }
 
         while (len--)
         {
-            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
-            current_addr += 0x200000;
+            paging::map_hhdm_phys(paging::page_type::SMALL, current_addr, flags);
+            current_addr += paging::PAGE_SMALL_SIZE;
         }
     });
 
@@ -181,8 +178,8 @@ static void init_smp(stivale2_struct_tag_smp* smp)
             continue;
         }
 
-        smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate();
-        smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate() + 512;
+        smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
+        smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate();
         std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(smp->bsp_lapic_id).pagemap + 256,
                     256 * sizeof(paging::page_table_entry));
         smp->smp_info[i].goto_address = (uint64_t)smp::initalize_smp;
@@ -216,7 +213,6 @@ namespace alloc::detail
         return 4096 * pages;
     }
 } // namespace alloc::detail
-
 
 extern "C"
 {

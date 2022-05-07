@@ -1,7 +1,9 @@
 #ifndef __ARCH_X86_PROCESS_H__
 #define __ARCH_X86_PROCESS_H__
 #include <context/context.h>
+#include <mm/mm.h>
 #include <cstddef>
+#include <id_allocator.h>
 
 namespace proc
 {
@@ -10,9 +12,13 @@ namespace proc
         context ctx;
     };
 
-    struct process
+    class process
     {
-        thread threads[16];
+    public:
+        inline static constexpr std::size_t MAX_THREADS = 16;
+
+        id_allocator<MAX_THREADS> thread_allocator;
+        thread threads[MAX_THREADS];
     };
 
     struct task_id

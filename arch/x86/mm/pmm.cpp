@@ -1,17 +1,16 @@
 #include "pmm.h"
 #include <config.h>
 #include <sync/spinlock.h>
+#include <id_allocator.h>
 
 namespace mm
 {
     pmm_region region[PMM_COUNT];
-    static char buf[bitmask_allocator::metadata_size_pages(PMM_COUNT)];
-    static bitmask_allocator meta_allocator((void*)buf, PMM_COUNT);
+    static id_allocator<PMM_COUNT> meta_allocator;
     static lock::spinlock l;
 
     void add_region_pre_smp(void* start, std::size_t len)
     {
-        lock::spinlock_guard g(l, 0);
         region[meta_allocator.allocate()] = pmm_region(start, len);
     }
 

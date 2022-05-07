@@ -1,6 +1,7 @@
 #include "process.h"
 #include <mm/pmm.h>
 #include <smp/smp.h>
+#include <sync/spinlock.h>
 
 namespace proc
 {
@@ -18,13 +19,18 @@ namespace proc
 
     uint32_t make_kthread(kthread_ip_t th, uint64_t extra)
     {
-        make_kthread(th, extra, smp::core_local::get().coreid);
+        return make_kthread(th, extra, smp::core_local::get().coreid);
     }
 
     uint32_t make_kthread(kthread_ip_t th, uint64_t extra, std::size_t core)
     {
-        static uint32_t current_idx = 0;
-        context& c = processes[0].threads[current_idx++].ctx;
+        static lock::spinlock l;
+        lock::spinlock_guard g(l);
+
+        auto& proc = processes[0];
+        uint32_t id = proc.thread_allocator.allocate();
+        auto& c = proc.threads[id].ctx;
+
         c.cs = 8;
         c.rflags = 0x202; // idk, StaticSega on osdev discord told me to use this
         c.rip = (uint64_t) th;
@@ -33,8 +39,7 @@ namespace proc
         c.rgp[context::RDI] = extra;
 
         // insert into a queue
-        smp::core_local::get(core).tasks.push(task_id{current_idx - 1, 0});
-
-        return current_idx - 1;
+        smp::core_local::get(core).tasks.push(task_id{id, 0});
+        return id;
     }
 }

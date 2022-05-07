@@ -28,7 +28,7 @@ namespace mm
         constexpr bool exists() { return len != 0; }
         constexpr void* get_buffer() { return (void*)buf; }
 
-        constexpr bool test(std::size_t i) { return buf[i / 64] & (1 << (63 - i % 64)); }
+        constexpr bool test(std::size_t i) { return std::get_bit(buf[i / 64], 63 - i % 64); }
 
         std::size_t allocate();
         bool allocate(std::size_t);

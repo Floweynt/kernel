@@ -14,4 +14,3 @@ namespace scheduler
         local.ctxbuffer = &proc::get_process(current_task.proc).threads[current_task.thread].ctx;
     }
 }
-
