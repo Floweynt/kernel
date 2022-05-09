@@ -39,7 +39,7 @@ namespace proc
         c.rgp[context::RDI] = extra;
 
         // insert into a queue
-        smp::core_local::get(core).tasks.push(task_id{id, 0});
+        smp::core_local::get(core).tasks->push(task_id{id, 0});
         return id;
     }
 }

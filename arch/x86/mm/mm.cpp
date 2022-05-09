@@ -4,17 +4,11 @@ namespace mm
 {
     bitmask_allocator::bitmask_allocator(void* buf, std::size_t len) : buf((uint64_t*)buf), len(len)
     {
-        // TODO: cleanp detail
-        if (buf == nullptr)
-        {
-            buf = nullptr;
-            len = 0;
-            return;
-        }
+        std::size_t n = len / 64;
 
-        std::memset(buf, 0xff, len / 8);
-        if (len % 64)
-            this->buf[len / 64 + 1] = 1 << ((len % 64) - 1);
+        std::memset(buf, 0xff, n * sizeof(uint64_t));
+        if(len % 64)
+            this->buf[len / 64] = ~((1ul << (64 - len % 64)) - 1);
     }
 
     std::size_t bitmask_allocator::allocate()

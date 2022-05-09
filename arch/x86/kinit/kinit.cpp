@@ -178,10 +178,14 @@ static void init_smp(stivale2_struct_tag_smp* smp)
             continue;
         }
 
+        // remember that stack grows down
         smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
+
         smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate();
-        std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(smp->bsp_lapic_id).pagemap + 256,
+
+        std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
                     256 * sizeof(paging::page_table_entry));
+
         smp->smp_info[i].goto_address = (uint64_t)smp::initalize_smp;
     }
 

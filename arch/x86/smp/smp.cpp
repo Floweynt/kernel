@@ -22,7 +22,7 @@ namespace smp
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
         sync::printf("APIC: ticks per ms: %lu\n", local.apic.calibrate());
-        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 10);
+        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 1000);
     }
 
     [[noreturn]] static void idle(uint64_t)
@@ -57,15 +57,15 @@ namespace smp
             if (!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
                 std::panic("failed to allocate irq");
 
+        local.tasks = new scheduler::task_queue;
         proc::make_kthread(idle, 0);
 
-        if (local.coreid == 0)
-            proc::make_kthread(
-                +[](uint64_t a) {
-                    sync::printf("value: %lu\n", a);
-                    idle(0);
-                },
-                12321);
+        proc::make_kthread(
+            +[](uint64_t a) {
+                sync::printf("value: %lu\n", a);
+                idle(0);
+            },
+        local.coreid);
 
         initalize_apic(smp::core_local::get());
         idle(0);

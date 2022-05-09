@@ -24,7 +24,7 @@ namespace smp
         
         // scheduler stuff
         proc::task_id current_tid;
-        scheduler::task_queue tasks;
+        scheduler::task_queue* tasks;
 
         inline static core_local& get()
         {
@@ -49,6 +49,8 @@ namespace smp
 
         inline static uint64_t gs_of(std::size_t core) { return (uint64_t)&entries[core]; }
     };
+
+    static_assert(sizeof(core_local) < 4096, "core_local buffer is larger than expected");
 
     [[noreturn]] void initalize_smp(stivale2_smp_info*);
 } // namespace smp

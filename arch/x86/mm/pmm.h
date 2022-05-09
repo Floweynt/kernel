@@ -11,8 +11,11 @@ namespace mm
 
         inline void* allocate()
         {
-            return (void*)(((uint8_t*)get_buffer()) +
-                           ((bitmask_allocator::allocate() + bitmask_allocator::metadata_size_pages(size())) * 4096));
+            std::size_t val = bitmask_allocator::allocate();
+            if(val == -1ul)
+                return nullptr;
+
+            return (void*)(((uint8_t*)get_buffer()) + ((val + bitmask_allocator::metadata_size_pages(size())) * 4096));
         }
 
         inline void free(void* index)

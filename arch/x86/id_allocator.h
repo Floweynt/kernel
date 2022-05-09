@@ -19,11 +19,11 @@ public:
         if constexpr (!inplace)
             buf = new uint64_t[std::detail::div_roundup(len, 64ul)];
 
-        std::size_t n = len;
+        std::size_t n = len / 64;
 
-        std::memset(buf, 0xff, n / 8);
-        if (len % 64)
-            this->buf[n / 64 + 1] = 1 << ((n % 64) - 1);
+        std::memset(buf, 0xff, n * sizeof(uint64_t));
+        if constexpr (len % 64)
+            this->buf[len / 64] = ~((1ul << (64 - len % 64)) - 1);
     }
 
     ~id_allocator()
