@@ -7,10 +7,12 @@
 #mesondefine MALLOC_IMPL_PATH
 #mesondefine PMM_COUNT
 #mesondefine PRE_ALLOCATE_PAGES
+#mesondefine KLOG_BUFFER
 
 // kernel memory layout
 #mesondefine HHDM_START
 #mesondefine SCROLLBACK_START
 #mesondefine HEAP_START
+#mesondefine KLOG_START
 
 #endif

@@ -282,8 +282,9 @@ extern "C"
             std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
         });
 
+        std::printf("cpu_vendor_string: %s\n", cpu_vendor_string());
+        std::printf("cpu_brand_string: %s\n", cpu_brand_string());
         auto rsdp = boot_resource::instance().rsdp();
-
         std::printf("ACPI info:\n", rsdp->xsdt_address);
         std::printf("  rsdp data:\n");
         std::printf("    revision=%d\n", (int)rsdp->revision);

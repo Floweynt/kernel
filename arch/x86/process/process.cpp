@@ -31,6 +31,8 @@ namespace proc
         uint32_t id = proc.thread_allocator.allocate();
         auto& c = proc.threads[id].ctx;
 
+        proc.threads[id].state = proc::thread_state::RUNNING;
+
         c.cs = 8;
         c.rflags = 0x202; // idk, StaticSega on osdev discord told me to use this
         c.rip = (uint64_t) th;

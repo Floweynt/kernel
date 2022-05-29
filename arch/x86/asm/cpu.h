@@ -79,3 +79,30 @@ inline void setstack(uint64_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
 [[noreturn]]
 inline void ljmp(void* addr) { asm volatile("push %0\nret" : : "r"(addr)); }
+
+inline const char* cpu_vendor_string()
+{
+    static bool is_init = false;
+    static uint32_t buf[3];
+
+    if(!is_init)
+    {
+        cpuid(0, nullptr, buf, buf + 2, buf + 1);
+        is_init = true;
+    }
+    return (const char*) buf;
+}
+
+inline const char* cpu_brand_string()
+{
+    static bool is_init = false;
+    static uint32_t buf[12];
+
+    if(!is_init)
+    {
+        for(int i = 0; i < 3; i++)
+            cpuid(0x80000002 + i, buf + i * 4, buf + i * 4 + 1, buf + i * 4 + 2, buf + i * 4 + 3);
+        is_init = true;
+    }
+    return (const char*) buf;
+}

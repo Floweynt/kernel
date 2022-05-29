@@ -22,7 +22,7 @@ namespace smp
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
         sync::printf("APIC: ticks per ms: %lu\n", local.apic.calibrate());
-        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 1000);
+        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 20);
     }
 
     [[noreturn]] static void idle(uint64_t)

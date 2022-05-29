@@ -7,9 +7,16 @@
 
 namespace proc
 {
+    enum class thread_state
+    {
+        RUNNING,
+        WAITING
+    };
+
     struct thread
     {
         context ctx;
+        thread_state state;
     };
 
     class process
