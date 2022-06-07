@@ -1,14 +1,20 @@
+// cSpell:ignore chindex
 #include "tty.h"
 #include <bits/user_implement.h>
 #include <cstring>
+
+// The instance of the tty_startup_driver
 static driver::tty_startup_driver* drv;
 
+// Implements the set_tty_startup_driver
 void driver::set_tty_startup_driver(driver::tty_startup_driver* d) { drv = d; }
 
+// The implementation for putc used by my totally legit stdlib
 void std::detail::putc(char ch) { drv->putc_handle_escape(ch); }
 
 driver::tty_startup_driver::~tty_startup_driver() {}
 
+// Handles the color given the color string
 void driver::tty_startup_driver::handle_color1()
 {
     switch (*((uint64_t*)command_buffer[0]))

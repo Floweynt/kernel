@@ -1,6 +1,16 @@
+// cSpell:ignore cpuid, apic, efer, wrmsr, rdmsr, ljmp
 #include <cstdint>
 
-inline void cpuid(int code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
+/// \brief `cpuid` instruction wrapper
+/// \param code The value passed in `%eax` for `cpuid`
+/// \param[out] a The value to store the `%eax` register
+/// \param[out] b The value to store the `%ebx` register
+/// \param[out] c The value to store the `%ecx` register
+/// \param[out] d The value to store the `%edx` register
+/// Wrapper for the <a href="https://en.wikipedia.org/wiki/CPUID">cpuid</a> instruction. The value specified in \p code will
+/// be written into the `cpuid` instruction, which is then executed and loaded into a, b, c, d parameters from `%e<param>x`.
+/// If the argument passed in is null, the corresponding register's value will be thrown away.
+inline void cpuid(uint32_t code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
 {
     uint32_t tmp = 0;
     if (a == nullptr)
@@ -12,6 +22,24 @@ inline void cpuid(int code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
     if (d == nullptr)
         d = &tmp;
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code));
+}
+
+/// \brief `cpuid` extended features instruction wrapper
+/// \param feature The value passed in `%ecx` for `cpuid`
+/// \param[out] b The value to store the `%ebx` register
+/// \param[out] c The value to store the `%ecx` register
+/// \param[out] d The value to store the `%edx` register
+/// \return The largest value available for this cpuid leaf
+///
+/// Wrapper for the <a href="https://en.wikipedia.org/wiki/CPUID#EAX=7,_ECX=0:_Extended_Features">cpuid extend features</a> 
+/// leaf. The value specified in \p feature will be written into the `%ecx` register for the, along with setting `%eax` to 7
+/// The `cpuid` instruction is then executed and loaded into b, c, d parameters from `%e<param>x`.
+/// The arguments to this instruction wrapper must not be null.
+inline uint32_t cpuid_ext(uint32_t feature, uint32_t* b, uint32_t* c, uint32_t* d)
+{
+    uint32_t max;
+    asm volatile("cpuid" : "=a"(max), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(7), "c"(feature));
+    return max;
 }
 
 #define READ_CR(CR)                                                                                                         \
@@ -44,9 +72,16 @@ WRITE_CR(4)
 // READ_CR(7)
 // READ_CR(8)
 
+/// \brief Wrapper for the `invlpg` instruction
+/// \param m The address passed into invlpg
 inline void invlpg(void* m) { asm volatile("invlpg (%0)" : : "b"(m) : "memory"); }
 
+/// \brief Wrapper for the `cli` instruction
+///
 inline void disable_interrupt() { __asm__ __volatile__("cli"); }
+
+/// \brief Wrapper for the `sti` instruction
+///
 inline void enable_interrupt() { __asm__ __volatile__("sti"); }
 
 namespace msr
@@ -59,6 +94,9 @@ namespace msr
     inline constexpr uint64_t IA32_PAT = 0x277;
 } // namespace msr
 
+/// \brief Wrapper for the `wrmsr` instruction
+/// \param msr The msr to write to
+/// \param value The value to write
 inline void wrmsr(uint64_t msr, uint64_t value)
 {
     uint32_t low = value & 0xFFFFFFFF;
@@ -66,8 +104,15 @@ inline void wrmsr(uint64_t msr, uint64_t value)
     asm volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
+/// \brief Wrapper for the `wrmsr` instruction, split into 2 parts
+/// \param msr The msr to write to
+/// \param a The a register passed to `wrmsr`
+/// \param d The d register passed to `wrmsr`
 inline void wrmsr(uint64_t msr, uint32_t a, uint32_t d) { __asm__ __volatile__("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
 
+/// \brief Wrapper for the `wrmsr` instruction
+/// \param msr The msr to read from
+/// \return The value contained in the msr specified in \p msr
 inline uint64_t rdmsr(uint64_t msr)
 {
     uint32_t low, high;
@@ -75,34 +120,15 @@ inline uint64_t rdmsr(uint64_t msr)
     return ((uint64_t)high << 32) | low;
 }
 
+/// \brief Sets the stack pointer `%rsp`
+/// \param sp The new stack pointer address
 inline void setstack(uint64_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
+/// \brief Preforms a long jump
+/// \param addr The address to jump to
 [[noreturn]]
-inline void ljmp(void* addr) { asm volatile("push %0\nret" : : "r"(addr)); }
-
-inline const char* cpu_vendor_string()
-{
-    static bool is_init = false;
-    static uint32_t buf[3];
-
-    if(!is_init)
-    {
-        cpuid(0, nullptr, buf, buf + 2, buf + 1);
-        is_init = true;
-    }
-    return (const char*) buf;
-}
-
-inline const char* cpu_brand_string()
-{
-    static bool is_init = false;
-    static uint32_t buf[12];
-
-    if(!is_init)
-    {
-        for(int i = 0; i < 3; i++)
-            cpuid(0x80000002 + i, buf + i * 4, buf + i * 4 + 1, buf + i * 4 + 2, buf + i * 4 + 3);
-        is_init = true;
-    }
-    return (const char*) buf;
+inline void ljmp(void* addr) 
+{ 
+    asm volatile("push %0\nret" : : "r"(addr)); 
+    __builtin_unreachable(); 
 }

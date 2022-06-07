@@ -46,6 +46,7 @@ kernel_source = [
     'arch/x86/paging/pgfault.cpp',
     'arch/x86/smp/smp.cpp',
     'arch/x86/driver/terminal.cpp',
+    'arch/x86/cpuid/cpuid.cpp',
     'lib/src/cstring.cpp',
     'lib/src/panic.cpp',
     'lib/src/new.cpp',
@@ -65,6 +66,7 @@ conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-alloc
 conf.set('PMM_COUNT', '0x20')
 conf.set('PRE_ALLOCATE_PAGES', '100')
 conf.set('KLOG_PAGES', '64')
+conf.set('CPUID_FEATURE_SIZE', '5')
 
 conf.set('HHDM_START', '0xffff800000000000')
 conf.set('SCROLLBACK_START', '0xffff900000000000')
@@ -153,7 +155,7 @@ run = run_target('run',
         '-S',
         '-M',
         'smm=off',
-        '-smp', '2'
+        '-cpu', 'host'
     ]
 )
 
