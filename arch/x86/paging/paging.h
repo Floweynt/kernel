@@ -1,3 +1,4 @@
+// cSpell:ignore hhdm
 #ifndef __ARCH_X86_PAGING_H__
 #define __ARCH_X86_PAGING_H__
 #include "paging_entries.h"
@@ -17,6 +18,9 @@ namespace paging
     inline constexpr std::size_t PAGE_LARGE_SIZE = 0x40000000;
  
     void install();
+    bool request_page(page_type pt, uint64_t vaddr, uint64_t paddr, page_prop prop = {}, bool overwrite = false);
+    void map_section(uint64_t addr, uint64_t len, paging::page_prop p);
+    void init();
 
     template <uint8_t t>
     constexpr uint16_t get_page_entry(uint64_t virtual_addr)
@@ -28,8 +32,6 @@ namespace paging
     {
         return std::get_bits(virtual_addr, (3 - t) * 9 + 12, (3 - t) * 9 + 20) >> ((3 - t) * 9 + 12);
     }
-
-    bool request_page(page_type pt, uint64_t vaddr, uint64_t paddr, page_prop prop = {}, bool overwrite = false);
     
     inline bool map_hhdm_phys(page_type pt, uint64_t paddr, page_prop prop = {}, bool overwrite = false)
     {
@@ -40,6 +42,7 @@ namespace paging
     {
         return request_page(pt, mm::make_physical(vaddr), vaddr, prop, overwrite);
     }
+
 } // namespace paging
 
 #endif

@@ -1,3 +1,4 @@
+// cSpell:ignore hhdm, msr, efer, kpages, rdmsr, wrmsr, stivale
 #include "paging.h"
 #include <asm/asm_cpp.h>
 #include <mm/pmm.h>
@@ -71,7 +72,97 @@ namespace paging
         uint16_t index = paging::get_page_entry<3>(virtual_addr);
         uint64_t value = smp::core_local::get().pagemap[index];
 
-        for(std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
+        for (std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
             smp::core_local::get(i).pagemap[index] = value;
     }
+
+    void map_section(uint64_t addr, uint64_t _len, paging::page_prop flags)
+    {
+        int64_t len = _len / PAGE_SMALL_SIZE;
+
+        while (addr % paging::PAGE_MEDIUM_SIZE)
+        {
+            if (len-- == 0)
+                return;
+            paging::map_hhdm_phys(paging::page_type::SMALL, addr, flags);
+            addr += paging::PAGE_SMALL_SIZE;
+        }
+
+        while ((len >= 0x200) && (addr % paging::PAGE_LARGE_SIZE))
+        {
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, flags);
+            addr += paging::PAGE_MEDIUM_SIZE;
+            len -= 0x200;
+        }
+
+        // okay, this is aligned...
+        while (len >= 0x40000)
+        {
+            paging::map_hhdm_phys(paging::page_type::BIG, addr, flags);
+            addr += paging::PAGE_LARGE_SIZE;
+            len -= 0x40000;
+        }
+
+        while (len >= 0x200)
+        {
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, flags);
+            addr += paging::PAGE_MEDIUM_SIZE;
+            len -= 0x200;
+        }
+
+        while (len--)
+        {
+            paging::map_hhdm_phys(paging::page_type::SMALL, addr, flags);
+            addr += paging::PAGE_SMALL_SIZE;
+        }
+    }
+
+    void init()
+    {
+        wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
+        // wrmsr(msr::IA32_PAT, 0x706050403020100);
+
+        std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), paging::PAGE_SMALL_SIZE);
+
+        // workaround for weird stuff
+        for (std::size_t i = 0; i < kpages + 10; i++)
+        {
+            uint64_t vaddr = 0xffffffff80000000 + i * paging::PAGE_SMALL_SIZE;
+            paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), {.x = true}, true);
+        }
+
+        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
+            paging::page_prop flags;
+
+            switch (e.type)
+            {
+            case 1:
+            case 3:
+            case 0x1000:
+            case 0x1001:
+            case 0x1002:
+                break;
+            case 2:
+            case 4:
+            case 5:
+                flags.rw = false;
+                break;
+            default:
+                return;
+            }
+
+            paging::map_section(e.base, e.length, flags);
+        });
+
+        for (std::size_t i = 0; i < PRE_ALLOCATE_PAGES; i++)
+        {
+            void* d;
+            if (!(d = mm::pmm_allocate_pre_smp()))
+                std::panic("cannot get memory for heap");
+            paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d));
+        }
+
+        paging::install();
+    }
+
 } // namespace paging

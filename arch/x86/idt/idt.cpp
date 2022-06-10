@@ -1,6 +1,7 @@
 #include "idt.h"
 #include <asm/asm_cpp.h>
 #include <smp/smp.h>
+#include <asm/asm_cpp.h>
 
 extern char idt_entry_start[];
 
@@ -28,7 +29,7 @@ namespace idt
     {
         smp::core_local& local = smp::core_local::get();
         idt_descriptor descriptor = {.size = sizeof(idt_entry) * 256, .offset = (uint64_t)local.idt_entries};
-        asm volatile("lidtq %0" : : "m"(descriptor));
+        lidt((void*)&descriptor);
     }
 
     bool register_idt(interrupt_handler handler, std::size_t num, uint8_t type, uint8_t dpl)

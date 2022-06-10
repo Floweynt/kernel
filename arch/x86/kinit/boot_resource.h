@@ -1,3 +1,4 @@
+// cSpell:ignore kinit, stivale, lapic, rsdp, xsdt
 #ifndef __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
 #define __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
 #include "stivale2.h"

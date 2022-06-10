@@ -1,3 +1,7 @@
+# cSpell:ignore noerr
+
+# Python scrip in order to generate asm stubs for IDT handling
+
 fmt_str_noerr = """
 .align 0x10
     push $0

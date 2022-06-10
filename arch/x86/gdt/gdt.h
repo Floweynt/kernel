@@ -3,6 +3,8 @@
 #include <cstdint>
 namespace gdt
 {
+    /// \brief generates and installs a GDT
+    ///
     void install_gdt();
 } // namespace gdt
 

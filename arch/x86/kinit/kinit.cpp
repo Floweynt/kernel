@@ -1,3 +1,4 @@
+// cSpell:ignore stivale, alignas, rsdp, lapic, efer, wrmsr, kpages, rdmsr, cpuid, kinit
 #include "boot_resource.h"
 #include "romfont.h"
 #include "stivale2.h"
@@ -16,6 +17,7 @@
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 #include <cpuid/cpuid.h>
+#include <debug/kinit_dump.h>
 
 #include MALLOC_IMPL_PATH
 
@@ -77,90 +79,6 @@ static void init_tty(stivale2_struct* root)
     driver::set_tty_startup_driver(&tmp);
 }
 
-static void init_paging()
-{
-    wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
-    // wrmsr(msr::IA32_PAT, 0x706050403020100);
-
-    std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), 4096ul);
-
-    // workaround for weird stuff
-    for (std::size_t i = 0; i < kpages + 10; i++)
-    {
-        uint64_t vaddr = 0xffffffff80000000 + i * paging::PAGE_SMALL_SIZE;
-        paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), { .x = true  }, true);
-    }
-
-    boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
-        uint64_t current_addr = e.base;
-        int64_t len = e.length / paging::PAGE_SMALL_SIZE;
-        paging::page_prop flags;
-    
-        switch (e.type)
-        {
-        case 1:
-        case 3:
-        case 0x1000:
-        case 0x1001:
-        case 0x1002:
-            break;
-        case 2:
-        case 4:
-        case 5:
-            flags.rw = false;
-            break;
-        default:
-            return;
-        }
-
-        while (current_addr % paging::PAGE_MEDIUM_SIZE)
-        {
-            if (len-- == 0)
-                return;
-            paging::map_hhdm_phys(paging::page_type::SMALL, current_addr, flags);
-            current_addr += paging::PAGE_SMALL_SIZE;
-        }
-
-        while ((len >= 0x200) && (current_addr % paging::PAGE_LARGE_SIZE))
-        {
-            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
-            current_addr += paging::PAGE_MEDIUM_SIZE;
-            len -= 0x200;
-        }
-
-        // okay, this is aligned...
-        while (len >= 0x40000)
-        {
-            paging::map_hhdm_phys(paging::page_type::BIG, current_addr, flags);
-            current_addr += paging::PAGE_LARGE_SIZE;
-            len -= 0x40000;
-        }
-
-        while (len >= 0x200)
-        {
-            paging::map_hhdm_phys(paging::page_type::MEDIUM, current_addr, flags);
-            current_addr += paging::PAGE_MEDIUM_SIZE;
-            len -= 0x200;
-        }
-
-        while (len--)
-        {
-            paging::map_hhdm_phys(paging::page_type::SMALL, current_addr, flags);
-            current_addr += paging::PAGE_SMALL_SIZE;
-        }
-    });
-
-    for(std::size_t i = 0; i < PRE_ALLOCATE_PAGES; i++)
-    {
-        void* d;
-        if (!(d = mm::pmm_allocate_pre_smp()))
-            std::panic("cannot get memory for heap");
-        paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d));
-    }
-
-    paging::install();
-}
-
 static void init_smp(stivale2_struct_tag_smp* smp)
 {
     std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
@@ -187,11 +105,11 @@ static void init_smp(stivale2_struct_tag_smp* smp)
         std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
                     256 * sizeof(paging::page_table_entry));
 
-        smp->smp_info[i].goto_address = (uint64_t)smp::initalize_smp;
+        smp->smp_info[i].goto_address = (uint64_t)smp::initialize_smp;
     }
 
-    // initalize myself too!
-    smp::initalize_smp(&smp->smp_info[index]);
+    // initialize myself too!
+    smp::initialize_smp(&smp->smp_info[index]);
 }
 
 namespace alloc::detail
@@ -246,44 +164,11 @@ extern "C"
         smp::core_local::create();
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
         init_tty(root);
-        init_paging();
+        paging::init();
         std::printf("kinit: _start() started tty\n");
-        std::printf("memory map:\n");
+        debug::dump_memory_map();
 
-        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
-            switch (e.type)
-            {
-            case 0x1:
-                std::printf("[\033cg;USABLE      \033]: ");
-                break;
-            case 0x2:
-                std::printf("[\033cr;RESERVED    \033]: ");
-                break;
-            case 0x3:
-                std::printf("[\033cy;ACPI RECLAIM\033]: ");
-                break;
-            case 0x4:
-                std::printf("[\033cy;ACPI NVS    \033]: ");
-                break;
-            case 0x5:
-                std::printf("[\033cr;BAD         \033]: ");
-                break;
-            case 0x1000:
-                std::printf("[\033cy;BTL RECLAIM \033]: ");
-                break;
-            case 0x1001:
-                std::printf("[\033cc;KERN MODULE \033]: ");
-                break;
-            case 0x1002:
-                std::printf("[\033cc;FRAMEBUFFER \033]: ");
-                break;
-            default:
-                std::printf("[\033cG;UNKNOWN     \033]: ");
-            }
-            std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
-        });
-
-        cpuid_info::initalize_cpuglobal();
+        cpuid_info::initialize_cpuglobal();
         std::printf("cpu_vendor_string: %s\n", cpuid_info::cpu_vendor_string());
         std::printf("cpu_brand_string: %s\n", cpuid_info::cpu_brand_string());
 

@@ -1,3 +1,4 @@
+// cSpell:ignore apic, stivale
 #ifndef __ARCH_X86_SMP_SMP_H__
 #define __ARCH_X86_SMP_SMP_H__
 #include <context/context.h>
@@ -52,7 +53,7 @@ namespace smp
 
     static_assert(sizeof(core_local) < 4096, "core_local buffer is larger than expected");
 
-    [[noreturn]] void initalize_smp(stivale2_smp_info*);
+    [[noreturn]] void init(stivale2_struct_tag_smp*);
 } // namespace smp
 
 #endif

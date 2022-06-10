@@ -1,3 +1,4 @@
+// cSpell:ignore apic, hhdm, lapic, wrmsr, efer, stivale, rdmsr
 #include "smp.h"
 #include <asm/asm_cpp.h>
 #include <gdt/gdt.h>
@@ -16,7 +17,7 @@ namespace smp
         // point entries
     }
 
-    static void initalize_apic(smp::core_local& local)
+    static void initialize_apic(smp::core_local& local)
     {
         uint64_t l = local.apic.get_apic_base();
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
@@ -31,7 +32,7 @@ namespace smp
         std::detail::errors::__halt();
     }
 
-    [[noreturn]] void initalize_smp(stivale2_smp_info* info)
+    [[noreturn]] static void smp_main(stivale2_smp_info* info)
     {
         disable_interrupt();
         info = mm::make_virtual<stivale2_smp_info>((uint64_t)info);
@@ -65,9 +66,42 @@ namespace smp
                 sync::printf("value: %lu\n", a);
                 idle(0);
             },
-        local.coreid);
+            local.coreid);
 
-        initalize_apic(smp::core_local::get());
+        initialize_apic(smp::core_local::get());
         idle(0);
+    }
+
+    [[noreturn]] void init(stivale2_struct_tag_smp* smp)
+    {
+        std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
+        std::printf("  cpus: %lu\n", smp->cpu_count);
+
+        std::size_t index;
+
+        for (std::size_t i = 0; i < smp->cpu_count; i++)
+        {
+            std::printf("initalizing core: %lu\n", i);
+            smp->smp_info[i].extra_argument = i;
+
+            if (smp->smp_info[i].lapic_id == smp->bsp_lapic_id)
+            {
+                index = i;
+                continue;
+            }
+
+            // remember that stack grows down
+            smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
+
+            smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate();
+
+            std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
+                        256 * sizeof(paging::page_table_entry));
+
+            smp->smp_info[i].goto_address = (uint64_t)smp::smp_main;
+        }
+
+        // initialize myself too!
+        smp::smp_main(&smp->smp_info[index]);
     }
 } // namespace smp
