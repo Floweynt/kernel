@@ -1,7 +1,9 @@
-// cSpell:ignore stivale
+// cSpell:ignore stivale, cpuid
 #include "kinit_dump.h"
 #include <kinit/boot_resource.h>
 #include <printf.h>
+#include <cpuid/cpuid.h>
+#include <config.h>
 
 namespace detail
 {
@@ -41,5 +43,18 @@ namespace detail
             }
             std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
         });
+    }
+
+    void dump_cpuid_info()
+    {
+        std::printf("cpu_vendor_string: %s\n", cpuid_info::cpu_vendor_string());
+        std::printf("cpu_brand_string: %s\n", cpuid_info::cpu_brand_string());
+
+        std::printf("cpu features: ");
+        for (std::size_t i = 0; i < CPUID_FEATURE_SIZE * 32; i++)
+        {
+            if (cpuid_info::test_feature(i) && cpuid_info::FEATURE_STRINGS[i])
+                std::printf("%s ", cpuid_info::FEATURE_STRINGS[i]);
+        }
     }
 } // namespace detail

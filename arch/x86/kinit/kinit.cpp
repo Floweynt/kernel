@@ -1,4 +1,4 @@
-// cSpell:ignore stivale, alignas, rsdp, lapic, efer, wrmsr, kpages, rdmsr, cpuid, kinit
+// cSpell:ignore stivale, alignas, rsdp, lapic, efer, wrmsr, kpages, rdmsr, cpuid, kinit, xsdt
 #include "boot_resource.h"
 #include "romfont.h"
 #include "stivale2.h"
@@ -79,39 +79,6 @@ static void init_tty(stivale2_struct* root)
     driver::set_tty_startup_driver(&tmp);
 }
 
-static void init_smp(stivale2_struct_tag_smp* smp)
-{
-    std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
-    std::printf("  cpus: %lu\n", smp->cpu_count);
-
-    std::size_t index;
-
-    for (std::size_t i = 0; i < smp->cpu_count; i++)
-    {
-        std::printf("initalizing core: %lu\n", i);
-        smp->smp_info[i].extra_argument = i;
-
-        if (smp->smp_info[i].lapic_id == smp->bsp_lapic_id)
-        {
-            index = i;
-            continue;
-        }
-
-        // remember that stack grows down
-        smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
-
-        smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate();
-
-        std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
-                    256 * sizeof(paging::page_table_entry));
-
-        smp->smp_info[i].goto_address = (uint64_t)smp::initialize_smp;
-    }
-
-    // initialize myself too!
-    smp::initialize_smp(&smp->smp_info[index]);
-}
-
 namespace alloc::detail
 {
     void* start() { return (void*)HEAP_START; }
@@ -142,6 +109,8 @@ extern "C"
     extern uint64_t __start_init_array[];
     extern uint64_t __end_init_array[];
 
+    // calls the global initialization function from the init_array sections
+    // this is required to say, call the constructors of global variables
     static void init_array()
     {
         using init_array_t = void (*)();
@@ -158,7 +127,7 @@ extern "C"
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
             if (e.type == 1)
-                mm::add_region_pre_smp(mm::make_virtual<void>(e.base), e.length / 4096);
+                mm::add_region_pre_smp(mm::make_virtual<void>(e.base), e.length / paging::PAGE_SMALL_SIZE);
         });
 
         smp::core_local::create();
@@ -167,18 +136,8 @@ extern "C"
         paging::init();
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();
-
         cpuid_info::initialize_cpuglobal();
-        std::printf("cpu_vendor_string: %s\n", cpuid_info::cpu_vendor_string());
-        std::printf("cpu_brand_string: %s\n", cpuid_info::cpu_brand_string());
-
-        std::printf("cpu features: ");
-        for(std::size_t i = 0; i < CPUID_FEATURE_SIZE * 32; i++)
-        {
-            if(cpuid_info::test_feature(i) && cpuid_info::FEATURE_STRINGS[i])
-                std::printf("%s ", cpuid_info::FEATURE_STRINGS[i]);
-        } 
-        std::printf("\n");
+        debug::dump_cpuid_info();    
 
         auto rsdp = boot_resource::instance().rsdp();
         std::printf("ACPI info:\n", rsdp->xsdt_address);
@@ -193,7 +152,7 @@ extern "C"
             std::printf("  entry: (sig=0x%08u)\n", entry->signature);
         });
 
-        init_smp(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
+        smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
 
         while (1)
             __asm__ __volatile__("hlt");

@@ -1,10 +1,11 @@
-// cSpell:ignore kinit
+// cSpell:ignore kinit, cpuid
 #ifndef __ARCH_X86_DEBUG_KINIT_DUMP_H__
 #define __ARCH_X86_DEBUG_KINIT_DUMP_H__
 
 namespace debug
 {
     void dump_memory_map();
+    void dump_cpuid_info();
 }
 
 #endif
