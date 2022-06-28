@@ -31,7 +31,7 @@ inline void cpuid(uint32_t code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t
 /// \param[out] d The value to store the `%edx` register
 /// \return The largest value available for this cpuid leaf
 ///
-/// Wrapper for the <a href="https://en.wikipedia.org/wiki/CPUID#EAX=7,_ECX=0:_Extended_Features">cpuid extend features</a> 
+/// Wrapper for the <a href="https://en.wikipedia.org/wiki/CPUID#EAX=7,_ECX=0:_Extended_Features">cpuid extend features</a>
 /// leaf. The value specified in \p feature will be written into the `%ecx` register for the, along with setting `%eax` to 7
 /// The `cpuid` instruction is then executed and loaded into b, c, d parameters from `%e<param>x`.
 /// The arguments to this instruction wrapper must not be null.
@@ -126,9 +126,8 @@ inline void setstack(uint64_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
 /// \brief Preforms a long jump
 /// \param addr The address to jump to
-[[noreturn]]
-inline void ljmp(void* addr) 
-{ 
-    asm volatile("push %0\nret" : : "r"(addr)); 
-    __builtin_unreachable(); 
+[[noreturn]] inline void ljmp(void* addr)
+{
+    asm volatile("push %0\nret" : : "r"(addr));
+    __builtin_unreachable();
 }

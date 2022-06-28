@@ -57,11 +57,12 @@ namespace apic
     private:
         apic_registers* reg_start = nullptr;
         uint64_t ticks_per_ms;
+
     public:
         /// \brief Check for the presense of an LAPIC on the current core
         ///
         static bool check_apic();
-        
+
         /// \brief Enables the LAPIC
         /// Enables the APIC by setting the APIC base, disabling old PIC and setting the spurious interrupt vector
         void enable();
@@ -80,7 +81,7 @@ namespace apic
         /// \brief Sets the amount of ticks before a timer interrupt
         /// \param irq The irq vector to use
         /// \param ms The number of milliseconds per timer interrupt
-        /// The APIT ticks are computed by using the value from calibrate() * \p ms. Interrupts are generated at the IRQ 
+        /// The APIT ticks are computed by using the value from calibrate() * \p ms. Interrupts are generated at the IRQ
         /// defined by \p irq, which requires that the core's IDT contain an entry for the specified vector
         void set_tick(uint8_t irq, std::size_t ms);
 
@@ -95,7 +96,7 @@ namespace apic
         /// \brief Obtains a reference to the MMIO registers for the LAPIC
         //
         constexpr apic_registers& mmio_register() { return *reg_start; }
-        
+
         /// \brief Sets the "end of interrupt" field in the LAPIC
         //
         inline void end() { mmio_register().eoi.write(0); }

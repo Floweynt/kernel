@@ -28,7 +28,7 @@ namespace idt
     bool register_idt(interrupt_handler handler, std::size_t num, uint8_t type = 0b1110, uint8_t dpl = 0x0);
 
     /// \brief Registers a handler entry at an available slot
-    /// 
+    ///
     std::size_t register_idt(interrupt_handler handler, uint8_t type = 0b1110, uint8_t dpl = 0x0);
 
     struct [[gnu::packed]] idt_entry

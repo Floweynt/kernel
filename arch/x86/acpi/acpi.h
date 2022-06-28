@@ -161,7 +161,7 @@ namespace acpi
     /// \brief Obtains a table, given the table type
     /// \tparam T The type of the table
     /// \return A pointer to the table, or null if not found
-    /// 
+    ///
     /// The table type must have a public static uint32_t member called SIGNATURE, which will be checked against in order to
     /// determine table type
     template <typename T>

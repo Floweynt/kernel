@@ -35,18 +35,22 @@ kernel_source = [
     'arch/x86/idt/handlers/div_by_zero.cpp',
     'arch/x86/idt/handlers/handle_gp.cpp',
     'arch/x86/idt/handlers/handle_timer.cpp',
+    'arch/x86/idt/idt.S',
+    'arch/x86/debug/kinit_dump.cpp',
+    'arch/x86/pci/pci_scan.cpp',
     'arch/x86/apic/apic.cpp',
     'arch/x86/kinit/kinit.cpp',
     'arch/x86/process/process.cpp',
     'arch/x86/process/scheduler/scheduler.cpp',
+    'arch/x86/klog/klog.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/mm/mm.cpp',
+    'arch/x86/cpuid/cpuid.cpp',
     'arch/x86/gdt/gdt.cpp',
     'arch/x86/paging/paging.cpp',
     'arch/x86/paging/pgfault.cpp',
     'arch/x86/smp/smp.cpp',
     'arch/x86/driver/terminal.cpp',
-    'arch/x86/cpuid/cpuid.cpp',
     'lib/src/cstring.cpp',
     'lib/src/panic.cpp',
     'lib/src/new.cpp',
@@ -54,7 +58,7 @@ kernel_source = [
     'libimpl/memory-allocator/linked-list-memory-allocator/extend_alloc.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
-    'arch/x86/idt/idt.S'
+
 ]
 
 # config
@@ -155,6 +159,8 @@ run = run_target('run',
         '-S',
         '-M',
         'smm=off',
+        '-smp', '2',
+        '-enable-kvm',
         '-cpu', 'host'
     ]
 )

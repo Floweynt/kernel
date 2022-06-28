@@ -15,15 +15,16 @@ namespace gdt
         gdt_descriptor descriptor = {.size = sizeof(gdt), .offset = (uint64_t)gdt};
         __asm__ __volatile__("lgdtq %0" : : "m"(descriptor));
 
-        __asm__ __volatile__(
-            "pushq $8\n"
-            "pushq $.L123\n"
-            "lretq\n"
-            ".L123:\n"
-            "movw $16, %%ax\n"
-            "movw %%ax, %%es\n"
-            "movw %%ax, %%ss\n"
-            "movw %%ax, %%ds\n"
-        : : : "%ax");
+        __asm__ __volatile__("pushq $8\n"
+                             "pushq $.L123\n"
+                             "lretq\n"
+                             ".L123:\n"
+                             "movw $16, %%ax\n"
+                             "movw %%ax, %%es\n"
+                             "movw %%ax, %%ss\n"
+                             "movw %%ax, %%ds\n"
+                             :
+                             :
+                             : "%ax");
     }
 } // namespace gdt

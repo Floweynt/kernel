@@ -5,7 +5,9 @@
 #include <acpi/acpi.h>
 #include <asm/asm_cpp.h>
 #include <config.h>
+#include <cpuid/cpuid.h>
 #include <cstdint>
+#include <debug/kinit_dump.h>
 #include <driver/terminal.h>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
@@ -13,11 +15,10 @@
 #include <new>
 #include <paging/paging.h>
 #include <panic.h>
+#include <pci/pci.h>
 #include <printf.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
-#include <cpuid/cpuid.h>
-#include <debug/kinit_dump.h>
 
 #include MALLOC_IMPL_PATH
 
@@ -85,13 +86,14 @@ namespace alloc::detail
 
     std::size_t extend(void* buf, std::size_t n)
     {
-        static uint64_t heap_start = HEAP_START + 4096 * PRE_ALLOCATE_PAGES;;
-        if((uint64_t) buf < heap_start)
+        static uint64_t heap_start = HEAP_START + 4096 * PRE_ALLOCATE_PAGES;
+        ;
+        if ((uint64_t)buf < heap_start)
             return 4096 * std::detail::div_roundup(n, 4096ul);
 
         std::size_t pages = std::detail::div_roundup(n, 4096ul);
 
-        for(std::size_t i = 0; i < pages; i++)
+        for (std::size_t i = 0; i < pages; i++)
         {
             void* d;
             if (!(d = mm::pmm_allocate_pre_smp()))
@@ -114,9 +116,9 @@ extern "C"
     static void init_array()
     {
         using init_array_t = void (*)();
-        for(uint64_t* i = (uint64_t*) &__start_init_array; i < (uint64_t*) &__end_init_array; i++)
-            if(*i != 0 && *i != -1ul)
-                ((init_array_t) *i)();
+        for (uint64_t* i = (uint64_t*)&__start_init_array; i < (uint64_t*)&__end_init_array; i++)
+            if (*i != 0 && *i != -1ul)
+                ((init_array_t)*i)();
     }
 
     [[noreturn]] void _start(stivale2_struct* root)
@@ -137,7 +139,7 @@ extern "C"
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();
         cpuid_info::initialize_cpuglobal();
-        debug::dump_cpuid_info();    
+        debug::dump_cpuid_info();
 
         auto rsdp = boot_resource::instance().rsdp();
         std::printf("ACPI info:\n", rsdp->xsdt_address);
@@ -151,6 +153,10 @@ extern "C"
             invlpg((void*)entry);
             std::printf("  entry: (sig=0x%08u)\n", entry->signature);
         });
+
+        pci::scan();
+
+        // PCI time!
 
         smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
 

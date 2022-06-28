@@ -1,8 +1,8 @@
 // cSpell:ignore cpuid
 // cpuid support
+#include "cpuid.h"
 #include <asm/asm_cpp.h>
 #include <config.h>
-#include "cpuid.h"
 
 namespace cpuid_info
 {
@@ -16,7 +16,7 @@ namespace cpuid_info
         cpuid(0, &cpuid_max, vendor_buf, vendor_buf + 2, vendor_buf + 1);
         cpuid(1, nullptr, nullptr, features, features + 1);
         std::size_t n = cpuid_ext(0, features + 2, features + 3, features + 4);
-        //for(size_t = 1; i < n && i < ; i++)
+        // for(size_t = 1; i < n && i < ; i++)
         for (int i = 0; i < 3; i++)
             cpuid(0x80000002 + i, brand_buf + i * 4, brand_buf + i * 4 + 1, brand_buf + i * 4 + 2, brand_buf + i * 4 + 3);
     };
@@ -48,8 +48,5 @@ namespace cpuid_info
         return (const char*)buf;
     }
 
-    bool test_feature(std::size_t feature)
-    {
-        return features[feature / 32] & (1 << (feature % 32));    
-    }
+    bool test_feature(std::size_t feature) { return features[feature / 32] & (1 << (feature % 32)); }
 } // namespace cpuid_info

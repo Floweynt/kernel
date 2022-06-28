@@ -1,7 +1,6 @@
 #include "idt.h"
 #include <asm/asm_cpp.h>
 #include <smp/smp.h>
-#include <asm/asm_cpp.h>
 
 extern char idt_entry_start[];
 
@@ -40,12 +39,12 @@ namespace idt
         smp::core_local::get().idt_entries[num].flags = 0x8000 | ((uint16_t)dpl << 13) | ((uint16_t)type << 8);
         return ret;
     }
-    
+
     std::size_t register_idt(interrupt_handler handler, uint8_t type, uint8_t dpl)
     {
         smp::core_local& local = smp::core_local::get();
         std::size_t num = local.irq_allocator.allocate();
-        if(num == -1ul)
+        if (num == -1ul)
             return -1ul;
 
         local.idt_handler_entries[num] = (uintptr_t)handler;

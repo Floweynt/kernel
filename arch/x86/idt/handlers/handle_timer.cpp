@@ -9,4 +9,4 @@ namespace handlers
         smp::core_local::get().apic.end();
         scheduler::schedule();
     }
-}
+} // namespace handlers

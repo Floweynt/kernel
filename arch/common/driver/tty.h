@@ -17,6 +17,7 @@ namespace tty
         const uint8_t font_height;
         // pointer to the data that contains the actual font
         void* font;
+
     public:
         /// \brief Creates a font given the width and height
         /// \param w The width of the font
@@ -27,7 +28,7 @@ namespace tty
         /// \brief Creates a font of size width and height, with font data pointed to by n
         /// \param w The width of the font
         /// \param h The height of the font
-        /// \param n The raw binary data of the font 
+        /// \param n The raw binary data of the font
         constexpr romfont(uint8_t w, uint8_t h, void* n) : font_width(w), font_height(h), font(n) {}
 
         /// \brief Copy constructor
@@ -47,7 +48,7 @@ namespace tty
         /// \return The height of the font
         constexpr uint8_t height() const { return font_height; }
 
-        /// \brief Obtains the bytes per character 
+        /// \brief Obtains the bytes per character
         /// \return The bytes per character
         constexpr std::size_t bpc() const { return (font_width * font_height) >> 3; }
 
@@ -82,18 +83,18 @@ namespace tty
 namespace driver
 {
     /// \brief Virtual class that handles tty support
-    /// This should only be used before actual video drivers are implemented, in which case the use of a more advanced 
+    /// This should only be used before actual video drivers are implemented, in which case the use of a more advanced
     /// driver is recommended. There is builtin support for color and other escape sequences, although not in the ANSI
     /// escape format.
     class tty_startup_driver
     {
         // The following members are states used for the escape sequence parser
-        
+
         // Flags used by the escape sequence parser
-        
+
         // Is the current character parsed a part of a command?
         bool is_command = false;
-        
+
         // Is the current character part of the text to be formatted by the escape sequence
         bool is_text = false;
 
@@ -151,20 +152,21 @@ namespace driver
         //    <command_char>(arg1,)...(arg8,)
         // The entire escape sequence can be defined as:
         //    \x1b<command_sequence>;<text>\x1b
-        // 
+        //
         // Future support for multiple formatting commands can be implemented with |
         // The \x1b may also be replaced with a more readable character
         friend void std::detail::putc(char ch);
         void putc_handle_escape(char c);
 
     protected:
-        // The current state of the tty, set via putc_handle_escape 
+        // The current state of the tty, set via putc_handle_escape
         tty::rgb fg_color = tty::WHITE;
         tty::rgb bg_color = tty::BLACK;
+
     public:
         /// \brief Writes a character to an appropriate target
         /// \param c The character to print
-        /// Writes the character to a serial port, some section of memory, or draws the character to the screen depenging 
+        /// Writes the character to a serial port, some section of memory, or draws the character to the screen depenging
         /// on the implementation
         virtual void putc(char c) = 0;
 

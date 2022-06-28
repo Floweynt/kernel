@@ -171,7 +171,7 @@ namespace cpuid_info
     /// \brief Initializes the caches for cpu-global cpuid based information
     ///
     void initialize_cpuglobal();
-    
+
     /// \brief Obtains the cpu vendor string
     /// \return The cpu vendor string
     const char* cpu_vendor_string();
@@ -184,6 +184,6 @@ namespace cpuid_info
     /// \param feature The cpu feature ID to test
     /// \return Wether or not the feature is present
     bool test_feature(std::size_t feature);
-}; // namespace std
+}; // namespace cpuid_info
 
 #endif

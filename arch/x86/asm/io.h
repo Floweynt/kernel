@@ -41,10 +41,10 @@ inline uint16_t inw(uint16_t port)
 inline uint32_t inl(uint16_t port)
 {
     uint32_t ret;
-    asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    asm volatile("inl %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
 
 /// \brief Waits for the time it takes to preform 1 I/O port operation
-/// 
+///
 inline void io_wait() { outb(0x80, 0); }

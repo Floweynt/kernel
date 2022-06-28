@@ -32,9 +32,9 @@ namespace apic
 
     uint64_t local_apic::calibrate()
     {
-        if(ticks_per_ms)
+        if (ticks_per_ms)
             return ticks_per_ms;
-                
+
         mmio_register().timer_divide.write(3);
         mmio_register().inital_timer_count.write(0xffffffff);
         mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
@@ -43,13 +43,13 @@ namespace apic
         outb(0x40, 0xff);
         outb(0x43, 0b00110000);
 
-        while(true)
+        while (true)
         {
             outb(0x43, 0);
             unsigned count = inb(0x40);
             count |= inb(0x40) << 8;
 
-            if(0xffff - count > 1193)
+            if (0xffff - count > 1193)
                 break;
         }
 

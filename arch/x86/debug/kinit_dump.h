@@ -6,6 +6,6 @@ namespace debug
 {
     void dump_memory_map();
     void dump_cpuid_info();
-}
+} // namespace debug
 
 #endif
