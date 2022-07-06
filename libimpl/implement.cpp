@@ -2,9 +2,7 @@
 #include <config.h>
 #include <panic.h>
 #include <sync/spinlock.h>
-
-#include MALLOC_IMPL_PATH
-
+#include <mm/malloc.h>
 namespace std::detail
 {
     static lock::spinlock l;
@@ -17,7 +15,7 @@ namespace std::detail
     void* aligned_malloc(size_t size, size_t align) 
     { 
         lock::spinlock_guard g(l);
-        return ::alloc::aligned_malloc(size, align); 
+        return nullptr; 
     }
 
     void free(void* ptr) 

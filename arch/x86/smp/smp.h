@@ -8,7 +8,7 @@
 #include <apic/apic.h>
 #include <paging/paging_entries.h>
 #include <process/scheduler/scheduler.h>
-#include <id_allocator.h>
+#include <utils/id_allocator.h>
 namespace smp
 {
     class core_local

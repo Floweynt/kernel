@@ -1,7 +1,8 @@
 #include "pmm.h"
 #include <config.h>
 #include <sync/spinlock.h>
-#include <id_allocator.h>
+#include <utils/id_allocator.h>
+#include <paging/paging.h>
 
 namespace mm
 {
@@ -20,32 +21,32 @@ namespace mm
         region[meta_allocator.allocate()] = pmm_region(start, len);
     }
 
-    void* pmm_allocate_pre_smp()
+    void* pmm_allocate_pre_smp(std::size_t len)
     {
         for (std::size_t i = 0; i < PMM_COUNT; i++)
         {
             lock::spinlock_guard g(l, 0);
             if (region[i].exists())
             {
-                auto ptr = region[i].allocate();
+                auto ptr = region[i].allocate(len);
                 if (ptr != nullptr)
-                    return std::memset(ptr, 0, 4096);
+                    return std::memset(ptr, 0, paging::PAGE_SMALL_SIZE * len);
             }
         }
 
         return nullptr;
     }
 
-    void* pmm_allocate()
+    void* pmm_allocate(std::size_t len)
     {
         for (std::size_t i = 0; i < PMM_COUNT; i++)
         {
             lock::spinlock_guard g(l);
             if (region[i].exists())
             {
-                auto ptr = region[i].allocate();
+                auto ptr = region[i].allocate(len);
                 if (ptr != nullptr)
-                    return std::memset(ptr, 0, 4096);
+                    return std::memset(ptr, 0, paging::PAGE_SMALL_SIZE * len);
             }
         }
 

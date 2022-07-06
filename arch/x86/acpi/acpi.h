@@ -155,7 +155,7 @@ namespace acpi
         for (std::size_t i = 0; i < sizeof(T); i++)
             sum += ptr[i];
 
-        return sum % 0x100 == 0;
+        return (sum & 0xff) == 0;
     }
 
     /// \brief Obtains a table, given the table type

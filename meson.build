@@ -1,4 +1,4 @@
-project('kernel', 'c', 'cpp', default_options: ['c_std=c11', 'cpp_std=c++17', 'warning_level=3'])
+project('kernel', 'c', 'cpp', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=3'])
 
 add_project_arguments(
     '-fno-exceptions',
@@ -43,7 +43,9 @@ kernel_source = [
     'arch/x86/process/process.cpp',
     'arch/x86/process/scheduler/scheduler.cpp',
     'arch/x86/klog/klog.cpp',
+    'arch/x86/utils/block_alloc.cpp',
     'arch/x86/mm/pmm.cpp',
+    'arch/x86/mm/malloc.cpp',
     'arch/x86/mm/mm.cpp',
     'arch/x86/cpuid/cpuid.cpp',
     'arch/x86/gdt/gdt.cpp',
@@ -55,10 +57,8 @@ kernel_source = [
     'lib/src/panic.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
-    'libimpl/memory-allocator/linked-list-memory-allocator/extend_alloc.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
-
 ]
 
 # config
@@ -66,7 +66,6 @@ conf = configuration_data()
 conf.set('VERSION', '"0.0.1"')
 conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
-conf.set('MALLOC_IMPL_PATH', '<libimpl/memory-allocator/linked-list-memory-allocator/alloc.h>')
 conf.set('PMM_COUNT', '0x20')
 conf.set('PRE_ALLOCATE_PAGES', '100')
 conf.set('KLOG_PAGES', '64')
@@ -139,7 +138,7 @@ kernel_img = custom_target('kernel_img',
     ]
 )
 
-run = run_target('run',
+run_kvm = run_target('run-kvm',
     depends: [kernel_img],
     command: [
         qemu, 
@@ -162,6 +161,30 @@ run = run_target('run',
         '-smp', '2',
         '-enable-kvm',
         '-cpu', 'host'
+    ]
+)
+
+run = run_target('run',
+    depends: [kernel_img],
+    command: [
+        qemu,
+        '-bios',
+        '/usr/share/ovmf/x64/OVMF.fd',
+        '-hda',
+        meson.build_root() + '/kernel.img',
+        '-no-reboot',
+        '-monitor',
+        'stdio',
+        '-d',
+        'int',
+        '-D',
+        'qemu.log' ,
+        '-no-shutdown',
+        '-s',
+        '-S',
+        '-M',
+        'smm=off',
+        '-smp', '2',
     ]
 )
 

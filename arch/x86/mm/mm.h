@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <kinit/boot_resource.h>
-#include <utils.h>
+#include <utils/utils.h>
 #include <config.h>
 namespace mm
 {
@@ -30,8 +30,7 @@ namespace mm
 
         constexpr bool test(std::size_t i) { return std::get_bit(buf[i / 64], 63 - i % 64); }
 
-        std::size_t allocate();
-        bool allocate(std::size_t);
+        std::size_t allocate(std::size_t s);
         void free(std::size_t);
     };
 

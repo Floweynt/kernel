@@ -7,11 +7,11 @@ namespace mm
     {
     public:
         pmm_region() : bitmask_allocator() {}
-        pmm_region(void* buf, std::size_t len) : bitmask_allocator(buf, len) {}
+        pmm_region(void* buf, std::size_t len) : bitmask_allocator(buf, len - metadata_size_pages(len)) {}
 
-        inline void* allocate()
+        inline void* allocate(std::size_t len)
         {
-            std::size_t val = bitmask_allocator::allocate();
+            std::size_t val = bitmask_allocator::allocate(len);
             if(val == -1ul)
                 return nullptr;
 
@@ -28,8 +28,8 @@ namespace mm
 
     void add_region(void*, std::size_t);
     void add_region_pre_smp(void*, std::size_t);
-    void* pmm_allocate();
-    void* pmm_allocate_pre_smp();
+    void* pmm_allocate(std::size_t len = 1);
+    void* pmm_allocate_pre_smp(std::size_t len = 1);
 } // namespace mm
 
 #endif

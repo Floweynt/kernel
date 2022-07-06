@@ -17,10 +17,10 @@
 #include <panic.h>
 #include <pci/pci.h>
 #include <printf.h>
+#include <mm/malloc.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
-#include MALLOC_IMPL_PATH
 
 static uint8_t stack[4096];
 
@@ -80,32 +80,6 @@ static void init_tty(stivale2_struct* root)
     driver::set_tty_startup_driver(&tmp);
 }
 
-namespace alloc::detail
-{
-    void* start() { return (void*)HEAP_START; }
-
-    std::size_t extend(void* buf, std::size_t n)
-    {
-        static uint64_t heap_start = HEAP_START + 4096 * PRE_ALLOCATE_PAGES;
-        ;
-        if ((uint64_t)buf < heap_start)
-            return 4096 * std::detail::div_roundup(n, 4096ul);
-
-        std::size_t pages = std::detail::div_roundup(n, 4096ul);
-
-        for (std::size_t i = 0; i < pages; i++)
-        {
-            void* d;
-            if (!(d = mm::pmm_allocate_pre_smp()))
-                std::panic("cannot get memory for heap");
-            paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * 4097, mm::make_physical(d));
-            invlpg(buf);
-        }
-
-        return 4096 * pages;
-    }
-} // namespace alloc::detail
-
 extern "C"
 {
     extern uint64_t __start_init_array[];
@@ -124,7 +98,6 @@ extern "C"
     [[noreturn]] void _start(stivale2_struct* root)
     {
         init_array();
-
         new (buf) boot_resource(root);
 
         boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
@@ -136,6 +109,7 @@ extern "C"
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
         init_tty(root);
         paging::init();
+        alloc::init((void*)HEAP_START, paging::PAGE_SMALL_SIZE* PRE_ALLOCATE_PAGES);
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();
         cpuid_info::initialize_cpuglobal();
@@ -154,9 +128,11 @@ extern "C"
             std::printf("  entry: (sig=0x%08u)\n", entry->signature);
         });
 
+        // PCI time!
+        // Note: this should be moved to post-smp init
         pci::scan();
 
-        // PCI time!
+        // TODO: initialize slab allocator?
 
         smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
 

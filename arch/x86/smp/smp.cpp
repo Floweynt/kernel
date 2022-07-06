@@ -67,7 +67,6 @@ namespace smp
                 idle(0);
             },
             local.coreid);
-
         initialize_apic(smp::core_local::get());
         idle(0);
     }

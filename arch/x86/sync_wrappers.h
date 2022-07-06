@@ -4,7 +4,7 @@
 #include <sync/spinlock.h>
 #include <utility>
 #include <config.h>
-#include MALLOC_IMPL_PATH
+#include <mm/malloc.h>
 
 namespace sync
 {

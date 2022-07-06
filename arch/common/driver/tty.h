@@ -1,7 +1,7 @@
 // cSpell:ignore chindex, scrollup
 #ifndef __TTY_STARTER_DRIVE__
 #define __TTY_STARTER_DRIVE__
-#include "utils.h"
+#include <utils/utils.h>
 #include <array>
 #include <cctype>
 #define KDEBUG
