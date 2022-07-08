@@ -1,4 +1,4 @@
-project('kernel', 'c', 'cpp', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=3'])
+project('kernel', 'c', 'cpp', version: '0.0.1', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=3'])
 
 add_project_arguments(
     '-fno-exceptions',
@@ -61,9 +61,16 @@ kernel_source = [
     'libimpl/implement.cpp',
 ]
 
+# required program for generating disk image
+gdb = find_program('gdb')
+objcopy = find_program('objcopy')
+qemu = find_program('qemu-system-x86_64')
+generate_image = find_program('./build-resources/generate_image.sh')
+git_version_info = find_program('./build-resources/git_version_info.sh')
+
 # config
 conf = configuration_data()
-conf.set('VERSION', '"0.0.1"')
+conf.set('VERSION', meson.project_version())
 conf.set('ARCH', '"x86_64"')
 conf.set('ARCH_PATH', '"x86"')
 conf.set('PMM_COUNT', '0x20')
@@ -77,11 +84,22 @@ conf.set('HEAP_START', '0xffff900080000000')
 conf.set('KLOG_BUFFER', '0xffffa00000000000')
 
 configure_file(input : 'config.h.in',
-               output : 'config.h',
+               output : 'config.h.in',
                configuration : conf)
 configuration_inc = include_directories('.')
 
+git_ver_info = custom_target('git_version_info',
+    input: 'config.h.in',
+    output: 'config.h',
+    command: [
+        git_version_info, 
+        meson.build_root() + '/config.h.in', 
+        meson.build_root() + '/config.h'
+    ],
+)
+
 kernel = executable('kernel.elf',
+    git_ver_info,
     kernel_source,
     link_args: [
         '-T' + (meson.source_root() + '/kernel.lds'),
@@ -94,12 +112,6 @@ kernel = executable('kernel.elf',
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
     include_directories : configuration_inc
 )
-
-# required program for generating disk image
-gdb = find_program('gdb')
-objcopy = find_program('objcopy')
-qemu = find_program('qemu-system-x86_64')
-generate_image = find_program('./build-resources/generate_image.sh')
 
 kernel_stripped = custom_target('kernel_stripped',
     output: 'kernel_stripped.elf',
@@ -124,7 +136,6 @@ kernel_dbg = custom_target('kernel_dbg',
         meson.build_root() + '/kernel.dbg'
     ]
 )
-
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',

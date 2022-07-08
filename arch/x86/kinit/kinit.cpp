@@ -21,6 +21,7 @@
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
+static_assert(__cplusplus >= 202002L);
 
 static uint8_t stack[4096];
 
@@ -110,6 +111,7 @@ extern "C"
         init_tty(root);
         paging::init();
         alloc::init((void*)HEAP_START, paging::PAGE_SMALL_SIZE* PRE_ALLOCATE_PAGES);
+        debug::print_kinfo();
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();
         cpuid_info::initialize_cpuglobal();

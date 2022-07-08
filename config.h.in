@@ -1,7 +1,7 @@
 #ifndef __ARCH_CONFIG_H__
 #define __ARCH_CONFIG_H__
 
-#mesondefine VERSION
+#define VERSION "@VERSION@-$GIT_VERSION_INFO"
 #mesondefine ARCH
 #mesondefine ARCH_PATH
 #mesondefine MALLOC_IMPL_PATH

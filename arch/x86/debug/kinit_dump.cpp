@@ -7,6 +7,10 @@
 
 namespace debug
 {
+    void print_kinfo()
+    {
+        std::printf("kernel v%s (%s)\n", VERSION, ARCH);
+    }
     void dump_memory_map()
     {
         std::printf("memory map:\n");
