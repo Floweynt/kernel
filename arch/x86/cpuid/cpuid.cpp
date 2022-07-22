@@ -1,4 +1,3 @@
-// cSpell:ignore cpuid
 // cpuid support
 #include "cpuid.h"
 #include <asm/asm_cpp.h>
@@ -7,7 +6,7 @@
 namespace cpuid_info
 {
     static uint32_t cpuid_max;
-    static uint32_t features[CPUID_FEATURE_SIZE];
+    static uint32_t features[config::get_val<"cpuid-feature-size">];
     static uint32_t vendor_buf[3];
     static uint32_t brand_buf[12];
 

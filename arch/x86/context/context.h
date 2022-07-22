@@ -34,7 +34,6 @@ struct context
     uint64_t ss;
     uint64_t rgp[15];
 
-    // yoinked from intel docs
     // high
     // 0x00: SS             <- RSP before interrupt
     // 0x08: RSP

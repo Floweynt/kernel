@@ -1,4 +1,3 @@
-// cSpell:ignore hhdm, msr, efer, kpages, rdmsr, wrmsr, stivale
 #include "paging.h"
 #include <asm/asm_cpp.h>
 #include <mm/pmm.h>
@@ -154,12 +153,13 @@ namespace paging
             paging::map_section(e.base, e.length, flags);
         });
 
-        for (std::size_t i = 0; i < PRE_ALLOCATE_PAGES; i++)
+        for (std::size_t i = 0; i < config::get_val<"preallocate-pages">; i++)
         {
             void* d;
             if (!(d = mm::pmm_allocate_pre_smp()))
                 std::panic("cannot get memory for heap");
-            paging::request_page(paging::page_type::SMALL, HEAP_START + i * 4096, mm::make_physical(d));
+            paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE,
+                                 mm::make_physical(d));
         }
 
         paging::install();

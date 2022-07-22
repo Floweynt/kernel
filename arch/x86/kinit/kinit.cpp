@@ -11,13 +11,13 @@
 #include <driver/terminal.h>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
+#include <mm/malloc.h>
 #include <mm/pmm.h>
 #include <new>
 #include <paging/paging.h>
 #include <panic.h>
 #include <pci/pci.h>
 #include <printf.h>
-#include <mm/malloc.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
@@ -110,7 +110,8 @@ extern "C"
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
         init_tty(root);
         paging::init();
-        alloc::init((void*)HEAP_START, paging::PAGE_SMALL_SIZE* PRE_ALLOCATE_PAGES);
+        alloc::init((void*)config::get_val<"mmap.start.heap">,
+                    paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
         debug::print_kinfo();
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();

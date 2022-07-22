@@ -1,4 +1,3 @@
-// cSpell:ignore apic, mmio, cmci, lapic, apit
 #ifndef __ARCH_X86_APIC_APIC_H__
 #define __ARCH_X86_APIC_APIC_H__
 #include <asm/asm_cpp.h>

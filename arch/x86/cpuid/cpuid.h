@@ -1,10 +1,10 @@
-// cSpell:ignore cpuid
 #ifndef __ARCH_X86_CPUID_CPUID_H__
 #define __ARCH_X86_CPUID_CPUID_H__
 #include <cstddef>
 
 namespace cpuid_info
 {
+// cSpell:disable
     static constexpr const char* FEATURE_STRINGS[] = {
         "fpu",
         "vme",
@@ -64,11 +64,11 @@ namespace cpuid_info
         "popcnt",
         "tsc-deadline",
         "aes",
-        "xsave",
+        "fsave",
         "osxsave",
         "avx",
         "f16c",
-        "rdrnd",
+        "rdn",
         "hypervisor",
         "fsgsbase",
         "IA32_TSC_ADJUST",
@@ -76,11 +76,11 @@ namespace cpuid_info
         "bmi1",
         "hle",
         "avx2",
-        "FDP_EXCPTN_ONLY",
+        "FDP_EXCEPT_ONLY",
         "smep",
         "bmi2",
         "erms",
-        "invpcid",
+        "invalid",
         "rtm",
         "pqm",
         "what the fuck",
@@ -167,6 +167,7 @@ namespace cpuid_info
         "IA32_CORE_CAPABILITIES",
         "ssbd",
     };
+// cSpell:enable
 
     /// \brief Initializes the caches for cpu-global cpuid based information
     ///

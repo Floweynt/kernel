@@ -6,6 +6,7 @@
 
 namespace mm
 {
+    inline constexpr auto PMM_COUNT = config::get_val<"pmm-count">;
     pmm_region region[PMM_COUNT];
     static id_allocator<PMM_COUNT> meta_allocator;
     static lock::spinlock l;

@@ -10,6 +10,7 @@ namespace driver
 {
     simple_tty::simple_tty(const stivale2_struct_tag_framebuffer& buffer, tty::romfont f) : buffer(buffer), f(f)
     {
+        static constexpr auto SCROLLBACK_START = config::get_val<"mmap.start.scrollback">;
         // Obtains the start of the framebuffer, in a mapped portion of virtual memory
         this->buffer.framebuffer_addr = mm::make_virtual(this->buffer.framebuffer_addr);
         // Conver to bytes

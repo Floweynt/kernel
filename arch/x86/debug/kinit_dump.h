@@ -1,4 +1,3 @@
-// cSpell:ignore kinit, cpuid
 #ifndef __ARCH_X86_DEBUG_KINIT_DUMP_H__
 #define __ARCH_X86_DEBUG_KINIT_DUMP_H__
 

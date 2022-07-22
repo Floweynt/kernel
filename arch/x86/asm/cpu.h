@@ -1,4 +1,3 @@
-// cSpell:ignore cpuid, apic, efer, wrmsr, rdmsr, ljmp
 #include <cstdint>
 
 /// \brief `cpuid` instruction wrapper

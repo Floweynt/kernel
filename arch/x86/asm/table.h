@@ -1,5 +1,3 @@
-// cSpell:ignore lidt, lgdt, lidtq, lgdtq
-
 /// \brief wrapper for the `lidtq` instruction
 /// \param idt The IDT to be loaded
 inline void lidt(void* idt) { asm volatile("lidtq %0" : : "m"(idt)); }

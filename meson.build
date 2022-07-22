@@ -1,4 +1,4 @@
-project('kernel', 'c', 'cpp', version: '0.0.1', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=3'])
+project('kernel', 'c', 'cpp', version: '0.0.1', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=2'])
 
 add_project_arguments(
     '-fno-exceptions',
@@ -20,6 +20,8 @@ add_project_arguments(
     '-mno-sse2',
     '-mno-mmx',
     '-mno-80387',
+    '-Wno-unused-parameter',
+    '-Wno-c99-extensions',
     language: 'cpp'
 )
 
@@ -71,8 +73,8 @@ git_version_info = find_program('./build-resources/git_version_info.sh')
 # config
 conf = configuration_data()
 conf.set('VERSION', meson.project_version())
-conf.set('ARCH', '"x86_64"')
-conf.set('ARCH_PATH', '"x86"')
+conf.set('ARCH', 'x86_64')
+conf.set('ARCH_PATH', 'x86')
 conf.set('PMM_COUNT', '0x20')
 conf.set('PRE_ALLOCATE_PAGES', '100')
 conf.set('KLOG_PAGES', '64')

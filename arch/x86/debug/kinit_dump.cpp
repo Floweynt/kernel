@@ -1,4 +1,3 @@
-// cSpell:ignore stivale, cpuid
 #include "kinit_dump.h"
 #include <config.h>
 #include <cpuid/cpuid.h>
@@ -9,7 +8,7 @@ namespace debug
 {
     void print_kinfo()
     {
-        std::printf("kernel v%s (%s)\n", VERSION, ARCH);
+        std::printf("kernel v%s (%s)\n", config::get_str<"version.full-version">, config::get_str<"arch">);
     }
     void dump_memory_map()
     {
@@ -55,7 +54,7 @@ namespace debug
         std::printf("cpu_brand_string: %s\n", cpuid_info::cpu_brand_string());
 
         std::printf("cpu features: ");
-        for (std::size_t i = 0; i < CPUID_FEATURE_SIZE * 32; i++)
+        for (std::size_t i = 0; i < config::get_val<"cpuid-feature-size"> * 32; i++)
         {
             if (cpuid_info::test_feature(i) && cpuid_info::FEATURE_STRINGS[i])
                 std::printf("%s ", cpuid_info::FEATURE_STRINGS[i]);

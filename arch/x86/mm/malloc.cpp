@@ -4,6 +4,7 @@
 #include <mm/pmm.h>
 #include <paging/paging.h>
 #include <panic.h>
+#include <new>
 
 namespace alloc
 {

@@ -34,7 +34,7 @@ namespace mm
         void free(std::size_t);
     };
 
-    constexpr uint64_t make_physical(uint64_t virt) { return virt & ~HHDM_START; }
+    constexpr uint64_t make_physical(uint64_t virt) { return virt & ~config::get_val<"mmap.start.hhdm">; }
 
     template <typename T>
     uint64_t make_physical(T* virt)
@@ -53,7 +53,7 @@ namespace mm
         return make_physical_kern(uint64_t(virt));
     }
 
-    constexpr uint64_t make_virtual(uint64_t phy) { return phy | HHDM_START; }
+    constexpr uint64_t make_virtual(uint64_t phy) { return phy | config::get_val<"mmap.start.hhdm">; }
 
     template <typename T>
     constexpr T* make_virtual(uint64_t phy)
@@ -63,7 +63,7 @@ namespace mm
 
     inline uint64_t make_virtual_kern(uint64_t phy)
     {
-        return phy - boot_resource::instance().kernel_phys_addr() + 0xffffffff80000000;
+        return phy - boot_resource::instance().kernel_phys_addr() + config::get_val<"mmap.start.kernel">;
     }
 
     template <typename T>

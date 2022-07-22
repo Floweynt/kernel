@@ -1,4 +1,3 @@
-// cSpell:ignore rsdp, rsdt, xsdt, lapic, apic, madt, nmis, xapic
 #ifndef __ARCH_X86_ACPI_ACPI_H__
 #define __ARCH_X86_ACPI_ACPI_H__
 #include <cstddef>
@@ -77,7 +76,7 @@ namespace acpi
     };
 
     /// \brief The entry within the MADT that contains information about the I/O-APIC
-    ///
+    /// 
     struct [[gnu::packed]] madt_io_apic
     {
         inline constexpr static uint32_t SIGNATURE = 1;

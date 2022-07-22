@@ -1,4 +1,3 @@
-// cSpell:ignore scrollup stivale
 #ifndef __ARCH_X86_DRIVER_TERMINAL_H__
 #define __ARCH_X86_DRIVER_TERMINAL_H__
 #include <common/driver/tty.h>

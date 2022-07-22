@@ -1,4 +1,3 @@
-// cSpell:ignore apic, cpuid, wrmsr, rdmsr, mmio
 #include "apic.h"
 #include <asm/asm_cpp.h>
 #include <cstdint>

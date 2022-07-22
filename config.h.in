@@ -1,18 +1,21 @@
 #ifndef __ARCH_CONFIG_H__
 #define __ARCH_CONFIG_H__
+#include <ctcfg.h>
 
-#define VERSION "@VERSION@-$GIT_VERSION_INFO"
-#mesondefine ARCH
-#mesondefine ARCH_PATH
-#mesondefine MALLOC_IMPL_PATH
-#mesondefine PMM_COUNT
-#mesondefine PRE_ALLOCATE_PAGES
-#mesondefine KLOG_PAGES
-#mesondefine CPUID_FEATURE_SIZE
-// kernel memory layout
-#mesondefine HHDM_START
-#mesondefine SCROLLBACK_START
-#mesondefine HEAP_START
-#mesondefine KLOG_START
+using config = ctcfg::config_holder<
+    ctcfg::string_entry<"version.version", "@VERSION@">,
+    ctcfg::string_entry<"version.git-info", "$GIT_VERSION_INFO">,
+    ctcfg::string_entry<"version.full-version", "@VERSION@-$GIT_VERSION_INFO">,
+    ctcfg::string_entry<"arch", "@ARCH@">,
+    ctcfg::string_entry<"arch-path", "@ARCH_PATH@">,
+    ctcfg::size_entry<"pmm-count", @PMM_COUNT@>,
+    ctcfg::size_entry<"preallocate-pages", @PRE_ALLOCATE_PAGES@>,
+    ctcfg::size_entry<"klog-pages", @KLOG_PAGES@>,
+    ctcfg::size_entry<"cpuid-feature-size", @CPUID_FEATURE_SIZE@>,
+    ctcfg::size_entry<"mmap.start.hhdm", @HHDM_START@>,
+    ctcfg::size_entry<"mmap.start.scrollback", @SCROLLBACK_START@>,
+    ctcfg::size_entry<"mmap.start.heap", @HEAP_START@>,
+    ctcfg::size_entry<"mmap.start.kernel", 0xffffffff80000000>
+>;
 
 #endif
