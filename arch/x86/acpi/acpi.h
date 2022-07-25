@@ -2,6 +2,8 @@
 #define __ARCH_X86_ACPI_ACPI_H__
 #include <cstddef>
 #include <cstdint>
+#include <concepts>
+
 namespace acpi
 {
     /// \brief Root System Description Pointer Descriptor
@@ -157,13 +159,19 @@ namespace acpi
         return (sum & 0xff) == 0;
     }
 
+    template<typename T>
+    concept acpi_table = requires(T a)
+    {
+        { T::SIGNATURE } -> std::same_as<uint32_t>;
+    };
+
     /// \brief Obtains a table, given the table type
     /// \tparam T The type of the table
     /// \return A pointer to the table, or null if not found
     ///
     /// The table type must have a public static uint32_t member called SIGNATURE, which will be checked against in order to
     /// determine table type
-    template <typename T>
+    template <acpi_table T>
     T* get_table(xsdt* table)
     {
         std::size_t n = (table->h.length - sizeof(acpi_sdt_header)) / 8;

@@ -64,6 +64,8 @@ idt_common:
 
     // setup stack frame
     andq $~0x7, %rsp
+    push $0 // dummy operation (for padding reasons)
+    push $1 // notate base-pointer type
     movq %rsp, %rbp
 
     // do gs stuff

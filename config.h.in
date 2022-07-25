@@ -15,7 +15,19 @@ using config = ctcfg::config_holder<
     ctcfg::size_entry<"mmap.start.hhdm", @HHDM_START@>,
     ctcfg::size_entry<"mmap.start.scrollback", @SCROLLBACK_START@>,
     ctcfg::size_entry<"mmap.start.heap", @HEAP_START@>,
-    ctcfg::size_entry<"mmap.start.kernel", 0xffffffff80000000>
+    ctcfg::size_entry<"mmap.start.slab", @SLAB_START@>,
+    ctcfg::size_entry<"mmap.start.kernel", 0xffffffff80000000>,
+    ctcfg::bool_entry<"debug.log.mmap", @DEBUG_LOG_MMAP@>,
+    ctcfg::bool_entry<"debug.log.cpuid", @DEBUG_LOG_CPUID@>,
+    ctcfg::bool_entry<"debug.log.acpi", @DEBUG_LOG_ACPI@>,
+    ctcfg::bool_entry<"debug.log.pci", @DEBUG_LOG_PCI@>,
+    ctcfg::size_entry<"slab.min_order", @SLAB_MIN_ORDER@>,
+    ctcfg::size_entry<"slab.max_order", @SLAB_MAX_ORDER@>,
+    ctcfg::size_entry<"slab.slab_size_order", @SLAB_SIZE_ORDER@>
 >;
+
+static_assert(config::get_val<"slab.min_order"> <= config::get_val<"slab.max_order">);
+static_assert(config::get_val<"slab.max_order"> <= config::get_val<"slab.slab_size_order">);
+
 
 #endif

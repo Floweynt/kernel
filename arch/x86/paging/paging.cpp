@@ -1,7 +1,7 @@
 #include "paging.h"
 #include <asm/asm_cpp.h>
 #include <mm/pmm.h>
-#include <panic.h>
+#include <debug/debug.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
@@ -37,7 +37,7 @@ namespace paging
             {
                 auto r = mm::pmm_allocate();
                 if (r == nullptr)
-                    std::panic("cannot allocate physical memory for paging");
+                    debug::panic("cannot allocate physical memory for paging");
                 std::memset(r, 0, 4096);
                 e = make_page_pointer(mm::make_physical(r), flags);
             }
@@ -157,7 +157,7 @@ namespace paging
         {
             void* d;
             if (!(d = mm::pmm_allocate_pre_smp()))
-                std::panic("cannot get memory for heap");
+                debug::panic("cannot get memory for heap");
             paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE,
                                  mm::make_physical(d));
         }

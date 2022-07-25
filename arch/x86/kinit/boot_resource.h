@@ -15,7 +15,7 @@ class boot_resource
     std::size_t bsp_id_lapic;
     stivale2_mmap_entry mmap_entries[0x100];
     acpi::rsdp_descriptor* root_table;
-
+    bool smp_status;
 public:
     boot_resource(stivale2_struct*);
     static boot_resource& instance();
@@ -23,8 +23,8 @@ public:
     constexpr uint64_t kernel_phys_addr() const { return phys_addr; }
     constexpr uint64_t kernel_size() const { return ksize; }
     constexpr acpi::rsdp_descriptor* rsdp() const { return root_table; }
-    constexpr std::size_t core_count() { return cores; }
-    constexpr std::size_t bsp_id() { return bsp_id_lapic; }
+    constexpr std::size_t core_count() const { return cores; }
+    constexpr std::size_t bsp_id() const { return bsp_id_lapic; }
 
     template <typename T>
     void iterate_mmap(T cb)
@@ -41,6 +41,9 @@ public:
         for (std::size_t i = 0; i < n; i++)
             cb(table->table[i]);
     }
+
+    bool is_smp() const { return smp_status; }
+    constexpr void mark_smp_start() { smp_status = true; }
 };
 
 #endif

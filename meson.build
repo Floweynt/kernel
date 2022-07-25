@@ -3,12 +3,13 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: ['c_std=c11', '
 add_project_arguments(
     '-fno-exceptions',
     '-fno-PIC',
+    '-fno-omit-frame-pointer',
     '-fcf-protection=none',
     '-fno-rtti',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
     '-ffreestanding',
-    '-no-pie',
+#    '-no-pie',
     '-nostdinc',
     '-Wno-ignored-attributes',
     '-I' + (meson.source_root() + '/'),
@@ -56,7 +57,7 @@ kernel_source = [
     'arch/x86/smp/smp.cpp',
     'arch/x86/driver/terminal.cpp',
     'lib/src/cstring.cpp',
-    'lib/src/panic.cpp',
+    'arch/x86/debug/panic.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
@@ -83,7 +84,17 @@ conf.set('CPUID_FEATURE_SIZE', '5')
 conf.set('HHDM_START', '0xffff800000000000')
 conf.set('SCROLLBACK_START', '0xffff900000000000')
 conf.set('HEAP_START', '0xffff900080000000')
+conf.set('SLAB_START', '0xffff980000000000')
 conf.set('KLOG_BUFFER', '0xffffa00000000000')
+
+conf.set('DEBUG_LOG_MMAP', 'false')
+conf.set('DEBUG_LOG_CPUID', 'true')
+conf.set('DEBUG_LOG_ACPI', 'true')
+conf.set('DEBUG_LOG_PCI', 'true')
+
+conf.set('SLAB_MIN_ORDER', 6)
+conf.set('SLAB_MAX_ORDER', 12)
+conf.set('SLAB_SIZE_ORDER', 16)
 
 configure_file(input : 'config.h.in',
                output : 'config.h.in',

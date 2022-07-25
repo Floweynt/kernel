@@ -1,7 +1,7 @@
 #ifndef __ARCH_X86_IDT_HANDLERS_HANDLERS_H__
 #define __ARCH_X86_IDT_HANDLERS_HANDLERS_H__
 #include <idt/idt.h>
-#include <panic.h>
+#include <debug/debug.h>
 #include <smp/smp.h>
 #include <sync_wrappers.h>
 #include <utility>

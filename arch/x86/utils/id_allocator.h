@@ -16,11 +16,7 @@ public:
         if constexpr (!inplace)
             buf = new uint64_t[std::detail::div_roundup(len, 64ul)];
 
-        std::size_t n = len / 64;
-
-        std::memset(buf, 0xff, n * sizeof(uint64_t));
-        if constexpr (len % 64)
-            this->buf[len / 64] = (1ul << (len % 64)) - 1;
+        std::make_bitarray<void>(len, buf);
     }
 
     ~id_allocator()

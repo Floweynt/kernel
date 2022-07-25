@@ -30,14 +30,14 @@ namespace smp
         inline static core_local& get()
         {
             core_local* addr;
-            __asm__ __volatile__("movq %%gs:0, %0" : "=r"(addr) :);
+            asm volatile("movq %%gs:0, %0" : "=r"(addr) :);
             return *addr;
         }
 
         inline static core_local* get_pointer()
         {
             core_local* addr;
-            __asm__ __volatile__("movq %%gs:0, %0" : "=r"(addr) :);
+            asm volatile("movq %%gs:0, %0" : "=r"(addr) :);
             return addr;
         }
 

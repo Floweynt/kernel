@@ -6,7 +6,7 @@ namespace handlers
     {
         if (smp::core_local::get().ctxbuffer->ss == 0)
         {
-            std::panic("division by zero");
+            debug::panic("division by zero");
         }
 
         // else kill process

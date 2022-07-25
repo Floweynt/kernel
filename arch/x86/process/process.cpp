@@ -24,8 +24,7 @@ namespace proc
 
     uint32_t make_kthread(kthread_ip_t th, uint64_t extra, std::size_t core)
     {
-        static lock::spinlock l;
-        lock::spinlock_guard g(l);
+        SPINLOCK_SYNC_BLOCK;
 
         auto& proc = processes[0];
         uint32_t id = proc.thread_allocator.allocate();

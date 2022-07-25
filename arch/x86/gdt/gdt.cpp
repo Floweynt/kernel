@@ -15,7 +15,7 @@ namespace gdt
         gdt_descriptor descriptor = {.size = sizeof(gdt), .offset = (uint64_t)gdt};
         asm volatile("lgdtq %0" : : "m"(descriptor));
 
-        __asm__ __volatile__("pushq $8\n"
+        asm volatile("pushq $8\n"
                              "pushq $.L123\n"
                              "lretq\n"
                              ".L123:\n"

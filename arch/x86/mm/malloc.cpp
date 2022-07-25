@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <mm/pmm.h>
 #include <paging/paging.h>
-#include <panic.h>
+#include <debug/debug.h>
 #include <new>
 
 namespace alloc
@@ -30,7 +30,7 @@ namespace alloc
         {
             void* d;
             if (!(d = mm::pmm_allocate_pre_smp()))
-                std::panic("cannot get memory for heap");
+                debug::panic("cannot get memory for heap");
             paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * paging::PAGE_SIZE, mm::make_physical(d));
             invlpg((uint8_t*)buf + i * paging::PAGE_SIZE);
         }

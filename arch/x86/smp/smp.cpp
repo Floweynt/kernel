@@ -6,6 +6,7 @@
 #include <mm/pmm.h>
 #include <paging/paging.h>
 #include <sync_wrappers.h>
+#include <klog/klog.h>
 
 namespace smp
 {
@@ -22,7 +23,7 @@ namespace smp
         uint64_t l = local.apic.get_apic_base();
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
-        sync::printf("APIC: ticks per ms: %lu\n", local.apic.calibrate());
+        klog::log("APIC: ticks per ms: %lu\n", local.apic.calibrate());
         local.apic.set_tick(idt::register_idt(handlers::handle_timer), 20);
     }
 
@@ -34,6 +35,7 @@ namespace smp
 
     [[noreturn]] static void smp_main(stivale2_smp_info* info)
     {
+        mark_stack(debug::SMP);
         disable_interrupt();
         info = mm::make_virtual<stivale2_smp_info>((uint64_t)info);
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(info->extra_argument));
@@ -52,11 +54,11 @@ namespace smp
         idt::init_idt();
         idt::install_idt();
 
-        sync::printf("SMP started from core %lu\n", info->lapic_id);
+        klog::log("SMP started\n");
 
         for (std::size_t i = 0; i < 32; i++)
             if (!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
-                std::panic("failed to allocate irq");
+                klog::panic("failed to allocate irq");
 
         local.tasks = new scheduler::task_queue;
         proc::make_kthread(idle, 0);
@@ -71,8 +73,12 @@ namespace smp
         idle(0);
     }
 
+    // used for proper frame pointer generation
+    static void main_wrapper(stivale2_smp_info* s) { smp_main(s); }
+
     [[noreturn]] void init(stivale2_struct_tag_smp* smp)
     {
+        boot_resource::instance().mark_smp_start();
         std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
         std::printf("  cpus: %lu\n", smp->cpu_count);
 
@@ -97,7 +103,7 @@ namespace smp
             std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
                         256 * sizeof(paging::page_table_entry));
 
-            smp->smp_info[i].goto_address = (uint64_t)smp::smp_main;
+            smp->smp_info[i].goto_address = (uint64_t)smp::main_wrapper;
         }
 
         // initialize myself too!

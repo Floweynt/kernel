@@ -65,7 +65,7 @@ namespace apic
         timer &= ~(0b11 << 17);
         timer |= 1 << 17;
         mmio_register().lvt_timer.write(timer);
-        mmio_register().lvt_timer.write((mmio_register().lvt_timer & 0xFFFFFF00) | irq);
+        mmio_register().lvt_timer.write((mmio_register().lvt_timer & 0xffffff00) | irq);
         mmio_register().inital_timer_count.write(ticks_per_ms * ms);
         mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
     }

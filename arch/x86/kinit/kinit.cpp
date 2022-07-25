@@ -15,13 +15,10 @@
 #include <mm/pmm.h>
 #include <new>
 #include <paging/paging.h>
-#include <panic.h>
 #include <pci/pci.h>
 #include <printf.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
-
-static_assert(__cplusplus >= 202002L);
 
 static uint8_t stack[4096];
 
@@ -118,28 +115,21 @@ extern "C"
         cpuid_info::initialize_cpuglobal();
         debug::dump_cpuid_info();
 
-        auto rsdp = boot_resource::instance().rsdp();
-        std::printf("ACPI info:\n", rsdp->xsdt_address);
-        std::printf("  rsdp data:\n");
-        std::printf("    revision=%d\n", (int)rsdp->revision);
-        std::printf("    length=%d\n", (int)rsdp->length);
-
         boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
             paging::request_page(paging::page_type::MEDIUM, mm::make_virtual((uint64_t)entry), (uint64_t)entry);
             entry = mm::make_virtual<acpi::acpi_sdt_header>((uint64_t)entry);
             invlpg((void*)entry);
-            std::printf("  entry: (sig=0x%08u)\n", entry->signature);
         });
 
+        debug::dump_acpi_info();
+        
         // PCI time!
         // Note: this should be moved to post-smp init
         pci::scan();
 
-        // TODO: initialize slab allocator?
-
         smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
 
         while (1)
-            __asm__ __volatile__("hlt");
+            asm volatile("hlt");
     }
 }

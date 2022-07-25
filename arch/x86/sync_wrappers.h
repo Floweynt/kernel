@@ -11,9 +11,7 @@ namespace sync
     template <typename... Args>
     auto printf(const char* fmt, Args... args)
     {
-        static lock::spinlock l;
-
-        lock::spinlock_guard g(l);
+        SPINLOCK_SYNC_BLOCK;
         return std::printf(fmt, args...);
     }
 

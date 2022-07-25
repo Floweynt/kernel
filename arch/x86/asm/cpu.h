@@ -77,11 +77,11 @@ inline void invlpg(void* m) { asm volatile("invlpg (%0)" : : "b"(m) : "memory");
 
 /// \brief Wrapper for the `cli` instruction
 ///
-inline void disable_interrupt() { __asm__ __volatile__("cli"); }
+inline void disable_interrupt() { asm volatile("cli"); }
 
 /// \brief Wrapper for the `sti` instruction
 ///
-inline void enable_interrupt() { __asm__ __volatile__("sti"); }
+inline void enable_interrupt() { asm volatile("sti"); }
 
 namespace msr
 {
@@ -107,7 +107,7 @@ inline void wrmsr(uint64_t msr, uint64_t value)
 /// \param msr The msr to write to
 /// \param a The a register passed to `wrmsr`
 /// \param d The d register passed to `wrmsr`
-inline void wrmsr(uint64_t msr, uint32_t a, uint32_t d) { __asm__ __volatile__("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
+inline void wrmsr(uint64_t msr, uint32_t a, uint32_t d) { asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to read from

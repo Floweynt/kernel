@@ -1,7 +1,7 @@
 #ifndef __ARCH_X86_PAGING_PGFAULT_H__
 #define __ARCH_X86_PAGING_PGFAULT_H__
 #include <cstdint>
-#include <panic.h>
+#include <debug/debug.h>
 
 namespace paging
 {
@@ -11,7 +11,7 @@ namespace paging
         // if it is a module, unload
         // the problem is determine if it is a module
 
-        std::panic("unexcepted page fault");
+        debug::panic("unexpected page fault");
     }
 }; // namespace paging
 

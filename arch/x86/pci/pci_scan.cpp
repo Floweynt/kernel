@@ -1,4 +1,5 @@
 #include "pci.h"
+#include <config.h>
 #include <cstdint>
 #include <printf.h>
 namespace pci
@@ -9,17 +10,18 @@ namespace pci
         if ((dev.class_code(function) == 0x6) && (dev.subclass(function) == 0x4))
         {
             uint8_t secondary_bus = dev.read_config(function, 0x18) >> 8;
-            std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hhx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ', dev.bus(),
-                        dev.slot(), function, dev.device_id(function), dev.subclass(function), dev.revision_id(function),
-                        secondary_bus);
+            if constexpr (config::get_val<"debug.log.pci">)
+                std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hhx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ',
+                            dev.bus(), dev.slot(), function, dev.device_id(function), dev.subclass(function),
+                            dev.revision_id(function), secondary_bus);
 
             check_bus(secondary_bus, level + 1);
             return;
         }
-
-        std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: class=%02hhx:%02hhx dev=%02hhx:%02hhx-r%02hhx\n", level, ' ', dev.bus(),
-                    dev.slot(), function, dev.class_code(function), dev.subclass(function), dev.device_id(function),
-                    dev.subclass(function), dev.revision_id(function));
+        if constexpr (config::get_val<"debug.log.pci">)
+            std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: class=%02hhx:%02hhx dev=%02hhx:%02hhx-r%02hhx\n", level, ' ', dev.bus(),
+                        dev.slot(), function, dev.class_code(function), dev.subclass(function), dev.device_id(function),
+                        dev.subclass(function), dev.revision_id(function));
     }
 
     static void check_device(pci_device_ident dev, int level)

@@ -1,6 +1,7 @@
 #ifndef __ARCH_X86_MM_PMM_H__
 #define __ARCH_X86_MM_PMM_H__
 #include "mm.h"
+#include "paging/paging.h"
 namespace mm
 {
     class pmm_region : public bitmask_allocator
@@ -12,17 +13,18 @@ namespace mm
         inline void* allocate(std::size_t len)
         {
             std::size_t val = bitmask_allocator::allocate(len);
-            if(val == -1ul)
+            if (val == -1ul)
                 return nullptr;
 
-            return (void*)(((uint8_t*)get_buffer()) + ((val + bitmask_allocator::metadata_size_pages(size())) * 4096));
+            return (void*)(((uint8_t*)get_buffer()) + ((val + metadata_size_pages(size())) * paging::PAGE_SMALL_SIZE));
         }
 
         inline void free(void* index)
         {
-            std::ptrdiff_t diff = (uint8_t*)index - 
-                ((uint8_t*)get_buffer() + bitmask_allocator::metadata_size_pages(size()));
-            bitmask_allocator::free(diff);
+            auto diff = ((uint8_t*)get_buffer() - (uint8_t*)index);
+            std::size_t page = diff / paging::PAGE_SMALL_SIZE;
+            page -= metadata_size_pages(size());
+            bitmask_allocator::free(page);
         }
     };
 
