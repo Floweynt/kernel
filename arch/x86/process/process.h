@@ -16,6 +16,7 @@ namespace proc
     struct thread
     {
         context ctx;
+        uintptr_t cr3;
         thread_state state;
     };
 

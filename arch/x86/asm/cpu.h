@@ -121,7 +121,7 @@ inline uint64_t rdmsr(uint64_t msr)
 
 /// \brief Sets the stack pointer `%rsp`
 /// \param sp The new stack pointer address
-inline void setstack(uint64_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
+inline void setstack(uintptr_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
 /// \brief Preforms a long jump
 /// \param addr The address to jump to

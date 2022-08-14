@@ -10,16 +10,17 @@
 
 namespace smp
 {
-    void core_local::create()
+    void core_local::create(core_local* cpu0)
     {
-        entries = (core_local**)mm::pmm_allocate_pre_smp();
-        for (std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
-            entries[i] = new (mm::pmm_allocate_pre_smp()) core_local;
+        entries = new core_local*[boot_resource::instance().core_count()];
+        entries[0] = cpu0;
+        for (std::size_t i = 1; i < boot_resource::instance().core_count(); i++)
+            entries[i] = new core_local;
         // point entries
     }
 
     static void initialize_apic(smp::core_local& local)
-    {
+{
         uint64_t l = local.apic.get_apic_base();
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
@@ -46,11 +47,12 @@ namespace smp
         paging::install();
         smp::core_local& local = smp::core_local::get();
         local.ctxbuffer = &proc::get_process(0).threads[0].ctx;
-        local.idt_handler_entries = new (sync::pre_smp) uintptr_t[256];
-        local.idt_entries = new (sync::pre_smp) idt::idt_entry[256];
+        local.idt_handler_entries = new uintptr_t[256];
+        local.idt_entries = new idt::idt_entry[256];
         local.coreid = info->extra_argument;
 
-        gdt::install_gdt();
+        local.gdt.set_ist(&local.ist);
+        gdt::reload_gdt_smp();
         idt::init_idt();
         idt::install_idt();
 
@@ -82,31 +84,35 @@ namespace smp
         std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
         std::printf("  cpus: %lu\n", smp->cpu_count);
 
-        std::size_t index;
-
+        std::size_t core_id = 0;
+        std::size_t bsp_index = 0;
         for (std::size_t i = 0; i < smp->cpu_count; i++)
         {
-            std::printf("initalizing core: %lu\n", i);
-            smp->smp_info[i].extra_argument = i;
-
-            if (smp->smp_info[i].lapic_id == smp->bsp_lapic_id)
+            if(smp->bsp_lapic_id == smp->smp_info[i].lapic_id)
             {
-                index = i;
+                bsp_index = i;
                 continue;
             }
 
+            core_id++;
+            std::printf("initalizing extra smp core: %lu\n", i);
+            smp->smp_info[i].extra_argument = core_id;
+
+            uintptr_t stack_ptr = (uintptr_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE - sizeof(init_data);
+
             // remember that stack grows down
-            smp->smp_info[i].target_stack = (uint64_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
+            smp->smp_info[i].target_stack = stack_ptr;
 
-            smp::core_local::get(i).pagemap = (paging::page_table_entry*)mm::pmm_allocate();
-
-            std::memcpy(smp::core_local::get(i).pagemap + 256, smp::core_local::get(index).pagemap + 256,
-                        256 * sizeof(paging::page_table_entry));
-
+            smp->smp_info[i].extra_argument = (uintptr_t)new ((void*) stack_ptr) smp::init_data {
+                .coreid = core_id,
+                .cr3 = (smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate())
+            };
+        
+            paging::sync_page_tables(core_id, 0); 
             smp->smp_info[i].goto_address = (uint64_t)smp::main_wrapper;
         }
 
         // initialize myself too!
-        smp::smp_main(&smp->smp_info[index]);
+        smp::smp_main(&smp->smp_info[bsp_index]);
     }
 } // namespace smp

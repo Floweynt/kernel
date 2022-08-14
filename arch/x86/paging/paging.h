@@ -43,6 +43,7 @@ namespace paging
         return request_page(pt, mm::make_physical(vaddr), vaddr, prop, overwrite);
     }
 
+    void sync_page_tables(std::size_t dest_core, std::size_t src_core);
 } // namespace paging
 
 #endif

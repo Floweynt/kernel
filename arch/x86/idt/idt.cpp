@@ -1,17 +1,12 @@
 #include "idt.h"
 #include <asm/asm_cpp.h>
 #include <smp/smp.h>
+#include <utils/utils.h>
 
 extern char idt_entry_start[];
 
 namespace idt
 {
-    struct [[gnu::packed]] idt_descriptor
-    {
-        uint16_t size;
-        uint64_t offset;
-    };
-
     void init_idt()
     {
         smp::core_local& local = smp::core_local::get();
@@ -27,8 +22,8 @@ namespace idt
     void install_idt()
     {
         smp::core_local& local = smp::core_local::get();
-        idt_descriptor descriptor = {.size = sizeof(idt_entry) * 256, .offset = (uint64_t)local.idt_entries};
-        lidt((void*)&descriptor);
+        utils::packed_tuple<uint16_t, uint64_t> d(sizeof(idt_entry) * 256, (uint64_t)local.idt_entries);
+        lidt(&d);
     }
 
     bool register_idt(interrupt_handler handler, std::size_t num, uint8_t type, uint8_t dpl)

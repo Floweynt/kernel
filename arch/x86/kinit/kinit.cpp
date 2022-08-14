@@ -78,6 +78,9 @@ static void init_tty(stivale2_struct* root)
     driver::set_tty_startup_driver(&tmp);
 }
 
+static smp::core_local cpu0;
+static smp::core_local* cpu0_ptr = &cpu0;
+
 extern "C"
 {
     extern uint64_t __start_init_array[];
@@ -97,18 +100,15 @@ extern "C"
     {
         init_array();
         new (buf) boot_resource(root);
+        wrmsr(msr::IA32_GS_BASE, (uint64_t) &cpu0_ptr);
 
-        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
-            if (e.type == 1)
-                mm::add_region_pre_smp(mm::make_virtual<void>(e.base), e.length / paging::PAGE_SMALL_SIZE);
-        });
-
-        smp::core_local::create();
-        wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(boot_resource::instance().bsp_id()));
-        init_tty(root);
+        mm::init();
         paging::init();
         alloc::init((void*)config::get_val<"mmap.start.heap">,
                     paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
+
+        init_tty(root);
+
         debug::print_kinfo();
         std::printf("kinit: _start() started tty\n");
         debug::dump_memory_map();
@@ -116,7 +116,7 @@ extern "C"
         debug::dump_cpuid_info();
 
         boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-            paging::request_page(paging::page_type::MEDIUM, mm::make_virtual((uint64_t)entry), (uint64_t)entry);
+            paging::map_hhdm_phys(paging::MEDIUM, (uint64_t)entry);
             entry = mm::make_virtual<acpi::acpi_sdt_header>((uint64_t)entry);
             invlpg((void*)entry);
         });
@@ -127,9 +127,7 @@ extern "C"
         // Note: this should be moved to post-smp init
         pci::scan();
 
-        smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
-
-        while (1)
-            asm volatile("hlt");
+        smp::core_local::create(cpu0_ptr);
+        smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID)); 
     }
 }

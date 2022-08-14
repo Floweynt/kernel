@@ -46,7 +46,6 @@ kernel_source = [
     'arch/x86/process/process.cpp',
     'arch/x86/process/scheduler/scheduler.cpp',
     'arch/x86/klog/klog.cpp',
-    'arch/x86/utils/block_alloc.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/mm/malloc.cpp',
     'arch/x86/mm/mm.cpp',
@@ -87,10 +86,11 @@ conf.set('HEAP_START', '0xffff900080000000')
 conf.set('SLAB_START', '0xffff980000000000')
 conf.set('KLOG_BUFFER', '0xffffa00000000000')
 
-conf.set('DEBUG_LOG_MMAP', 'false')
+conf.set('DEBUG_LOG_MMAP', 'true')
 conf.set('DEBUG_LOG_CPUID', 'true')
 conf.set('DEBUG_LOG_ACPI', 'true')
 conf.set('DEBUG_LOG_PCI', 'true')
+conf.set('DEBUG_SPINLOCK_DEP', 'true')
 
 conf.set('SLAB_MIN_ORDER', 6)
 conf.set('SLAB_MAX_ORDER', 12)

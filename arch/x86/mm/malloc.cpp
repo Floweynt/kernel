@@ -28,14 +28,14 @@ namespace alloc
 
         for (std::size_t i = 0; i < pages; i++)
         {
-            void* d;
-            if (!(d = mm::pmm_allocate_pre_smp()))
+             void* d;
+            if (!(d = mm::pmm_allocate()))
                 debug::panic("cannot get memory for heap");
             paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * paging::PAGE_SIZE, mm::make_physical(d));
-            invlpg((uint8_t*)buf + i * paging::PAGE_SIZE);
+            invlpg((uint8_t*)buf + i * paging::PAGE_SMALL_SIZE);
         }
 
-        return paging::PAGE_SIZE * pages;
+        return paging::PAGE_SMALL_SIZE * pages;
     }
 
     void init(void* ptr, std::size_t s) { root = last = new (ptr) block_header{(s - sizeof(block_header)) | 1, nullptr}; }

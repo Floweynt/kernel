@@ -23,7 +23,15 @@ namespace klog
         return s1 + s2;
     }
 
-    inline void panic(const char* msg, bool crash = true)
+    [[noreturn]] inline void panic(const char* msg)
+    {
+        lock::spinlock_guard g(lock);
+        std::printf("[%lu] ", smp::core_local::get().coreid);
+        debug::panic(msg);
+        __builtin_unreachable();
+    }
+
+    inline void panic(const char* msg, bool crash)
     {
         lock::spinlock_guard g(lock);
         std::printf("[%lu] ", smp::core_local::get().coreid);

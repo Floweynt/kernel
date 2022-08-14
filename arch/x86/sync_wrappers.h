@@ -14,24 +14,6 @@ namespace sync
         SPINLOCK_SYNC_BLOCK;
         return std::printf(fmt, args...);
     }
-
-    struct pre_smp_t {};
-    inline constexpr pre_smp_t pre_smp{};
-
 } // namespace sync
-
-inline void* operator new (std::size_t size, const sync::pre_smp_t&)
-{
-    static lock::spinlock l;
-    lock::spinlock_guard g(l, 0);
-    return alloc::malloc(size); 
-}
-
-inline void* operator new[](std::size_t size, const sync::pre_smp_t&)
-{
-    static lock::spinlock l;
-    lock::spinlock_guard g(l, 0);
-    return alloc::malloc(size); 
-}
 
 #endif

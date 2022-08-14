@@ -1,7 +1,7 @@
 #include "paging.h"
 #include <asm/asm_cpp.h>
-#include <mm/pmm.h>
 #include <debug/debug.h>
+#include <mm/pmm.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
@@ -19,7 +19,7 @@ namespace paging
 
     static lock::spinlock l;
 
-    bool request_page(page_type pt, uint64_t virtual_addr, uint64_t physical_address, page_prop flags, bool overwrite)
+    bool request_page(page_type pt, uintptr_t virtual_addr, uintptr_t physical_address, page_prop flags, bool overwrite)
     {
         virtual_addr &= ~type2align[pt];
         physical_address &= ~type2align[pt];
@@ -36,9 +36,9 @@ namespace paging
             if (!e)
             {
                 auto r = mm::pmm_allocate();
-                if (r == nullptr)
+                if (r == 0)
                     debug::panic("cannot allocate physical memory for paging");
-                std::memset(r, 0, 4096);
+                std::memset((void*)r, 0, 4096);
                 e = make_page_pointer(mm::make_physical(r), flags);
             }
 
@@ -65,7 +65,7 @@ namespace paging
         return true;
     }
 
-    void sync(uint64_t virtual_addr)
+    void sync(uintptr_t virtual_addr)
     {
         lock::spinlock_guard g(l);
         uint16_t index = paging::get_page_entry<3>(virtual_addr);
@@ -75,7 +75,7 @@ namespace paging
             smp::core_local::get(i).pagemap[index] = value;
     }
 
-    void map_section(uint64_t addr, uint64_t _len, paging::page_prop flags)
+    void map_section(uintptr_t addr, std::size_t _len, paging::page_prop flags)
     {
         int64_t len = _len / PAGE_SMALL_SIZE;
 
@@ -156,13 +156,19 @@ namespace paging
         for (std::size_t i = 0; i < config::get_val<"preallocate-pages">; i++)
         {
             void* d;
-            if (!(d = mm::pmm_allocate_pre_smp()))
+            if (!(d = mm::pmm_allocate()))
                 debug::panic("cannot get memory for heap");
             paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE,
                                  mm::make_physical(d));
         }
 
         paging::install();
+    }
+
+    void sync_page_tables(std::size_t dest_core, std::size_t src_core)
+    {
+        std::memcpy(smp::core_local::get(dest_core).pagemap + 256, smp::core_local::get(src_core).pagemap + 256,
+                    256 * sizeof(paging::page_table_entry));
     }
 
 } // namespace paging
