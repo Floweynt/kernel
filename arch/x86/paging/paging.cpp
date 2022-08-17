@@ -38,7 +38,6 @@ namespace paging
                 auto r = mm::pmm_allocate();
                 if (r == 0)
                     debug::panic("cannot allocate physical memory for paging");
-                std::memset((void*)r, 0, 4096);
                 e = make_page_pointer(mm::make_physical(r), flags);
             }
 

@@ -1,4 +1,6 @@
 #include "process.h"
+#include "paging/paging.h"
+#include <cstdint>
 #include <mm/pmm.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
@@ -36,7 +38,7 @@ namespace proc
         c.rflags = 0x202; // idk, StaticSega on osdev discord told me to use this
         c.rip = (uint64_t) th;
         c.ss = 0;
-        c.rsp = (uint64_t) mm::pmm_allocate() + 4096;
+        c.rsp = (uintptr_t) mm::pmm_allocate() + paging::PAGE_SMALL_SIZE;
         c.rgp[context::RDI] = extra;
 
         // insert into a queue

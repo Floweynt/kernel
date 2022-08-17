@@ -1,6 +1,6 @@
 #include "gdt.h"
-#include <smp/smp.h>
 #include <asm/asm_cpp.h>
+#include <smp/smp.h>
 #include <utils/utils.h>
 
 namespace gdt
@@ -10,29 +10,48 @@ namespace gdt
     void install_gdt()
     {
         utils::packed_tuple<uint16_t, uint64_t> d(sizeof(gdt), (uint64_t)gdt);
-        lgdt(&d);
-
+        asm volatile("lgdtq %0" : : "m"(d));
         asm volatile goto("pushq $8\n"
-                          "push %0\n"
+                          "push $%0\n"
                           "lretq\n"
                           :
                           :
                           :
-                          : handle_segments);
-    handle_segments:
+                          : install_gdt_handle_segments);
+    install_gdt_handle_segments:
         asm volatile("movw $16, %%ax\n"
                      "movw %%ax, %%es\n"
                      "movw %%ax, %%ss\n"
                      "movw %%ax, %%ds\n"
+
                      :
                      :
                      : "%rax");
+        return;
     }
 
     void reload_gdt_smp()
     {
         utils::packed_tuple<uint16_t, uint64_t> d(sizeof(gdt_entries), (uint64_t)&smp::core_local::get().gdt);
-        lgdt(&d);
+
+        asm volatile("lgdtq %0" : : "m"(d));
+        asm volatile goto("pushq $8\n"
+                          "push $%0\n"
+                          "lretq\n"
+                          :
+                          :
+                          :
+                          : reload_gdt_smp_handle_segments);
+    reload_gdt_smp_handle_segments:
+        asm volatile("movw $16, %%ax\n"
+                     "movw %%ax, %%es\n"
+                     "movw %%ax, %%ss\n"
+                     "movw %%ax, %%ds\n"
+
+                     :
+                     :
+                     : "%rax");
+
         ltr(40);
     }
 } // namespace gdt

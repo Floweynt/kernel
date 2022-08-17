@@ -9,7 +9,7 @@
 namespace handlers
 {
     // void handle_div_by_zero(uint64_t, uint64_t);
-    inline void handle_noop(uint64_t c, uint64_t) { sync::printf("c=%lu\n", c); }
+    inline void handle_noop(uint64_t c, uint64_t) { sync::printf("c=%lu\n", c); while(1) {} }
     void handle_gp(uint64_t, uint64_t);
     void handle_timer(uint64_t, uint64_t);
 

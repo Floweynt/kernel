@@ -24,6 +24,7 @@ namespace proc
     {
     public:
         inline static constexpr std::size_t MAX_THREADS = 16;
+        inline static constexpr std::size_t MAX_PROCESS = 1;
 
         id_allocator<MAX_THREADS> thread_allocator;
         thread threads[MAX_THREADS];

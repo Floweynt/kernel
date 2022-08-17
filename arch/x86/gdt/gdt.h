@@ -39,10 +39,11 @@ namespace gdt
         const uint16_t limit = 0x6b;
         uint16_t base_lowest;
         uint8_t base_lo;
-        const uint8_t access = 0b11101001;
-        const uint8_t mixed = 0b00100000;
+        const uint8_t access = 0x89;
+        const uint8_t mixed = 0b00000000;
         uint8_t base_mid;
         uint32_t base_high;
+        const uint32_t reserved0 = 0;
 
         inline void set_ist(interrupt_stack_table* ist)
         {

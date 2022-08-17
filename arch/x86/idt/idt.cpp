@@ -23,7 +23,7 @@ namespace idt
     {
         smp::core_local& local = smp::core_local::get();
         utils::packed_tuple<uint16_t, uint64_t> d(sizeof(idt_entry) * 256, (uint64_t)local.idt_entries);
-        lidt(&d);
+        asm volatile("lidtq %0" : : "m"(d));
     }
 
     bool register_idt(interrupt_handler handler, std::size_t num, uint8_t type, uint8_t dpl)

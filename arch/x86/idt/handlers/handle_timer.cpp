@@ -1,4 +1,5 @@
 #include "handlers.h"
+#include "klog/klog.h"
 #include <printf.h>
 #include <process/scheduler/scheduler.h>
 
