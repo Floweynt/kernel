@@ -8,6 +8,7 @@ add_project_arguments(
     '-fno-rtti',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
+    '-mno-red-zone',
     '-ffreestanding',
 #    '-no-pie',
     '-nostdinc',

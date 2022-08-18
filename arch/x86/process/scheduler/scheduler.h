@@ -8,7 +8,7 @@ namespace scheduler
     void schedule();
     //bool task_sort(proc::task_id, proc::task_id);
 
-    using task_queue = std::cyclic_queue<proc::task_id, 512, true>;
+    using task_queue = std::circular_queue<proc::task_id, 512>;
 }
 
 #endif

@@ -28,7 +28,8 @@ namespace smp
         paging::map_hhdm_phys(paging::page_type::SMALL, l);
         local.apic.enable();
         klog::log("APIC: ticks per ms: %lu\n", local.apic.calibrate());
-        local.apic.set_tick(idt::register_idt(handlers::handle_timer), 20);
+        idt::register_idt(handlers::handle_timer, 32ul);
+        local.apic.set_tick(32, 20);
     }
 
     [[noreturn]] static void idle(uint64_t)
@@ -57,6 +58,7 @@ namespace smp
         local.idt_handler_entries = new uintptr_t[256];
         local.idt_entries = new idt::idt_entry[256];
         local.coreid = core_id;
+        local.current_tid = { 0xffffffff, 0xffffffff };
 
         //local.gdt.set_ist(&local.ist);
         gdt::install_gdt();
@@ -65,10 +67,10 @@ namespace smp
         idt::install_idt();
 
         klog::log("SMP started\n");
-
+    /*
         for (std::size_t i = 0; i < 32; i++)
             if (!idt::register_idt(handlers::INTERRUPT_HANDLERS[i], i))
-                klog::panic("failed to allocate irq");
+                klog::panic("failed to allocate irq");*/
 
         local.tasks = new scheduler::task_queue;
         proc::make_kthread(idle, 0);
