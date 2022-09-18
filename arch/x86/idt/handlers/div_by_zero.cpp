@@ -2,7 +2,7 @@
 
 namespace handlers
 {
-    void handle_div_by_zero(uint64_t i1, uint64_t i2)
+    void handle_div_by_zero(std::uint64_t i1, std::uint64_t i2)
     {
         if (smp::core_local::get().ctxbuffer->ss == 0)
         {

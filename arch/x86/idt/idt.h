@@ -5,11 +5,11 @@
 
 namespace idt
 {
-    using interrupt_handler = void (*)(uint64_t, uint64_t);
+    using interrupt_handler = void (*)(std::uint64_t, std::uint64_t);
 
-    inline constexpr uint64_t MASK_DPL_R0 = 0x0;
-    inline constexpr uint64_t MASK_DPL_R3 = 0x3;
-    inline constexpr uint64_t MASK_TYPE = 0x1;
+    inline constexpr std::uint64_t MASK_DPL_R0 = 0x0;
+    inline constexpr std::uint64_t MASK_DPL_R3 = 0x3;
+    inline constexpr std::uint64_t MASK_TYPE = 0x1;
 
     /// \brief Initialize the data structures required for the IDT to function
     ///
@@ -19,26 +19,60 @@ namespace idt
     ///
     void install_idt();
 
+    class idt_builder
+    {
+        interrupt_handler handler;
+        std::uint8_t gate : 4;
+        std::uint8_t _ist : 3;
+        std::uint8_t _dpl : 2;
+
+    public:
+        explicit constexpr idt_builder(interrupt_handler handler) : handler(handler) {}
+        constexpr idt_builder& gate_intr()
+        {
+            gate = 0xe;
+            return *this;
+        }
+        constexpr idt_builder& gate_trap()
+        {
+            gate = 0xf;
+            return *this;
+        }
+        constexpr idt_builder& dpl(std::uint8_t d)
+        {
+            _dpl = d;
+            return *this;
+        }
+        constexpr idt_builder& ist(std::uint8_t i)
+        {
+            _ist = i;
+            return *this;
+        }
+
+        constexpr std::uint16_t flag() const { return 0x8000 | ((std::uint16_t)_dpl << 13) | ((std::uint16_t)gate << 8) | _ist; }
+        constexpr interrupt_handler cb() const { return handler; }
+    };
+
     /// \brief Registers a handler entry in the IDT
     /// \param handler The callback to run when the interrupt has occurred
     /// \param num The interrupt vector to register
     /// \param type The gate type
     /// \param dpl The DPL requirement
-    /// \return Some value lol TODO: document
-    bool register_idt(interrupt_handler handler, std::size_t num, uint8_t type = 0b1110, uint8_t dpl = 0x0);
+    /// \return wether or not the handler was registered
+    bool register_idt(const idt_builder&, std::size_t num);
 
     /// \brief Registers a handler entry at an available slot
     ///
-    std::size_t register_idt(interrupt_handler handler, uint8_t type = 0b1110, uint8_t dpl = 0x0);
+    std::size_t register_idt(const idt_builder&);
 
     struct [[gnu::packed]] idt_entry
     {
-        uint16_t offset_low;
-        uint16_t cs = 0x8;
-        uint16_t flags;
-        uint16_t offset_mid;
-        uint32_t offset_high;
-        uint32_t reserved;
+        std::uint16_t offset_low;
+        const std::uint16_t cs = 0x8;
+        std::uint16_t flags;
+        std::uint16_t offset_mid;
+        std::uint32_t offset_high;
+        std::uint32_t reserved;
     };
 } // namespace idt
 #endif

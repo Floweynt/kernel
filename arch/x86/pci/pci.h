@@ -4,51 +4,49 @@
 
 namespace pci
 {
-    inline constexpr uint16_t CONFIG_ADDRESS = 0xcf8;
-    inline constexpr uint16_t CONFIG_DATA = 0xcfc;
+    inline constexpr std::uint16_t CONFIG_ADDRESS = 0xcf8;
+    inline constexpr std::uint16_t CONFIG_DATA = 0xcfc;
 
     class pci_device_ident
     {
-        uint8_t _bus;
-        uint8_t _slot;
-        constexpr uint32_t make_address(uint8_t func, uint8_t offset)
+        std::uint8_t _bus;
+        std::uint8_t _slot;
+        constexpr std::uint32_t make_address(std::uint8_t func, std::uint8_t offset) const
         {
-            return ((uint32_t)_bus << 16) | 
-                   ((uint32_t)_slot << 11) | 
-                   ((uint32_t)func << 8) | 
-                   ((uint32_t)offset & 0xfc) | 
-                   ((uint32_t)0x80000000);
+            return ((std::uint32_t)_bus << 16) | ((std::uint32_t)_slot << 11) | ((std::uint32_t)func << 8) | ((std::uint32_t)offset & 0xfc) |
+                   ((std::uint32_t)0x80000000);
         }
-    public:
-        constexpr pci_device_ident(uint8_t b, uint8_t s) : _bus(b), _slot(s) {}
-        constexpr pci_device_ident(const pci_device_ident& rhs) : _bus(rhs._bus), _slot(rhs._slot) {}
-        constexpr uint8_t bus() { return _bus; }
-        constexpr uint8_t slot() { return _slot; }
 
-        inline uint32_t read_config(uint8_t func, uint8_t offset)
+    public:
+        constexpr pci_device_ident(std::uint8_t bus, std::uint8_t slot) : _bus(bus), _slot(slot) {}
+        constexpr pci_device_ident(const pci_device_ident& rhs) : _bus(rhs._bus), _slot(rhs._slot) {}
+        constexpr std::uint8_t bus() const { return _bus; }
+        constexpr std::uint8_t slot() const { return _slot; }
+
+        inline std::uint32_t read_config(std::uint8_t func, std::uint8_t offset) const
         {
             outl(CONFIG_ADDRESS, make_address(func, offset));
             return inl(CONFIG_DATA);
         }
 
-        inline void write_config(uint8_t func, uint8_t offset, uint32_t data)
+        inline void write_config(std::uint8_t func, std::uint8_t offset, std::uint32_t data) const
         {
             outl(CONFIG_ADDRESS, make_address(func, offset));
             outl(CONFIG_DATA, data);
         }
-        
-        inline uint16_t device_id(uint8_t func) { return read_config(func, 0) >> 16; }
-        inline uint16_t vendor_id(uint8_t func) { return read_config(func, 0); }
-        inline uint16_t status(uint8_t func) { return read_config(func, 4) >> 16; }
-        inline uint16_t command(uint8_t func) { return read_config(func, 4); }
-        inline uint8_t class_code(uint8_t func) { return read_config(func, 8) >> 24; }
-        inline uint8_t subclass(uint8_t func) { return read_config(func, 8) >> 16; }
-        inline uint8_t prog_if(uint8_t func) { return read_config(func, 8) >> 8; }
-        inline uint8_t revision_id(uint8_t func) { return read_config(func, 8); }
-        inline uint8_t bist(uint8_t func) { return read_config(func, 12) >> 24; }
-        inline uint8_t header_type(uint8_t func) { return read_config(func, 12) >> 16; }
-        inline uint8_t latency_timer(uint8_t func) { return read_config(func, 12) >> 8; }
-        inline uint8_t cache_line_size(uint8_t func) { return read_config(func, 12); }
+
+        inline std::uint16_t device_id(std::uint8_t func) const { return read_config(func, 0) >> 16; }
+        inline std::uint16_t vendor_id(std::uint8_t func) const { return read_config(func, 0); }
+        inline std::uint16_t status(std::uint8_t func) const { return read_config(func, 4) >> 16; }
+        inline std::uint16_t command(std::uint8_t func) const { return read_config(func, 4); }
+        inline std::uint8_t class_code(std::uint8_t func) const { return read_config(func, 8) >> 24; }
+        inline std::uint8_t subclass(std::uint8_t func) const { return read_config(func, 8) >> 16; }
+        inline std::uint8_t prog_if(std::uint8_t func) const { return read_config(func, 8) >> 8; }
+        inline std::uint8_t revision_id(std::uint8_t func) const { return read_config(func, 8); }
+        inline std::uint8_t bist(std::uint8_t func) const { return read_config(func, 12) >> 24; }
+        inline std::uint8_t header_type(std::uint8_t func) const { return read_config(func, 12) >> 16; }
+        inline std::uint8_t latency_timer(std::uint8_t func) const { return read_config(func, 12) >> 8; }
+        inline std::uint8_t cache_line_size(std::uint8_t func) const { return read_config(func, 12); }
     };
 
     void scan();

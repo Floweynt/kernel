@@ -1,11 +1,17 @@
-project('kernel', 'c', 'cpp', version: '0.0.1', default_options: ['c_std=c11', 'cpp_std=c++20', 'warning_level=2'])
+project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
+    'c_std=c11', 
+    'cpp_std=c++20', 
+    'warning_level=2',
+    'cpp_rtti=false',
+    'cpp_eh=none',
+    'error_level=3'
+])
 
 add_project_arguments(
-    '-fno-exceptions',
     '-fno-PIC',
+    '-fno-exceptions',
     '-fno-omit-frame-pointer',
     '-fcf-protection=none',
-    '-fno-rtti',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
     '-mno-red-zone',
@@ -13,11 +19,6 @@ add_project_arguments(
 #    '-no-pie',
     '-nostdinc',
     '-Wno-ignored-attributes',
-    '-I' + (meson.source_root() + '/'),
-    '-I' + (meson.source_root() + '/arch/x86/'),
-    '-I' + (meson.source_root() + '/arch/'),
-    '-I' + (meson.source_root() + '/lib/'),
-    '-I' + (meson.source_root() + '/lib/include/'),
     '-mno-sse',
     '-mno-sse2',
     '-mno-mmx',
@@ -34,19 +35,23 @@ add_project_arguments(
 )
 
 kernel_source = [
-    'arch/common/driver/tty.cpp',
     'arch/x86/idt/idt.cpp',
     'arch/x86/idt/handlers/div_by_zero.cpp',
     'arch/x86/idt/handlers/handle_gp.cpp',
     'arch/x86/idt/handlers/handle_timer.cpp',
     'arch/x86/idt/idt.S',
     'arch/x86/debug/kinit_dump.cpp',
+    'arch/x86/debug/panic.cpp',
+    'arch/x86/syscall/syscall_entry.S',
     'arch/x86/pci/pci_scan.cpp',
+    'arch/x86/sync/spinlock.cpp',
     'arch/x86/apic/apic.cpp',
     'arch/x86/kinit/kinit.cpp',
     'arch/x86/process/process.cpp',
+    'arch/x86/process/save_ctx_for_reschedule.S',
     'arch/x86/process/scheduler/scheduler.cpp',
     'arch/x86/klog/klog.cpp',
+    'arch/x86/tty/terminal.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/mm/malloc.cpp',
     'arch/x86/mm/mm.cpp',
@@ -55,13 +60,13 @@ kernel_source = [
     'arch/x86/paging/paging.cpp',
     'arch/x86/paging/pgfault.cpp',
     'arch/x86/smp/smp.cpp',
-    'arch/x86/driver/terminal.cpp',
+    'arch/x86/debug/symbols.cpp',
     'lib/src/cstring.cpp',
-    'arch/x86/debug/panic.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
+    'arch/x86/san/ubsan.cpp'
 ]
 
 # required program for generating disk image
@@ -92,15 +97,34 @@ conf.set('DEBUG_LOG_CPUID', 'true')
 conf.set('DEBUG_LOG_ACPI', 'true')
 conf.set('DEBUG_LOG_PCI', 'true')
 conf.set('DEBUG_SPINLOCK_DEP', 'true')
+conf.set('DEBUG_SYMTAB', '0xffffffff90000000')
 
 conf.set('SLAB_MIN_ORDER', 6)
 conf.set('SLAB_MAX_ORDER', 12)
 conf.set('SLAB_SIZE_ORDER', 16)
 
+comp_id = meson.get_compiler('cpp').get_id()
+
+if comp_id == 'gcc'
+    conf.set('COMPILER_GCC', true)
+    conf.set('COMPILER_CLANG', false)
+elif comp_id == 'clang'
+    conf.set('COMPILER_GCC', false)
+    conf.set('COMPILER_CLANG', true)
+else 
+    error('unknown cc', comp_id)
+endif
 configure_file(input : 'config.h.in',
                output : 'config.h.in',
                configuration : conf)
-configuration_inc = include_directories('.')
+configuration_inc = include_directories(
+    './',
+    './arch/x86/',
+    './arch/',
+    './lib/',
+    './lib/include/',
+    is_system: true
+)
 
 git_ver_info = custom_target('git_version_info',
     input: 'config.h.in',
@@ -122,7 +146,7 @@ kernel = executable('kernel.elf',
         '-lgcc',
         '-m64',
     ],
-    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
+    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-fsanitize=undefined', '-fsanitize-minimal-runtime'],
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
     include_directories : configuration_inc
 )
@@ -210,6 +234,30 @@ run = run_target('run',
         '-M',
         'smm=off',
         '-smp', '2',
+    ]
+)
+
+run = run_target('run_nosmp',
+    depends: [kernel_img],
+    command: [
+        qemu,
+        '-bios',
+        '/usr/share/ovmf/x64/OVMF.fd',
+        '-hda',
+        meson.build_root() + '/kernel.img',
+        '-no-reboot',
+        '-monitor',
+        'stdio',
+        '-d',
+        'int',
+        '-D',
+        'qemu.log' ,
+        '-no-shutdown',
+        '-s',
+        '-S',
+        '-M',
+        'smm=off',
+        '-smp', '1',
     ]
 )
 

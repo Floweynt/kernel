@@ -1,10 +1,12 @@
+#include "bits/mathhelper.h"
 #include <asm/asm_cpp.h>
 #include <config.h>
 #include <cstddef>
-#include <mm/pmm.h>
-#include <paging/paging.h>
+#include <cstdint>
 #include <debug/debug.h>
+#include <mm/pmm.h>
 #include <new>
+#include <paging/paging.h>
 
 namespace alloc
 {
@@ -19,7 +21,7 @@ namespace alloc
 
     inline static block_header* next_of(block_header* header)
     {
-        return (block_header*)((uint8_t*)header + sizeof(block_header) + (header->size & ~1));
+        return (block_header*)((std::uint8_t*)header + sizeof(block_header) + (header->size & ~1));
     }
 
     inline static std::size_t extend(void* buf, std::size_t n)
@@ -28,11 +30,11 @@ namespace alloc
 
         for (std::size_t i = 0; i < pages; i++)
         {
-             void* d;
+            void* d;
             if (!(d = mm::pmm_allocate()))
                 debug::panic("cannot get memory for heap");
-            paging::request_page(paging::page_type::SMALL, (uint64_t)buf + i * paging::PAGE_SIZE, mm::make_physical(d));
-            invlpg((uint8_t*)buf + i * paging::PAGE_SMALL_SIZE);
+            paging::request_page(paging::page_type::SMALL, (std::uint64_t)buf + i * paging::PAGE_SIZE, mm::make_physical(d));
+            invlpg((std::uint8_t*)buf + i * paging::PAGE_SMALL_SIZE);
         }
 
         return paging::PAGE_SMALL_SIZE * pages;
@@ -92,6 +94,23 @@ namespace alloc
         }
     }
 
+    void* aligned_malloc(std::size_t s, std::size_t align)
+    {
+        if (align <= 8)
+            return malloc(s);
+
+        std::uintptr_t ptr = (std::uintptr_t)malloc(align + s);
+        std::uintptr_t aligned_ptr = std::div_roundup(ptr, align);
+
+        if (ptr != align)
+        {
+            // insert unaligned pointer back to real root
+            ((std::uintptr_t*)aligned_ptr)[-1] = ptr | 1;
+        }
+
+        return (void*)aligned_ptr;
+    }
+
     void* realloc(void* buf, std::size_t size)
     {
         block_header* hdr = (block_header*)buf - 1;
@@ -109,6 +128,9 @@ namespace alloc
     {
         if (buffer == nullptr)
             return;
+
+        if (((std::uintptr_t*)buffer)[-1])
+            buffer = (void*)(((std::uintptr_t*)buffer)[-1] & ~1);
 
         std::size_t* type = (std::size_t*)buffer - 1;
         block_header* hdr = (block_header*)buffer - 1;
@@ -163,5 +185,5 @@ namespace alloc
         }
     }
 
-} // namespace alloc::detail
+} // namespace alloc
 

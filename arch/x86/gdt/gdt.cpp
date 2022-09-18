@@ -5,12 +5,12 @@
 
 namespace gdt
 {
-    static uint64_t gdt[] = {0, 0x00af9b000000ffff, 0x00af93000000ffff};
+    static std::uint64_t gdt[] = {0, 0x00af9b000000ffff, 0x00af93000000ffff};
 
     void install_gdt()
     {
-        utils::packed_tuple<uint16_t, uint64_t> d(sizeof(gdt), (uint64_t)gdt);
-        asm volatile("lgdtq %0" : : "m"(d));
+        utils::packed_tuple<std::uint16_t, std::uint64_t> desc(sizeof(gdt), (std::uint64_t)gdt);
+        asm volatile("lgdtq %0" : : "m"(desc));
         asm volatile goto("pushq $8\n"
                           "push $%0\n"
                           "lretq\n"
@@ -32,9 +32,9 @@ namespace gdt
 
     void reload_gdt_smp()
     {
-        utils::packed_tuple<uint16_t, uint64_t> d(sizeof(gdt_entries), (uint64_t)&smp::core_local::get().gdt);
+        utils::packed_tuple<std::uint16_t, std::uint64_t> desc(sizeof(gdt_entries), (std::uint64_t)&smp::core_local::get().gdt);
 
-        asm volatile("lgdtq %0" : : "m"(d));
+        asm volatile("lgdtq %0" : : "m"(desc));
         asm volatile goto("pushq $8\n"
                           "push $%0\n"
                           "lretq\n"

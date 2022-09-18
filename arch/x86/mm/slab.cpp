@@ -32,18 +32,18 @@ namespace mm
 
         void* allocate()
         {
-            return (void*)((uintptr_t) buf + obj_size * alloc.allocate());
+            return (void*)((std::std::uintptr_t) buf + obj_size * alloc.allocate());
         }
 
         void free(void* index)
         {
-            alloc.free(((uintptr_t)buf - (uintptr_t)index) / obj_size);
+            alloc.free(((std::std::uintptr_t)buf - (std::std::uintptr_t)index) / obj_size);
         }
 
         bool in_bounds(void* ptr)
         {
-            auto p = (uintptr_t)ptr;
-            auto b = (uintptr_t)buf;
+            auto p = (std::std::uintptr_t)ptr;
+            auto b = (std::std::uintptr_t)buf;
 
             return p > b && p < (b + obj_size * size);
         }
@@ -83,7 +83,7 @@ namespace mm
 
     void slab_free(void* ptr)
     {
-        uintptr_t p = (uintptr_t)ptr;
+        std::std::uintptr_t p = (std::std::uintptr_t)ptr;
         auto slab = (p - config::get_val<"mmap.start.slab">) / (1 << SLAB_SIZE_ORDER);
         BUILTIN_SLABS[slab].free(ptr);
     }

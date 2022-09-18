@@ -13,10 +13,10 @@ namespace apic
     class local_apic
     {
     public:
-        using register_rw = mmio::register_rw<uint32_t, 16>;
-        using register_rdonly = mmio::register_rdonly<uint32_t, 16>;
-        using register_wronly = mmio::register_wronly<uint32_t, 16>;
-        using register_reserved = mmio::register_reserved<uint32_t, 16>;
+        using register_rw = mmio::register_rw<std::uint32_t, 16>;
+        using register_rdonly = mmio::register_rdonly<std::uint32_t, 16>;
+        using register_wronly = mmio::register_wronly<std::uint32_t, 16>;
+        using register_reserved = mmio::register_reserved<std::uint32_t, 16>;
 
         static inline constexpr auto IA32_APIC_BASE_MSR_ENABLE = 0x800;
 
@@ -55,7 +55,7 @@ namespace apic
 
     private:
         apic_registers* reg_start = nullptr;
-        uint64_t ticks_per_ms;
+        std::uint64_t ticks_per_ms;
 
     public:
         /// \brief Check for the presense of an LAPIC on the current core
@@ -75,26 +75,26 @@ namespace apic
         ///
         /// This computes the APIT ticks per millisecond, and stores it into a cached value
         /// A call to this function should occur before any call to set_tick()
-        uint64_t calibrate();
+        std::uint64_t calibrate();
 
         /// \brief Sets the amount of ticks before a timer interrupt
         /// \param irq The irq vector to use
         /// \param ms The number of milliseconds per timer interrupt
         /// The APIT ticks are computed by using the value from calibrate() * \p ms. Interrupts are generated at the IRQ
         /// defined by \p irq, which requires that the core's IDT contain an entry for the specified vector
-        void set_tick(uint8_t irq, std::size_t ms);
+        void set_tick(std::uint8_t irq, std::size_t ms);
 
         /// \brief Sets the base address for the APIC
         /// \param addr The new base address
-        void set_apic_base(uintptr_t addr);
+        void set_apic_base(std::uintptr_t addr);
 
         /// \brief Obtains the APIC base address
         ///
-        uintptr_t get_apic_base();
+        inline std::uintptr_t get_apic_base() const { return 0x0ffffff000 & rdmsr(msr::IA32_APIC_BASE); }
 
         /// \brief Obtains a reference to the MMIO registers for the LAPIC
         //
-        constexpr apic_registers& mmio_register() { return *reg_start; }
+        constexpr apic_registers& mmio_register() const { return *reg_start; }
 
         /// \brief Sets the "end of interrupt" field in the LAPIC
         //

@@ -10,4 +10,4 @@ inline void lgdt(void* gdt) { asm volatile("lgdtq %0" : : "m"(gdt)); }
 
 /// \brief wrapper for the 'ltr` instruction
 /// \param desc The segment descriptor
-inline void ltr(uint16_t desc) { asm volatile("ltr %0" : : "r"(desc)); }
+inline void ltr(std::uint16_t desc) { asm volatile("ltr %0" : : "r"(desc)); }

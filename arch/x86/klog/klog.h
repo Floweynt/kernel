@@ -18,7 +18,7 @@ namespace klog
     std::size_t log(const char* fmt, Args... args)
     {
         lock::spinlock_guard g(lock);
-        std::size_t s1 = std::printf("[%lu] ", smp::core_local::get().coreid);
+        std::size_t s1 = std::printf("[%lu] ", smp::core_local::get().core_id);
         std::size_t s2 = std::printf(fmt, args...);
         return s1 + s2;
     }
@@ -26,7 +26,7 @@ namespace klog
     [[noreturn]] inline void panic(const char* msg)
     {
         lock::spinlock_guard g(lock);
-        std::printf("[%lu] ", smp::core_local::get().coreid);
+        std::printf("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg);
         __builtin_unreachable();
     }
@@ -34,7 +34,7 @@ namespace klog
     inline void panic(const char* msg, bool crash)
     {
         lock::spinlock_guard g(lock);
-        std::printf("[%lu] ", smp::core_local::get().coreid);
+        std::printf("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg, crash);
     }
 }

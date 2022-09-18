@@ -9,9 +9,9 @@
 /// Wrapper for the <a href="https://en.wikipedia.org/wiki/CPUID">cpuid</a> instruction. The value specified in \p code will
 /// be written into the `cpuid` instruction, which is then executed and loaded into a, b, c, d parameters from `%e<param>x`.
 /// If the argument passed in is null, the corresponding register's value will be thrown away.
-inline void cpuid(uint32_t code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d)
+inline void cpuid(std::uint32_t code, std::uint32_t* a, std::uint32_t* b, std::uint32_t* c, std::uint32_t* d)
 {
-    uint32_t tmp = 0;
+    std::uint32_t tmp = 0;
     if (a == nullptr)
         a = &tmp;
     if (b == nullptr)
@@ -34,22 +34,22 @@ inline void cpuid(uint32_t code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t
 /// leaf. The value specified in \p feature will be written into the `%ecx` register for the, along with setting `%eax` to 7
 /// The `cpuid` instruction is then executed and loaded into b, c, d parameters from `%e<param>x`.
 /// The arguments to this instruction wrapper must not be null.
-inline uint32_t cpuid_ext(uint32_t feature, uint32_t* b, uint32_t* c, uint32_t* d)
+inline std::uint32_t cpuid_ext(std::uint32_t feature, std::uint32_t* b, std::uint32_t* c, std::uint32_t* d)
 {
-    uint32_t max;
+    std::uint32_t max;
     asm volatile("cpuid" : "=a"(max), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(7), "c"(feature));
     return max;
 }
 
 #define READ_CR(CR)                                                                                                         \
-    inline uint64_t read_cr##CR()                                                                                           \
+    inline std::uint64_t read_cr##CR()                                                                                           \
     {                                                                                                                       \
-        uint64_t val;                                                                                                       \
+        std::uint64_t val;                                                                                                       \
         asm volatile("mov %%cr" #CR "%0" : "=r"(val));                                                                      \
         return val;                                                                                                         \
     }
 #define WRITE_CR(CR)                                                                                                        \
-    inline void write_cr##CR(uint64_t val) { asm volatile("mov %0, %%cr" #CR : : "r"(val)); }
+    inline void write_cr##CR(std::uint64_t val) { asm volatile("mov %0, %%cr" #CR : : "r"(val)); }
 
 READ_CR(0)
 // READ_CR(1)
@@ -85,21 +85,21 @@ inline void enable_interrupt() { asm volatile("sti"); }
 
 namespace msr
 {
-    inline constexpr uint64_t IA32_APIC_BASE = 0x1b;
-    inline constexpr uint64_t IA32_EFER = 0xc0000080;
-    inline constexpr uint64_t IA32_FS_BASE = 0xc0000100;
-    inline constexpr uint64_t IA32_GS_BASE = 0xc0000101;
-    inline constexpr uint64_t IA32_KERNEL_GS_BASE = 0xc0000102;
-    inline constexpr uint64_t IA32_PAT = 0x277;
+    inline constexpr std::uint64_t IA32_APIC_BASE = 0x1b;
+    inline constexpr std::uint64_t IA32_EFER = 0xc0000080;
+    inline constexpr std::uint64_t IA32_FS_BASE = 0xc0000100;
+    inline constexpr std::uint64_t IA32_GS_BASE = 0xc0000101;
+    inline constexpr std::uint64_t IA32_KERNEL_GS_BASE = 0xc0000102;
+    inline constexpr std::uint64_t IA32_PAT = 0x277;
 } // namespace msr
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to write to
 /// \param value The value to write
-inline void wrmsr(uint64_t msr, uint64_t value)
+inline void wrmsr(std::uint64_t msr, std::uint64_t value)
 {
-    uint32_t low = value & 0xFFFFFFFF;
-    uint32_t high = value >> 32;
+    std::uint32_t low = value & 0xFFFFFFFF;
+    std::uint32_t high = value >> 32;
     asm volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
@@ -107,21 +107,21 @@ inline void wrmsr(uint64_t msr, uint64_t value)
 /// \param msr The msr to write to
 /// \param a The a register passed to `wrmsr`
 /// \param d The d register passed to `wrmsr`
-inline void wrmsr(uint64_t msr, uint32_t a, uint32_t d) { asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
+inline void wrmsr(std::uint64_t msr, std::uint32_t a, std::uint32_t d) { asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to read from
 /// \return The value contained in the msr specified in \p msr
-inline uint64_t rdmsr(uint64_t msr)
+inline std::uint64_t rdmsr(std::uint64_t msr)
 {
-    uint32_t low, high;
+    std::uint32_t low, high;
     asm volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
-    return ((uint64_t)high << 32) | low;
+    return ((std::uint64_t)high << 32) | low;
 }
 
 /// \brief Sets the stack pointer `%rsp`
 /// \param sp The new stack pointer address
-inline void setstack(uintptr_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
+inline void setstack(std::uintptr_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
 
 /// \brief Preforms a long jump
 /// \param addr The address to jump to

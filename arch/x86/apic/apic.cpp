@@ -7,18 +7,16 @@ namespace apic
 {
     bool local_apic::check_apic()
     {
-        uint32_t eax, edx;
+        std::uint32_t eax, edx;
         cpuid(1, &eax, nullptr, nullptr, &edx);
         return edx & 0;
     }
 
-    void local_apic::set_apic_base(uintptr_t apic)
+    void local_apic::set_apic_base(std::uintptr_t apic)
     {
         reg_start = mm::make_virtual<apic_registers>(apic);
         wrmsr(msr::IA32_APIC_BASE, (apic & 0xfffff0000) | IA32_APIC_BASE_MSR_ENABLE, (apic >> 32) & 0x0f);
     }
-
-    uintptr_t local_apic::get_apic_base() { return 0x0ffffff000 & rdmsr(msr::IA32_APIC_BASE); }
 
     void local_apic::enable()
     {
@@ -29,7 +27,7 @@ namespace apic
         reg_start->siv.write(reg_start->siv.read() | 0x100);
     }
 
-    uint64_t local_apic::calibrate()
+    std::uint64_t local_apic::calibrate()
     {
         if (ticks_per_ms)
             return ticks_per_ms;
@@ -53,15 +51,15 @@ namespace apic
         }
 
         mmio_register().lvt_timer.write(mmio_register().lvt_timer | (1 << 16));
-        uint64_t ticks = 0xffffffff - mmio_register().current_timer_count;
+        std::uint64_t ticks = 0xffffffff - mmio_register().current_timer_count;
 
         return ticks_per_ms = ticks;
     }
 
-    void local_apic::set_tick(uint8_t irq, std::size_t ms)
+    void local_apic::set_tick(std::uint8_t irq, std::size_t ms)
     {
         mmio_register().timer_divide.write(3);
-        uint32_t timer = mmio_register().lvt_timer;
+        std::uint32_t timer = mmio_register().lvt_timer;
         timer &= ~(0b11 << 17);
         timer |= 1 << 17;
         mmio_register().lvt_timer.write(timer);

@@ -8,10 +8,10 @@
 
 namespace handlers
 {
-    // void handle_div_by_zero(uint64_t, uint64_t);
-    inline void handle_noop(uint64_t c, uint64_t) { sync::printf("c=%lu\n", c); while(1) {} }
-    void handle_gp(uint64_t, uint64_t);
-    void handle_timer(uint64_t, uint64_t);
+    // void handle_div_by_zero(std::uint64_t, std::uint64_t);
+    inline void handle_noop(std::uint64_t c, std::uint64_t) { sync::printf("c=%lu\n", c); while(1) {} }
+    void handle_gp(std::uint64_t, std::uint64_t);
+    void handle_timer(std::uint64_t, std::uint64_t);
 
     inline constexpr idt::interrupt_handler INTERRUPT_HANDLERS[] = {
         handle_noop, handle_noop, handle_noop, handle_noop, handle_noop, handle_noop, handle_noop, handle_noop,

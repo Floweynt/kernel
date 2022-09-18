@@ -5,7 +5,7 @@
 
 namespace paging
 {
-    void handle_page_fault(uint64_t id, void* stackpointer)
+    void handle_page_fault(std::uint64_t id, void* stackpointer)
     {
         // if this is kernel space code this is very bad
         // if it is a module, unload

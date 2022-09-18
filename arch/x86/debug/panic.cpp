@@ -1,4 +1,5 @@
 #include <cstddef>
+#include "debug.h"
 #include <printf.h>
 #include <kinit/boot_resource.h>
 
@@ -10,11 +11,11 @@ namespace debug
         "SMP",
     };
 
-    void panic(const char* c, bool crash)
+    void panic(const char* msg, bool crash)
     {
-        std::printf("panic: %s\n", c);
-        const char* mode = boot_resource::instance().is_smp() ? "smp" : "kinit";
-        std::printf("stage = \033cc;%s\033\n", mode);
+        std::printf("panic: %s\n", msg);
+        const char* stage = boot_resource::instance().is_smp() ? "smp" : "kinit";
+        std::printf("stage = \033cc;%s\033\n", stage);
         std::printf("crash = %B\n", crash);
         std::size_t* base_ptr;
 
@@ -28,7 +29,8 @@ namespace debug
             if (!ret_addr)
                 break;
 
-            std::printf("#%lu: 0x%016lx\n", n++, ret_addr);
+            auto symbol = sym_for(ret_addr);
+            std::printf("#%lu: 0x%016lx <\"%s\"+0x%08lx>\n", n++, ret_addr, symbol.name, symbol.offset);
             if (old_bp < 0x1000)
             {
                 stack_color = old_bp;

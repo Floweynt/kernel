@@ -5,10 +5,10 @@
 
 namespace cpuid_info
 {
-    static uint32_t cpuid_max;
-    static uint32_t features[config::get_val<"cpuid-feature-size">];
-    static uint32_t vendor_buf[3];
-    static uint32_t brand_buf[12];
+    static std::uint32_t cpuid_max;
+    static std::uint32_t features[config::get_val<"cpuid-feature-size">];
+    static std::uint32_t vendor_buf[3];
+    static std::uint32_t brand_buf[12];
 
     void initialize_cpuglobal()
     {
@@ -23,7 +23,7 @@ namespace cpuid_info
     const char* cpu_vendor_string()
     {
         static bool is_init = false;
-        static uint32_t buf[3];
+        static std::uint32_t buf[3];
 
         if (!is_init)
         {
@@ -36,7 +36,7 @@ namespace cpuid_info
     const char* cpu_brand_string()
     {
         static bool is_init = false;
-        static uint32_t buf[12];
+        static std::uint32_t buf[12];
 
         if (!is_init)
         {

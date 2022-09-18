@@ -2,7 +2,6 @@
 #define __ARCH_X86_SYNC_SPINLOCK_H__
 #include "kinit/boot_resource.h"
 #include <cstddef>
-#include <smp/smp.h>
 
 namespace lock
 {
@@ -13,19 +12,7 @@ namespace lock
     public:
         constexpr spinlock() : l(0) {}
 
-        inline void lock()
-        {
-            if constexpr(config::get_val<"debug.lock.spinlock_dep">)
-            {
-                while (!__sync_bool_compare_and_swap(&l, 0, smp::core_local::get().coreid + 1));
-                __sync_synchronize();
-            }
-            else
-            {
-                while (!__sync_bool_compare_and_swap(&l, 0, 1));
-                __sync_synchronize();
-            }
-        }
+        void lock();
 
         inline void release()
         {
@@ -34,6 +21,10 @@ namespace lock
         }
 
         inline std::size_t owned_core() { return l - 1; }
+    };
+
+    class interrupt_lock
+    {
     };
 
     template <typename T>

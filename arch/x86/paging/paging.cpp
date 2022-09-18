@@ -11,106 +11,106 @@ namespace paging
 {
     void install() { write_cr3(mm::make_physical(smp::core_local::get().pagemap)); }
 
-    static inline constexpr uint64_t type2align[] = {
+    static inline constexpr std::uint64_t type2align[] = {
         0xfff,
         0x1fffff,
         0x3fffffff,
     };
 
-    static lock::spinlock l;
+    static lock::spinlock paging_global_lock;
 
-    bool request_page(page_type pt, uintptr_t virtual_addr, uintptr_t physical_address, page_prop flags, bool overwrite)
+    bool request_page(page_type pt, std::uintptr_t virtual_addr, std::   uintptr_t physical_addr, page_prop prop, bool overwrite)
     {
         virtual_addr &= ~type2align[pt];
-        physical_address &= ~type2align[pt];
+        physical_addr &= ~type2align[pt];
 
-        lock::spinlock_guard g(l);
+        lock::spinlock_guard g(paging_global_lock);
         // obtain pointer to entry
-        page_table_entry* current_ent = smp::core_local::get().pagemap;
-        if (current_ent == nullptr)
-            current_ent = smp::core_local::get().pagemap = (page_table_entry*)mm::pmm_allocate();
+        page_table_entry* current_entry = smp::core_local::get().pagemap;
+        if (current_entry == nullptr)
+            current_entry = smp::core_local::get().pagemap = (page_table_entry*)mm::pmm_allocate();
 
         for (int i = 0; i < (3 - pt); i++)
         {
-            uint64_t& e = current_ent[get_page_entry(virtual_addr, i)];
+            std::uint64_t& e = current_entry[get_page_entry(virtual_addr, i)];
             if (!e)
             {
                 auto r = mm::pmm_allocate();
                 if (r == 0)
                     debug::panic("cannot allocate physical memory for paging");
-                e = make_page_pointer(mm::make_physical(r), flags);
+                e = make_page_pointer(mm::make_physical(r), prop);
             }
 
-            current_ent =
-                mm::make_virtual<page_table_entry>(current_ent[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
+            current_entry =
+                mm::make_virtual<page_table_entry>(current_entry[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
         }
         // writelast entry
-        current_ent += get_page_entry(virtual_addr, 3 - pt);
-        if (*current_ent && !overwrite)
+        current_entry += get_page_entry(virtual_addr, 3 - pt);
+        if (*current_entry && !overwrite)
             return false;
         switch (pt)
         {
         case SMALL:
-            *current_ent = make_page_small(physical_address, flags);
+            *current_entry = make_page_small(physical_addr, prop);
             break;
         case MEDIUM:
-            *current_ent = make_page_medium(physical_address, flags);
+            *current_entry = make_page_medium(physical_addr, prop);
             break;
         case BIG:
-            *current_ent = make_page_large(physical_address, flags);
+            *current_entry = make_page_large(physical_addr, prop);
             break;
         }
 
         return true;
     }
 
-    void sync(uintptr_t virtual_addr)
+    void sync(std::uintptr_t virtual_addr)
     {
-        lock::spinlock_guard g(l);
-        uint16_t index = paging::get_page_entry<3>(virtual_addr);
-        uint64_t value = smp::core_local::get().pagemap[index];
+        lock::spinlock_guard g(paging_global_lock);
+        std::uint16_t index = paging::get_page_entry<3>(virtual_addr);
+        std::uint64_t value = smp::core_local::get().pagemap[index];
 
         for (std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
             smp::core_local::get(i).pagemap[index] = value;
     }
 
-    void map_section(uintptr_t addr, std::size_t _len, paging::page_prop flags)
+    void map_section(std::uintptr_t addr, std::size_t length, paging::page_prop prop)
     {
-        int64_t len = _len / PAGE_SMALL_SIZE;
+        std::int64_t pages = length / PAGE_SMALL_SIZE;
 
         while (addr % paging::PAGE_MEDIUM_SIZE)
         {
-            if (len-- == 0)
+            if (pages-- == 0)
                 return;
-            paging::map_hhdm_phys(paging::page_type::SMALL, addr, flags);
+            paging::map_hhdm_phys(paging::page_type::SMALL, addr, prop);
             addr += paging::PAGE_SMALL_SIZE;
         }
 
-        while ((len >= 0x200) && (addr % paging::PAGE_LARGE_SIZE))
+        while ((pages >= 0x200) && (addr % paging::PAGE_LARGE_SIZE))
         {
-            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, flags);
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, prop);
             addr += paging::PAGE_MEDIUM_SIZE;
-            len -= 0x200;
+            pages -= 0x200;
         }
 
         // okay, this is aligned...
-        while (len >= 0x40000)
+        while (pages >= 0x40000)
         {
-            paging::map_hhdm_phys(paging::page_type::BIG, addr, flags);
+            paging::map_hhdm_phys(paging::page_type::BIG, addr, prop);
             addr += paging::PAGE_LARGE_SIZE;
-            len -= 0x40000;
+            pages -= 0x40000;
         }
 
-        while (len >= 0x200)
+        while (pages >= 0x200)
         {
-            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, flags);
+            paging::map_hhdm_phys(paging::page_type::MEDIUM, addr, prop);
             addr += paging::PAGE_MEDIUM_SIZE;
-            len -= 0x200;
+            pages -= 0x200;
         }
 
-        while (len--)
+        while (pages--)
         {
-            paging::map_hhdm_phys(paging::page_type::SMALL, addr, flags);
+            paging::map_hhdm_phys(paging::page_type::SMALL, addr, prop);
             addr += paging::PAGE_SMALL_SIZE;
         }
     }
@@ -120,12 +120,11 @@ namespace paging
         wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
         // wrmsr(msr::IA32_PAT, 0x706050403020100);
 
-        std::size_t kpages = std::detail::div_roundup(boot_resource::instance().kernel_size(), paging::PAGE_SMALL_SIZE);
+        std::size_t kernel_pages = std::div_roundup(boot_resource::instance().kernel_size(), paging::PAGE_SMALL_SIZE);
 
-        // workaround for weird stuff
-        for (std::size_t i = 0; i < kpages + 10; i++)
+        for (std::size_t i = 0; i < kernel_pages + 10; i++)
         {
-            uint64_t vaddr = 0xffffffff80000000 + i * paging::PAGE_SMALL_SIZE;
+            std::uint64_t vaddr = 0xffffffff80000000 + i * paging::PAGE_SMALL_SIZE;
             paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), {.x = true}, true);
         }
 

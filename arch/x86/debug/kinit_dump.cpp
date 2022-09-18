@@ -3,8 +3,8 @@
 #include <config.h>
 #include <cpuid/cpuid.h>
 #include <kinit/boot_resource.h>
-#include <printf.h>
 #include <mm/mm.h>
+#include <printf.h>
 
 namespace debug
 {
@@ -14,7 +14,7 @@ namespace debug
     }
     void dump_memory_map()
     {
-        if constexpr(config::get_val<"debug.log.mmap">)
+        if constexpr (config::get_val<"debug.log.mmap">)
         {
             std::printf("memory map:\n");
 
@@ -55,7 +55,7 @@ namespace debug
 
     void dump_cpuid_info()
     {
-        if constexpr(config::get_val<"debug.log.cpuid">)
+        if constexpr (config::get_val<"debug.log.cpuid">)
         {
             std::printf("cpu_vendor_string: %s\n", cpuid_info::cpu_vendor_string());
             std::printf("cpu_brand_string: %s\n", cpuid_info::cpu_brand_string());
@@ -72,7 +72,7 @@ namespace debug
 
     void dump_acpi_info()
     {
-        if constexpr(config::get_val<"debug.log.acpi">)
+        if constexpr (config::get_val<"debug.log.acpi">)
         {
             auto rsdp = boot_resource::instance().rsdp();
             std::printf("ACPI info:\n", rsdp->xsdt_address);
@@ -81,7 +81,8 @@ namespace debug
             std::printf("    length=%d\n", (int)rsdp->length);
 
             boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-                std::printf("  entry: (sig=0x%08u)\n", mm::make_virtual<acpi::acpi_sdt_header>((uint64_t)entry)->signature);
+                std::printf("  entry: (sig=0x%08u)\n",
+                            mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry)->signature);
             });
         }
     }

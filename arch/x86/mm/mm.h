@@ -32,40 +32,40 @@ namespace mm
         constexpr void free(std::size_t s) { bitmask.reset(s); }
     };
 
-    constexpr uintptr_t make_physical(uintptr_t virt) { return virt & ~config::get_val<"mmap.start.hhdm">; }
+    constexpr std::uintptr_t make_physical(std::uintptr_t virt) { return virt & ~config::get_val<"mmap.start.hhdm">; }
 
     template <typename T>
-    uintptr_t make_physical(T* virt)
+    std::uintptr_t make_physical(T* virt)
     {
-        return make_physical(uintptr_t(virt));
+        return make_physical(std::uintptr_t(virt));
     }
 
-    inline uintptr_t make_physical_kern(uintptr_t virt)
+    inline std::uintptr_t make_physical_kern(std::uintptr_t virt)
     {
         return virt - 0xffffffff80000000 + boot_resource::instance().kernel_phys_addr();
     }
 
     template <typename T>
-    constexpr uintptr_t make_physical_kern(T* virt)
+    constexpr std::uintptr_t make_physical_kern(T* virt)
     {
-        return make_physical_kern(uintptr_t(virt));
+        return make_physical_kern(std::uintptr_t(virt));
     }
 
-    constexpr uintptr_t make_virtual(uintptr_t phy) { return phy | config::get_val<"mmap.start.hhdm">; }
+    constexpr std::uintptr_t make_virtual(std::uintptr_t phy) { return phy | config::get_val<"mmap.start.hhdm">; }
 
     template <typename T>
-    constexpr T* make_virtual(uintptr_t phy)
+    constexpr T* make_virtual(std::uintptr_t phy)
     {
         return (T*)make_virtual(phy);
     }
 
-    inline uintptr_t make_virtual_kern(uintptr_t phy)
+    inline std::uintptr_t make_virtual_kern(std::uintptr_t phy)
     {
         return phy - boot_resource::instance().kernel_phys_addr() + config::get_val<"mmap.start.kernel">;
     }
 
     template <typename T>
-    T* make_virtual_kern(uint64_t phy)
+    T* make_virtual_kern(std::uint64_t phy)
     {
         return (T*)make_virtual_kern(phy);
     }

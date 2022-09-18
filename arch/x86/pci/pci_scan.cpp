@@ -4,12 +4,12 @@
 #include <printf.h>
 namespace pci
 {
-    static void check_bus(uint8_t bus, int level);
-    static void check_function(pci_device_ident dev, uint8_t function, int level)
+    static void check_bus(std::uint8_t bus, int level);
+    static void check_function(pci_device_ident dev, std::uint8_t function, int level)
     {
         if ((dev.class_code(function) == 0x6) && (dev.subclass(function) == 0x4))
         {
-            uint8_t secondary_bus = dev.read_config(function, 0x18) >> 8;
+            std::uint8_t secondary_bus = dev.read_config(function, 0x18) >> 8;
             if constexpr (config::get_val<"debug.log.pci">)
                 std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hhx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ',
                             dev.bus(), dev.slot(), function, dev.device_id(function), dev.subclass(function),
@@ -31,7 +31,7 @@ namespace pci
         check_function(dev, 0, level);
         if (dev.header_type(0) & 0x80)
         {
-            for (uint8_t function = 1; function < 8; function++)
+            for (std::uint8_t function = 1; function < 8; function++)
             {
                 if (dev.vendor_id(function) != 0xFFFF)
                     check_function(dev, function, level);
@@ -39,9 +39,9 @@ namespace pci
         }
     }
 
-    static void check_bus(uint8_t bus, int level)
+    static void check_bus(std::uint8_t bus, int level)
     {
-        for (uint8_t device = 0; device < 32; device++)
+        for (std::uint8_t device = 0; device < 32; device++)
             check_device({bus, device}, level);
     }
 
@@ -52,7 +52,7 @@ namespace pci
             check_bus(0, 0);
         else
         {
-            for (uint8_t function = 0; function < 8; function++)
+            for (std::uint8_t function = 0; function < 8; function++)
             {
                 if (root.vendor_id(function) != 0xFFFF)
                     break;

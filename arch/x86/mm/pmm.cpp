@@ -20,7 +20,7 @@ namespace mm
         });
     }
 
-    void add_region(uintptr_t start, std::size_t len)
+    void add_region(std::uintptr_t start, std::size_t len)
     {
         lock::spinlock_guard g(l);
         region[meta_allocator.allocate()] = pmm_region(start, len);
