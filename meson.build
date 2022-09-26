@@ -16,7 +16,6 @@ add_project_arguments(
     '-fno-threadsafe-statics',
     '-mno-red-zone',
     '-ffreestanding',
-#    '-no-pie',
     '-nostdinc',
     '-Wno-ignored-attributes',
     '-mno-sse',
@@ -71,10 +70,12 @@ kernel_source = [
 
 # required program for generating disk image
 gdb = find_program('gdb')
-objcopy = find_program('objcopy')
+strip_debug = find_program('./build-resources/strip_debug.sh')
 qemu = find_program('qemu-system-x86_64')
 generate_image = find_program('./build-resources/generate_image.sh')
 git_version_info = find_program('./build-resources/git_version_info.sh')
+gen_dbg = find_program('./build-resources/gen-dbg')
+objcopy = find_program('objcopy')
 
 # config
 conf = configuration_data()
@@ -114,9 +115,11 @@ elif comp_id == 'clang'
 else 
     error('unknown cc', comp_id)
 endif
+
 configure_file(input : 'config.h.in',
                output : 'config.h.in',
                configuration : conf)
+
 configuration_inc = include_directories(
     './',
     './arch/x86/',
@@ -126,7 +129,7 @@ configuration_inc = include_directories(
     is_system: true
 )
 
-git_ver_info = custom_target('git_version_info',
+config_output = custom_target('config_output',
     input: 'config.h.in',
     output: 'config.h',
     command: [
@@ -137,7 +140,7 @@ git_ver_info = custom_target('git_version_info',
 )
 
 kernel = executable('kernel.elf',
-    git_ver_info,
+    config_output,
     kernel_source,
     link_args: [
         '-T' + (meson.source_root() + '/kernel.lds'),
@@ -156,13 +159,13 @@ kernel_stripped = custom_target('kernel_stripped',
     input: kernel,
     depends:  [kernel],
     command: [
-        objcopy,
-        '--strip-debug', 
-        meson.build_root() + '/kernel.elf',
-        meson.build_root() + '/kernel_stripped.elf'
+        strip_debug,
+        '@INPUT@',
+        '@OUTPUT@'
     ]
 )
 
+# for gdb
 kernel_dbg = custom_target('kernel_dbg',
     output: 'kernel.dbg',
     input: kernel,
@@ -170,20 +173,30 @@ kernel_dbg = custom_target('kernel_dbg',
     command: [
         objcopy,
         '--only-keep-debug',
-        meson.build_root() + '/kernel.elf',
-        meson.build_root() + '/kernel.dbg'
+        '@INPUT@',
+        '@OUTPUT@'
+    ]
+)
+
+kernel_syms = custom_target('kernel_syms',
+    output: 'kernel.syms',
+    input: kernel,
+    command: [
+        gen_dbg,
+        '@INPUT@',
+        '@OUTPUT@',
     ]
 )
 
 kernel_img = custom_target('kernel_img',
     output: 'kernel.img',
-    input: kernel_stripped,
-    depends: [kernel_stripped],
+    input: [ kernel_stripped, kernel_syms ],
     command: [
         generate_image, 
-        meson.build_root() + '/kernel.img', 
+        '@OUTPUT@', 
         meson.source_root() + '/build-resources/kernel-template.img',
-        meson.build_root() + '/kernel_stripped.elf'
+        '@INPUT0@',
+        '@INPUT1@'
     ]
 )
 

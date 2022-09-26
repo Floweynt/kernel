@@ -1,6 +1,6 @@
-#include <kinit/stivale2.h>
+#include <kinit/limine.h>
 
 namespace tty
 {
-    void init(const stivale2_struct_tag_framebuffer& buf);    
+    void init(const limine_framebuffer_response* buf);    
 }

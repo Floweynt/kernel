@@ -1,23 +1,25 @@
 // cSpell:ignore kinit, stivale, lapic, rsdp, xsdt
 #ifndef __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
 #define __KERNEL_ARCH_X86_KINIT_BOOT_RESOURCE_H__
-#include "stivale2.h"
+#include "limine.h"
 #include <acpi/acpi.h>
 #include <cstddef>
 #include <cstdint>
 
 class boot_resource
 {
+    inline static constexpr std::size_t MMAP_ENTRIES = 32;
     std::uint64_t phys_addr;
     std::uint64_t ksize;
     std::size_t mmap_length;
+    std::size_t pmrs_length;
     std::size_t cores;
     std::size_t bsp_id_lapic;
-    stivale2_mmap_entry mmap_entries[0x100];
+    limine_memmap_entry mmap_entries[MMAP_ENTRIES];
     acpi::rsdp_descriptor* root_table;
     bool smp_status;
 public:
-    boot_resource(stivale2_struct*);
+    boot_resource();
     static boot_resource& instance();
 
     constexpr std::uint64_t kernel_phys_addr() const { return phys_addr; }

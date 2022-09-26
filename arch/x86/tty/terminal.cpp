@@ -1,10 +1,10 @@
 // cSpell:ignore scrollup stivale
+#include <kinit/limine.h>
 #include "romfont.h"
 #include <bits/user_implement.h>
 #include <cctype>
 #include <common/tty.h>
 #include <cstring>
-#include <kinit/stivale2.h>
 #include <mm/pmm.h>
 #include <paging/paging.h>
 
@@ -24,7 +24,7 @@ namespace tty
     char command_buffer[8][32];
     tty::rgb fg_color = tty::WHITE;
     tty::rgb bg_color = tty::BLACK;
-    stivale2_struct_tag_framebuffer buffer;
+    limine_framebuffer buffer;
     tty::romfont f(8, 8, (void*)font);
     screen_character* screen_buffer;
     std::size_t rotate_offset;
@@ -33,12 +33,12 @@ namespace tty
 
     inline void* pixel_at(std::size_t x, std::size_t y)
     {
-        return (void*)(buffer.framebuffer_addr + y * buffer.framebuffer_pitch + x * buffer.framebuffer_bpp);
+        return (void*)((std::uint8_t*) buffer.address + y * buffer.pitch + x * buffer.bpp);
     }
 
-    inline std::size_t lines() { return buffer.framebuffer_height / f.height(); }
+    inline std::size_t lines() { return buffer.height / f.height(); }
 
-    inline std::size_t cols() { return buffer.framebuffer_width / f.width(); }
+    inline std::size_t cols() { return buffer.width / f.width(); }
 
     inline screen_character& char_at(std::size_t i, std::size_t j)
     {
@@ -46,14 +46,20 @@ namespace tty
         return screen_buffer[i * lines() + j];
     }
 
-    void init(const stivale2_struct_tag_framebuffer& buf)
+    void init(const limine_framebuffer_response* buf)
     {
-        buffer = buf;
+        if(buf->framebuffer_count < 1)
+        {
+            // this should NEVER occur!
+            while(1) {};
+        }
+
+        buffer = *buf->framebuffers[0];
+
         static constexpr auto SCROLLBACK_START = config::get_val<"mmap.start.scrollback">;
         // Obtains the start of the framebuffer, in a mapped portion of virtual memory
-        buffer.framebuffer_addr = mm::make_virtual(buffer.framebuffer_addr);
         // Conver to bytes
-        buffer.framebuffer_bpp >>= 3;
+        buffer.bpp >>= 3;
 
         // Obtains the approx amount of pages required to map the character buffer
         std::size_t pages = std::detail::div_roundup(cols() * lines() * sizeof(screen_character), paging::PAGE_SMALL_SIZE);
@@ -127,10 +133,10 @@ namespace tty
             {
                 std::uint64_t px = *current_char & (0x80 >> bit_index) ? fg : bg;
                 char* pixel_buffer = (char*)&px;
-                for (int k = 0; k < buffer.framebuffer_bpp; k++)
+                for (int k = 0; k < buffer.bpp; k++)
                     current_pixel[k] = *pixel_buffer++;
 
-                current_pixel += buffer.framebuffer_bpp;
+                current_pixel += buffer.bpp;
                 bit_index++;
                 current_char += bit_index / 8;
                 bit_index %= 8;

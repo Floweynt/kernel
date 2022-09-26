@@ -1,5 +1,6 @@
 #include "kinit_dump.h"
 #include "acpi/acpi.h"
+#include "kinit/limine.h"
 #include <config.h>
 #include <cpuid/cpuid.h>
 #include <kinit/boot_resource.h>
@@ -18,7 +19,7 @@ namespace debug
         {
             std::printf("memory map:\n");
 
-            boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
+            boot_resource::instance().iterate_mmap([](const limine_memmap_entry& e) {
                 switch (e.type)
                 {
                 case 0x1:

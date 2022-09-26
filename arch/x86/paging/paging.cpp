@@ -1,6 +1,7 @@
 #include "paging.h"
 #include <asm/asm_cpp.h>
 #include <debug/debug.h>
+#include <kinit/limine.h>
 #include <mm/pmm.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
@@ -19,7 +20,8 @@ namespace paging
 
     static lock::spinlock paging_global_lock;
 
-    bool request_page(page_type pt, std::uintptr_t virtual_addr, std::   uintptr_t physical_addr, page_prop prop, bool overwrite)
+    bool request_page(page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop,
+                      bool overwrite)
     {
         virtual_addr &= ~type2align[pt];
         physical_addr &= ~type2align[pt];
@@ -128,7 +130,13 @@ namespace paging
             paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), {.x = true}, true);
         }
 
-        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
+        for (std::size_t i = 0; i < 10; i++)
+        {
+            std::uint64_t vaddr = 0xffffffff90000000 + i * paging::PAGE_SMALL_SIZE;
+            paging::request_page(paging::SMALL, vaddr, mm::make_physical_kern(vaddr), {.x = true}, true);
+        }
+
+        boot_resource::instance().iterate_mmap([](const limine_memmap_entry& e) {
             paging::page_prop flags;
 
             switch (e.type)

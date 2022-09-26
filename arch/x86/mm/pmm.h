@@ -1,6 +1,5 @@
 #ifndef __ARCH_X86_MM_PMM_H__
 #define __ARCH_X86_MM_PMM_H__
-#include "kinit/stivale2.h"
 #include "mm.h"
 #include "paging/paging.h"
 namespace mm

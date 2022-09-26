@@ -1,7 +1,10 @@
 // cSpell:ignore apic, hhdm, lapic, wrmsr, efer, stivale, rdmsr
 #include "smp.h"
+#include "kinit/limine.h"
+#include "paging/paging_entries.h"
 #include <asm/asm_cpp.h>
 #include <atomic>
+#include <cstdint>
 #include <gdt/gdt.h>
 #include <idt/handlers/handlers.h>
 #include <idt/idt.h>
@@ -38,13 +41,13 @@ namespace smp
         std::detail::errors::__halt();
     }
 
-    [[noreturn]] static void smp_main(stivale2_smp_info* info)
+    [[noreturn]] static void smp_main(limine_smp_info* info)
     {
         mark_stack(debug::SMP);
         disable_interrupt();
-        info = mm::make_virtual<stivale2_smp_info>((std::uint64_t)info);
 
-        const auto [core_id, cr3] = *((smp::init_data*)(info->extra_argument));
+        std::uintptr_t cr3 = info->extra_argument & ~0xfff;
+        std::uintptr_t core_id = info->extra_argument | ~0xfff;
 
         write_cr3(mm::make_physical(cr3));
 
@@ -84,9 +87,9 @@ namespace smp
     }
 
     // used for proper frame pointer generation
-    static void main_wrapper(stivale2_smp_info* s) { smp_main(s); }
+    static void main_wrapper(limine_smp_info* s) { smp_main(s); }
 
-    [[noreturn]] void init(stivale2_struct_tag_smp* smp)
+    [[noreturn]] void init(limine_smp_response* smp)
     {
         boot_resource::instance().mark_smp_start();
         std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
@@ -96,36 +99,25 @@ namespace smp
         std::size_t bsp_index = 0;
         for (std::size_t i = 0; i < smp->cpu_count; i++)
         {
-            if (smp->bsp_lapic_id == smp->smp_info[i].lapic_id)
+            if (smp->bsp_lapic_id == smp->cpus[i]->lapic_id)
             {
                 bsp_index = i;
-                static init_data cpu0_data{0, smp::core_local::get(0).pagemap};
-                smp->smp_info[i].extra_argument = (std::uintptr_t)&cpu0_data;
+                smp->cpus[i]->extra_argument = (std::uintptr_t)smp::core_local::get(0).pagemap;
                 continue;
             }
 
             core_id++;
             std::printf("initalizing extra smp core: %lu\n", i);
-            smp->smp_info[i].extra_argument = core_id;
-
-            std::uintptr_t stack_base = (std::uintptr_t)mm::pmm_allocate();
-
-            std::uintptr_t stack_ptr = stack_base + paging::PAGE_SMALL_SIZE - sizeof(init_data);
-
-            std::printf("  stack: 0x%016lx-0x%016lx\n", stack_base, stack_ptr);
 
             // remember that stack grows down
-            smp->smp_info[i].target_stack = stack_ptr;
 
-            smp->smp_info[i].extra_argument = (std::uintptr_t) new ((void*)stack_ptr) smp::init_data{
-                .core_id = core_id,
-                .cr3 = (smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate())};
+            smp->cpus[i]->extra_argument = (std::uintptr_t)(smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate()) | core_id;
 
             paging::sync_page_tables(core_id, 0);
-            stdext::direct_atomic_store(&smp->smp_info[i].goto_address, (std::uintptr_t)smp::main_wrapper,
+            stdext::direct_atomic_store((std::uint64_t*)&smp->cpus[i]->goto_address, (std::uintptr_t)smp::main_wrapper,
                                         std::memory_order_seq_cst);
         }
         // initialize myself too!
-        smp::smp_main(&smp->smp_info[bsp_index]);
+        smp::smp_main(smp->cpus[bsp_index]);
     }
 } // namespace smp

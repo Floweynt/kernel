@@ -1,4 +1,5 @@
 #include "pmm.h"
+#include <kinit/limine.h>
 #include <config.h>
 #include <cstdint>
 #include <paging/paging.h>
@@ -14,7 +15,7 @@ namespace mm
 
     void init()
     {
-        boot_resource::instance().iterate_mmap([](const stivale2_mmap_entry& e) {
+        boot_resource::instance().iterate_mmap([](const limine_memmap_entry& e) {
             if (e.type == 1)
                 mm::add_region(mm::make_virtual(e.base), e.length / paging::PAGE_SMALL_SIZE);
         });

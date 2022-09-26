@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
-#include <kinit/stivale2.h>
 #include <paging/paging.h>
 #include <process/scheduler/scheduler.h>
 #include <utils/id_allocator.h>
@@ -59,14 +58,7 @@ namespace smp
         inline static std::uint64_t gs_of(std::size_t core) { return (std::uint64_t)&entries[core]; }
     };
 
-    struct init_data
-    {
-        std::size_t core_id;
-        paging::page_table_entry* cr3;
-    };
-    static_assert(sizeof(init_data) < paging::PAGE_SMALL_SIZE);
-
-    [[noreturn]] void init(stivale2_struct_tag_smp*);
+    [[noreturn]] void init(limine_smp_response* smp);
 } // namespace smp
 
 #endif

@@ -1,6 +1,6 @@
 // cSpell:ignore stivale, alignas, rsdp, lapic, efer, wrmsr, kpages, rdmsr, cpuid, kinit, xsdt
 #include "boot_resource.h"
-#include "stivale2.h"
+#include "kinit/limine.h"
 #include <acpi/acpi.h>
 #include <asm/asm_cpp.h>
 #include <config.h>
@@ -19,52 +19,59 @@
 #include <sync/spinlock.h>
 #include <tty/tty.h>
 
-static std::uint8_t stack[4096];
+static limine_smp_request smp_request = {
+    .id = LIMINE_SMP_REQUEST,
+    .revision = 0,
+    .flags = 0, // no need for x2apic
+};
 
-static stivale2_header_tag_smp smp_tag{.tag = {.identifier = STIVALE2_HEADER_TAG_SMP_ID, .next = 0}, .flags = 0};
+static limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 0
+};
 
-static stivale2_tag unmap_null_tag = {.identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID, .next = (std::uint64_t)&smp_tag};
+static limine_framebuffer_request framebuffer_request {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .revision = 0,
+};
 
-static stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
-    .tag = {.identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID, .next = (std::uint64_t)&unmap_null_tag},
-    .framebuffer_width = 0,
-    .framebuffer_height = 0,
-    .framebuffer_bpp = 0};
+static limine_stack_size_request stack_size_request {
+    .id = LIMINE_STACK_SIZE_REQUEST,
+    .revision = 0,
+    .stack_size = paging::PAGE_SMALL_SIZE
+};
 
-static stivale2_header stivale_hdr
-    [[gnu::section(".stivale2hdr"), gnu::used]] = {.entry_point = 0,
-                                                   .stack = (std::uintptr_t)stack + sizeof(stack),
-                                                   .flags = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
-                                                   .tags = (std::uintptr_t)&framebuffer_hdr_tag};
+static limine_kernel_file_request kernel_file_request {
+    .id = LIMINE_KERNEL_FILE_REQUEST,
+    .revision = 0
+};
 
-template <typename H>
-static H* stivale2_get_tag(struct stivale2_struct* stivale2_struct, std::uint64_t id)
-{
-    struct stivale2_tag* current_tag = (stivale2_tag*)stivale2_struct->tags;
-    while (true)
-    {
-        if (current_tag == nullptr)
-            return nullptr;
-        if (current_tag->identifier == id)
-            return (H*)current_tag;
-        current_tag = (stivale2_tag*)current_tag->next;
-    }
-}
+static limine_kernel_address_request kernel_address_request {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0
+};
+
+static limine_rsdp_request rsdp_request {
+    .id = LIMINE_RSDP_REQUEST,
+    .revision = 0
+};
 
 alignas(boot_resource) static char buf[sizeof(boot_resource)];
 boot_resource& boot_resource::instance() { return *(boot_resource*)(buf); }
 
-boot_resource::boot_resource(stivale2_struct* root)
+boot_resource::boot_resource()
 {
-    auto mmap_tag = stivale2_get_tag<stivale2_struct_tag_memmap>(root, STIVALE2_STRUCT_TAG_MEMMAP_ID);
-    mmap_length = mmap_tag->entries;
+    auto mmap_tag = memmap_request.response;
+    mmap_length = std::min(mmap_tag->entry_count, MMAP_ENTRIES);
+
     for (std::size_t i = 0; i < mmap_length; i++)
-        mmap_entries[i] = mmap_tag->memmap[i];
-    ksize = stivale2_get_tag<stivale2_struct_tag_kernel_file_v2>(root, STIVALE2_STRUCT_TAG_KERNEL_FILE_V2_ID)->kernel_size;
-    phys_addr = stivale2_get_tag<stivale2_struct_tag_kernel_base_address>(root, STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID)
-                    ->physical_base_address;
-    root_table = (acpi::rsdp_descriptor*)stivale2_get_tag<stivale2_struct_tag_rsdp>(root, STIVALE2_STRUCT_TAG_RSDP_ID)->rsdp;
-    auto smp = stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID);
+        mmap_entries[i] = *mmap_tag->entries[i];
+
+    ksize = kernel_file_request.response->kernel_file->size;
+    phys_addr = kernel_address_request.response->physical_base;
+
+    root_table = (acpi::rsdp_descriptor*)rsdp_request.response->address;
+    auto smp = smp_request.response;
     cores = smp->cpu_count;
     bsp_id_lapic = smp->bsp_lapic_id;
 }
@@ -88,10 +95,10 @@ extern "C"
                 ((init_array_t)*i)();
     }
 
-    [[noreturn]] void _start(stivale2_struct* root)
+    [[noreturn]] void _start()
     {
         init_array();
-        new (buf) boot_resource(root);
+        new (buf) boot_resource();
         wrmsr(msr::IA32_GS_BASE, (std::uint64_t)&cpu0_ptr);
 
         mm::init();
@@ -99,7 +106,7 @@ extern "C"
         alloc::init((void*)config::get_val<"mmap.start.heap">,
                     paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
 
-        tty::init(*stivale2_get_tag<stivale2_struct_tag_framebuffer>(root, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID));
+        tty::init(framebuffer_request.response);
 
         debug::print_kinfo();
         std::printf("kinit: _start() started tty\n");
@@ -121,6 +128,6 @@ extern "C"
 
         smp::core_local::create(cpu0_ptr);
 
-        smp::init(stivale2_get_tag<stivale2_struct_tag_smp>(root, STIVALE2_STRUCT_TAG_SMP_ID));
+        smp::init(smp_request.response);
     }
 }
