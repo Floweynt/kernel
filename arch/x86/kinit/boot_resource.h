@@ -6,9 +6,25 @@
 #include <cstddef>
 #include <cstdint>
 
+// boot_warn_flags
+enum init_warn_flags : std::uint32_t
+{
+    WARN_MMAP_OVERFLOW = 1 << 0,
+    WARN_PMM_OVERFLOW = 1 << 1
+};
+
+class modules
+{
+    void* symbols;
+public:
+    modules();
+    constexpr void* get_symbols() const { return symbols; } 
+};
+
+
 class boot_resource
 {
-    inline static constexpr std::size_t MMAP_ENTRIES = 32;
+    inline static constexpr std::size_t MMAP_ENTRIES = 48;
     std::uint64_t phys_addr;
     std::uint64_t ksize;
     std::size_t mmap_length;
@@ -18,6 +34,8 @@ class boot_resource
     limine_memmap_entry mmap_entries[MMAP_ENTRIES];
     acpi::rsdp_descriptor* root_table;
     bool smp_status;
+    std::uint32_t flags;
+    modules mods;
 public:
     boot_resource();
     static boot_resource& instance();
@@ -46,6 +64,11 @@ public:
 
     bool is_smp() const { return smp_status; }
     constexpr void mark_smp_start() { smp_status = true; }
+
+    constexpr void warn_init(init_warn_flags f) { flags = flags | f; }
+    constexpr std::uint32_t warn_init() const { return flags; }
+
+    constexpr const modules& modules() const { return mods; }
 };
 
 #endif

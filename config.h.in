@@ -22,7 +22,6 @@ using config = ctcfg::config_holder<
     ctcfg::bool_entry<"debug.log.acpi", @DEBUG_LOG_ACPI@>,
     ctcfg::bool_entry<"debug.log.pci", @DEBUG_LOG_PCI@>,
     ctcfg::bool_entry<"debug.lock.spinlock_dep", @DEBUG_SPINLOCK_DEP@>,
-    ctcfg::address_entry<"debug.symtab", @DEBUG_SYMTAB@>,
     ctcfg::size_entry<"slab.min_order", @SLAB_MIN_ORDER@>,
     ctcfg::size_entry<"slab.max_order", @SLAB_MAX_ORDER@>,
     ctcfg::size_entry<"slab.slab_size_order", @SLAB_SIZE_ORDER@>

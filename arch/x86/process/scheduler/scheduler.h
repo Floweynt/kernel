@@ -18,7 +18,7 @@ namespace scheduler
         };
 
         std::vector<heap_entry> task_heap;
-        lock::spinlock l;
+        lock::spinlock schedule_lock;
         std::size_t sched_ticks;
 
         inline std::int64_t compute_priority(proc::thread& th)
@@ -52,7 +52,7 @@ namespace scheduler
 
         void update(proc::task_id tid)
         {
-            lock::spinlock_guard g(l);
+            lock::spinlock_guard g(schedule_lock);
             auto th = proc::get_thread(tid);
             auto idx = th.sched_index;
             heap_update(idx, compute_priority(th));

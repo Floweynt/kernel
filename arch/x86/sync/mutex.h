@@ -12,13 +12,13 @@ namespace lock
     class semaphore
     {
         std::size_t count;
-        spinlock l;
+        spinlock internal_spinlock;
         stdext::circular_queue<proc::thread*, N, queue_heap> q;
     public:
         constexpr semaphore() : count(N) {}
         void lock()
         { 
-            spinlock_guard g(l);
+            spinlock_guard g(internal_spinlock);
             if(count)
                 count--;
             else
@@ -30,7 +30,7 @@ namespace lock
 
         void release()
         {
-            spinlock_guard g(l);
+            spinlock_guard g(internal_spinlock);
             count++;
             // scheduler stuff
         }
@@ -39,13 +39,13 @@ namespace lock
     class dynamic_semaphore
     {
         std::size_t count;
-        spinlock l;
+        spinlock internal_spinlock;
         stdext::dynamic_circular_queue<proc::thread*> q;
     public:
         inline dynamic_semaphore(std::size_t n) : count(n), q(n) {}
         void lock()
         { 
-            spinlock_guard g(l);
+            spinlock_guard g(internal_spinlock);
             if(count)
                 count--;
             else
@@ -57,7 +57,7 @@ namespace lock
 
         void release()
         {
-            spinlock_guard g(l);
+            spinlock_guard g(internal_spinlock);
             count++;
             // scheduler stuff
         }

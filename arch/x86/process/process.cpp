@@ -28,7 +28,8 @@ namespace proc
 
         std::uint32_t id32 = id;
 
-        thread* th = proc.threads[id] = new thread({0, id32});
+        thread* th = new thread({0, id32});
+        proc.threads[id] = th;
         auto& ctx = proc.threads[id]->ctx;
 
         proc.threads[id]->state = proc::thread_state::RUNNING;

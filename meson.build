@@ -149,7 +149,9 @@ kernel = executable('kernel.elf',
         '-lgcc',
         '-m64',
     ],
-    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel', '-fsanitize=undefined', '-fsanitize-minimal-runtime'],
+    cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'
+      #, '-fsanitize=undefined', '-fsanitize-minimal-runtime' 
+    ],
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
     include_directories : configuration_inc
 )

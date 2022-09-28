@@ -141,15 +141,15 @@ namespace paging
 
             switch (e.type)
             {
-            case 1:
-            case 3:
-            case 0x1000:
-            case 0x1001:
-            case 0x1002:
+            case LIMINE_MEMMAP_USABLE:
+            case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
+            case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
+            case LIMINE_MEMMAP_KERNEL_AND_MODULES:
+            case LIMINE_MEMMAP_FRAMEBUFFER:
                 break;
-            case 2:
-            case 4:
-            case 5:
+            case LIMINE_MEMMAP_RESERVED:
+            case LIMINE_MEMMAP_BAD_MEMORY:
+            case LIMINE_MEMMAP_ACPI_NVS:
                 flags.rw = false;
                 break;
             default:

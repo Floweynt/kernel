@@ -47,7 +47,7 @@ namespace smp
         disable_interrupt();
 
         std::uintptr_t cr3 = info->extra_argument & ~0xfff;
-        std::uintptr_t core_id = info->extra_argument | ~0xfff;
+        std::uintptr_t core_id = info->extra_argument & 0xfff;
 
         write_cr3(mm::make_physical(cr3));
 
@@ -57,11 +57,12 @@ namespace smp
         wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
         smp::core_local& local = smp::core_local::get();
+
+        local.core_id = core_id;
+        local.current_thread = nullptr;
         local.ctxbuffer = new proc::context;
         local.idt_handler_entries = new std::uintptr_t[256];
         local.idt_entries = new idt::idt_entry[256];
-        local.core_id = core_id;
-        local.current_thread = nullptr;
 
         local.gdt.set_ist(&local.ist);
         gdt::install_gdt();

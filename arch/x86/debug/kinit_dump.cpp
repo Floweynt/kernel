@@ -22,31 +22,32 @@ namespace debug
             boot_resource::instance().iterate_mmap([](const limine_memmap_entry& e) {
                 switch (e.type)
                 {
-                case 0x1:
+                case LIMINE_MEMMAP_USABLE:
                     std::printf("[\033cg;USABLE      \033]: ");
                     break;
-                case 0x2:
+                case LIMINE_MEMMAP_RESERVED:
                     std::printf("[\033cr;RESERVED    \033]: ");
                     break;
-                case 0x3:
+                case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
                     std::printf("[\033cy;ACPI RECLAIM\033]: ");
                     break;
-                case 0x4:
+                case LIMINE_MEMMAP_ACPI_NVS:
                     std::printf("[\033cy;ACPI NVS    \033]: ");
                     break;
-                case 0x5:
+                case LIMINE_MEMMAP_BAD_MEMORY:
                     std::printf("[\033cr;BAD         \033]: ");
                     break;
-                case 0x1000:
+                case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
                     std::printf("[\033cy;BTL RECLAIM \033]: ");
                     break;
-                case 0x1001:
-                    std::printf("[\033cc;KERN MODULE \033]: ");
+                case LIMINE_MEMMAP_KERNEL_AND_MODULES:
+                    std::printf("[\033cc;KERN/MODULE \033]: ");
                     break;
-                case 0x1002:
+                case LIMINE_MEMMAP_FRAMEBUFFER:
                     std::printf("[\033cc;FRAMEBUFFER \033]: ");
                     break;
                 default:
+                    // this case should never be reached, but exists as a fallback
                     std::printf("[\033cG;UNKNOWN     \033]: ");
                 }
                 std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);

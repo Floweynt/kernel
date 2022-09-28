@@ -2,7 +2,7 @@
 
 cp $2 "tmp.partition"
 mcopy -i "tmp.partition" $3 "::kernel.elf"
-mcopy -i "tmp.partition" $4 "::modules.img"
+mcopy -i "tmp.partition" $4 "::kernel_syms.kmod"
 truncate -s 64M $1
 parted -s $1 mklabel gpt
 parted -s $1 mkpart ESP fat32 2048s 100%

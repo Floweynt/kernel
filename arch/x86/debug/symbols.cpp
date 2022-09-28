@@ -1,4 +1,5 @@
 #include "debug.h"
+#include <kinit/boot_resource.h>
 #include <config.h>
 #include <cstdint>
 
@@ -19,9 +20,10 @@ namespace debug
 
     debug::symbol sym_for(std::uint64_t address)
     {
-        if constexpr(config::get_val<"debug.symtab"> != 0)
+        void* symtab = boot_resource::instance().modules().get_symbols();
+        if (symtab != nullptr)
         {
-            hdr* ptr = (hdr*) config::get_val<"debug.symtab">;
+            hdr* ptr = (hdr*) symtab;
 
             std::size_t n = ptr->count;
 
@@ -44,7 +46,7 @@ namespace debug
 
             if(entries[l].start_addr + entries[l].len > address)
                 return debug::symbol{
-                    (const char*) config::get_val<"debug.symtab"> + entries[l].name,
+                    (const char*) symtab + entries[l].name,
                     static_cast<std::uint32_t>(address - entries[l].start_addr)
                 };
             return debug::symbol{"unk", 0};

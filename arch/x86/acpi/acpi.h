@@ -180,23 +180,6 @@ namespace acpi
                 return (T*)table->table[i];
         return nullptr;
     }
-
-    /*
-    template <typename T>
-    T* madt_get_entry(madt* table)
-    {
-        // iterate entries
-        madt_entry_descriptor* entry = (madt_entry_descriptor*)(table + 1);
-
-        while ((const std::uint64_t)entry < ((std::uint64_t)table + table->parent.length))
-        {
-            if (T::SIGNATURE == entry->type)
-                return (T*)(entry + 1);
-
-            entry = (madt_entry_descriptor*)((const std::uint8_t*)entry + entry->length);
-        }
-    }
-    */
 } // namespace acpi
 
 #endif

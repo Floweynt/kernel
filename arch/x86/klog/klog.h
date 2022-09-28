@@ -14,6 +14,7 @@ namespace klog
         extern std::size_t start, end;
         lock::spinlock lock;
     }
+
     template<typename... Args>
     std::size_t log(const char* fmt, Args... args)
     {
