@@ -51,9 +51,13 @@ namespace smp
 
         write_cr3(mm::make_physical(cr3));
 
+
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(core_id));
         wrmsr(msr::IA32_KERNEL_GS_BASE, smp::core_local::gs_of(core_id));
+
+        std::printf("a");
         wrmsr(msr::IA32_PAT, 0x706050403020100);
+        std::printf("a");
         wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
         smp::core_local& local = smp::core_local::get();
@@ -112,13 +116,17 @@ namespace smp
 
             // remember that stack grows down
 
-            smp->cpus[i]->extra_argument = (std::uintptr_t)(smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate()) | core_id;
+            smp->cpus[i]->extra_argument =
+                (std::uintptr_t)(smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate()) |
+                core_id;
 
             paging::sync_page_tables(core_id, 0);
             stdext::direct_atomic_store((std::uint64_t*)&smp->cpus[i]->goto_address, (std::uintptr_t)smp::main_wrapper,
                                         std::memory_order_seq_cst);
         }
+
         // initialize myself too!
+        std::printf("bootstraped smp from bootstrap core!\n");
         smp::smp_main(smp->cpus[bsp_index]);
     }
 } // namespace smp

@@ -70,39 +70,54 @@ kernel_source = [
 
 # required program for generating disk image
 gdb = find_program('gdb')
-strip_debug = find_program('./build-resources/strip_debug.sh')
-qemu = find_program('qemu-system-x86_64')
-generate_image = find_program('./build-resources/generate_image.sh')
-git_version_info = find_program('./build-resources/git_version_info.sh')
-gen_dbg = find_program('./build-resources/gen-dbg')
 objcopy = find_program('objcopy')
+qemu = find_program('qemu-system-x86_64')
+
+gen_dbg = find_program(meson.source_root()/'build-resources'/'gen-dbg')
+strip_debug = find_program(meson.source_root()/'build-resources'/'strip_debug.sh')
+generate_image = find_program(meson.source_root()/'build-resources'/'generate_image.sh')
+git_version_info = find_program(meson.source_root()/'build-resources'/'git_version_info.sh')
+
+# options configuration
+
+if get_option('slab_min_order') >= get_option('slab_max_order')
+    error('config: slab_min_order cannot >= slab_max_order')
+endif
+
+if get_option('slab_max_order') >= get_option('slab_size_order')
+    error('config: slab_max_order cannot >= slab_size_order')
+endif
+
+opt_to_config = {
+    'PMM_COUNT': 'max_physical_memory_allocators',
+    'PRE_ALLOCATE_PAGES': 'preallocate_pages',
+    'KLOG_PAGES': 'klog_size_pages',
+    'CPUID_FEATURE_SIZE': 'cpuid_feature_buffer_size',
+    'DEBUG_LOG_MMAP': 'debug_log_mmap',
+    'DEBUG_LOG_CPUID': 'debug_log_cpuid',
+    'DEBUG_LOG_ACPI': 'debug_log_acpi',
+    'DEBUG_LOG_PCI': 'debug_log_pci',
+    'DEBUG_SPINLOCK_DEP': 'debug_spinlock_dep',
+    'SLAB_MIN_ORDER': 'slab_min_order',
+    'SLAB_MAX_ORDER': 'slab_max_order',
+    'SLAB_SIZE_ORDER': 'slab_size_order'
+}
 
 # config
 conf = configuration_data()
 conf.set('VERSION', meson.project_version())
 conf.set('ARCH', 'x86_64')
 conf.set('ARCH_PATH', 'x86')
-conf.set('PMM_COUNT', '0x20')
-conf.set('PRE_ALLOCATE_PAGES', '100')
-conf.set('KLOG_PAGES', '64')
-conf.set('CPUID_FEATURE_SIZE', '5')
+
+foreach key, opt : opt_to_config
+    conf.set(key, get_option(opt).to_string())
+endforeach
 
 conf.set('HHDM_START', '0xffff800000000000')
 conf.set('SCROLLBACK_START', '0xffff900000000000')
 conf.set('HEAP_START', '0xffff900080000000')
 conf.set('SLAB_START', '0xffff980000000000')
 conf.set('KLOG_BUFFER', '0xffffa00000000000')
-
-conf.set('DEBUG_LOG_MMAP', 'true')
-conf.set('DEBUG_LOG_CPUID', 'true')
-conf.set('DEBUG_LOG_ACPI', 'true')
-conf.set('DEBUG_LOG_PCI', 'true')
-conf.set('DEBUG_SPINLOCK_DEP', 'true')
-conf.set('DEBUG_SYMTAB', '0xffffffff90000000')
-
-conf.set('SLAB_MIN_ORDER', 6)
-conf.set('SLAB_MAX_ORDER', 12)
-conf.set('SLAB_SIZE_ORDER', 16)
 
 comp_id = meson.get_compiler('cpp').get_id()
 
@@ -150,16 +165,15 @@ kernel = executable('kernel.elf',
         '-m64',
     ],
     cpp_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'
-      #, '-fsanitize=undefined', '-fsanitize-minimal-runtime' 
+      ,'-fsanitize=undefined', '-fsanitize-minimal-runtime' 
     ],
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
     include_directories : configuration_inc
 )
 
-kernel_stripped = custom_target('kernel_stripped',
+kernel_stripped = custom_target('kernel-stripped',
     output: 'kernel_stripped.elf',
     input: kernel,
-    depends:  [kernel],
     command: [
         strip_debug,
         '@INPUT@',
@@ -167,11 +181,9 @@ kernel_stripped = custom_target('kernel_stripped',
     ]
 )
 
-# for gdb
-kernel_dbg = custom_target('kernel_dbg',
+kernel_dbg = custom_target('kernel-dbg',
     output: 'kernel.dbg',
     input: kernel,
-    depends:  [kernel],
     command: [
         objcopy,
         '--only-keep-debug',
@@ -180,7 +192,7 @@ kernel_dbg = custom_target('kernel_dbg',
     ]
 )
 
-kernel_syms = custom_target('kernel_syms',
+kernel_syms = custom_target('kernel-syms',
     output: 'kernel.syms',
     input: kernel,
     command: [
@@ -190,7 +202,7 @@ kernel_syms = custom_target('kernel_syms',
     ]
 )
 
-kernel_img = custom_target('kernel_img',
+kernel_img = custom_target('kernel-img',
     output: 'kernel.img',
     input: [ kernel_stripped, kernel_syms ],
     command: [
@@ -202,88 +214,84 @@ kernel_img = custom_target('kernel_img',
     ]
 )
 
-run_kvm = run_target('run-kvm',
-    depends: [kernel_img],
-    command: [
-        qemu, 
-        '-bios', 
-        '/usr/share/ovmf/x64/OVMF.fd',
-        '-hda', 
-        meson.build_root() + '/kernel.img',
-        '-no-reboot',
-        '-monitor',
-        'stdio',
-        '-d',
-        'int',
-        '-D',
-        'qemu.log' ,
-        '-no-shutdown',
-        '-s',
-        '-S',
-        '-M',
-        'smm=off',
-        '-smp', '2',
-        '-enable-kvm',
-        '-cpu', 'host'
-    ]
-)
+qemu_base_flags = [
+    '-bios', '/usr/share/ovmf/x64/OVMF.fd',     # Make sure this path points to **your** ovmf
+    '-hda', meson.build_root() + '/kernel.img', # Kernel image to run
+    '-no-reboot',                               # Prevent rebooting on exception
+    '-monitor', 'stdio',                        # Monitor output to stdio
+    '-d', 'int',                                # Generate interrupt logging
+    '-D', 'qemu.log',                           # QEMU logging output
+    '-no-shutdown',                             
+    '-s',                                       # Enable debugging port (same as -gdb tcp::1234)
+    '-S',                                       # Freeze CPU on start
+    '-M', 'smm=off'                             # No SMM interrupts
+]
 
-run = run_target('run',
-    depends: [kernel_img],
-    command: [
-        qemu,
-        '-bios',
-        '/usr/share/ovmf/x64/OVMF.fd',
-        '-hda',
-        meson.build_root() + '/kernel.img',
-        '-no-reboot',
-        '-monitor',
-        'stdio',
-        '-d',
-        'int',
-        '-D',
-        'qemu.log' ,
-        '-no-shutdown',
-        '-s',
-        '-S',
-        '-M',
-        'smm=off',
-        '-smp', '2',
-    ]
-)
+execution_targets = {
+    'normal': {
+        'exec': {
+            'smp': ['-smp', '2'],
+            'nosmp': ['-smp', '1'],
+        },
+        'debugger': [
+            'b _start',
+            'c',
+            'tui enabled'
+        ]
+    },
+    'kvm': {
+        'exec': {
+            'smp': ['-enable-kvm', '-cpu', 'host', '-smp', '2'],
+            'nosmp': ['-enable-kvm', '-cpu', 'host', '-smp', '1']
+        },
+        'debugger': [
+            'hbreak _start',
+            'c',
+            'tui enabled'
+        ]
+    }
+}
 
-run = run_target('run_nosmp',
-    depends: [kernel_img],
-    command: [
-        qemu,
-        '-bios',
-        '/usr/share/ovmf/x64/OVMF.fd',
-        '-hda',
-        meson.build_root() + '/kernel.img',
-        '-no-reboot',
-        '-monitor',
-        'stdio',
-        '-d',
-        'int',
-        '-D',
-        'qemu.log' ,
-        '-no-shutdown',
-        '-s',
-        '-S',
-        '-M',
-        'smm=off',
-        '-smp', '1',
-    ]
-)
+qemu_targets = {}
 
-attach_debugger = run_target('attach',
-    depends: [kernel_dbg],
-    command: [
-        gdb,
-        meson.build_root() + '/kernel.dbg',
-        '-ex', 'target remote localhost:1234',
-        '-ex', 'b _start', 
-        '-ex', 'c',
-        '-ex', 'tui enable'
-    ]
-)
+foreach type, value : execution_targets
+    # extract execution modes
+    message('registering targets for: ', type)
+
+    foreach name, flags : value.get('exec')
+        real_name = type + '-' + name
+        message('registering target: ', real_name)
+
+        qemu_targets += {
+            real_name: run_target(real_name, 
+                depends: [kernel_img],
+                command: [
+                    qemu,
+                    qemu_base_flags,
+                    flags
+                ]
+            )
+        }
+    endforeach
+
+    message('registering debugging for: ', type)
+    gdb_flags = [ '-ex', 'target remote localhost:1234' ]
+
+
+    foreach flag : value.get('debugger')
+        gdb_flags += [ '-ex', flag ]
+    endforeach
+
+    debugger_name = 'attach-' + type
+
+    qemu_targets += {
+        debugger_name: run_target(debugger_name,
+            depends: [kernel_dbg],
+            command: [
+                gdb,
+                meson.build_root() + '/kernel.dbg',
+                gdb_flags
+            ]
+        )
+    }
+endforeach 
