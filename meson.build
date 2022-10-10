@@ -7,15 +7,17 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
     'error_level=3'
 ])
 
+build_resources = meson.source_root()/'build-resources'
+
 # required program for generating the kernel
 gdb = find_program('gdb')
 objcopy = find_program('objcopy')
 qemu = find_program('qemu-system-x86_64')
 
-gen_dbg = find_program(meson.source_root()/'build-resources'/'gen-dbg')
-strip_debug = find_program(meson.source_root()/'build-resources'/'strip_debug.sh')
-generate_image = find_program(meson.source_root()/'build-resources'/'generate_image.sh')
-git_version_info = find_program(meson.source_root()/'build-resources'/'git_version_info.sh')
+gen_dbg =           find_program(build_resources/'gen-dbg')
+strip_debug =       find_program(build_resources/'strip_debug.sh')
+generate_image =    find_program(build_resources/'generate_image.sh')
+git_version_info =  find_program(build_resources/'git_version_info.sh')
 
 kernel_source = [
     'arch/x86/idt/idt.cpp',
@@ -68,8 +70,8 @@ opt_to_config = {
 }
 
 qemu_base_flags = [
-    '-bios', '/usr/share/ovmf/x64/OVMF.fd',     # Make sure this path points to **your** ovmf
-    '-hda', meson.build_root() + '/kernel.img', # Kernel image to run
+    '-bios', build_resources/'OVMF.fd',         # Make sure this path points to **your** ovmf
+    '-hda', meson.build_root()/'kernel.img',    # Kernel image to run
     '-no-reboot',                               # Prevent rebooting on exception
     '-monitor', 'stdio',                        # Monitor output to stdio
     '-d', 'int',                                # Generate interrupt logging
@@ -203,16 +205,17 @@ config_output = custom_target('config_output',
     output: 'config.h',
     command: [
         git_version_info, 
-        meson.build_root() + '/config.h.in', 
-        meson.build_root() + '/config.h'
+        meson.build_root()/'config.h.in', 
+        meson.build_root()/'config.h'
     ],
 )
 
 kernel = executable('kernel.elf',
     config_output,
     kernel_source,
+    link_depends: meson.source_root()/'kernel.lds',
     link_args: [
-        '-T' + (meson.source_root() + '/kernel.lds'),
+        '-T' + (meson.source_root()/'kernel.lds'),
         '-static',
         '-nostdlib',
         '-lgcc',
@@ -247,7 +250,7 @@ kernel_img = custom_target('kernel-img',
     command: [
         generate_image, 
         '@OUTPUT@', 
-        meson.source_root() + '/build-resources/kernel-template.img',
+        build_resources/'kernel-template.img',
         '@INPUT0@',
         '@INPUT1@'
     ]
@@ -262,6 +265,7 @@ foreach type, value : execution_targets
     foreach name, flags : value.get('exec')
         real_name = type + '-' + name
         message('registering target: ', real_name)
+        message('flags: ', qemu_base_flags, flags)
 
         qemu_targets += {
             real_name: run_target(real_name, 
@@ -284,6 +288,8 @@ foreach type, value : execution_targets
 
     debugger_name = 'attach-' + type
 
+
+    message('flags: ', gdb_flags)
     qemu_targets += {
         debugger_name: run_target(debugger_name,
             depends: [kernel_dbg],
