@@ -11,7 +11,7 @@ namespace pci
         {
             std::uint8_t secondary_bus = dev.read_config(function, 0x18) >> 8;
             if constexpr (config::get_val<"debug.log.pci">)
-                std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hhx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ',
+                std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ',
                             dev.bus(), dev.slot(), function, dev.device_id(function), dev.subclass(function),
                             dev.revision_id(function), secondary_bus);
 
@@ -19,7 +19,7 @@ namespace pci
             return;
         }
         if constexpr (config::get_val<"debug.log.pci">)
-            std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: class=%02hhx:%02hhx dev=%02hhx:%02hhx-r%02hhx\n", level, ' ', dev.bus(),
+            std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: class=%02hhx:%02hhx dev=%02hx:%02hhx-r%02hhx\n", level, ' ', dev.bus(),
                         dev.slot(), function, dev.class_code(function), dev.subclass(function), dev.device_id(function),
                         dev.subclass(function), dev.revision_id(function));
     }

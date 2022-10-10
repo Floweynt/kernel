@@ -42,9 +42,9 @@ inline std::uint32_t cpuid_ext(std::uint32_t feature, std::uint32_t* b, std::uin
 }
 
 #define READ_CR(CR)                                                                                                         \
-    inline std::uint64_t read_cr##CR()                                                                                           \
+    inline std::uint64_t read_cr##CR()                                                                                      \
     {                                                                                                                       \
-        std::uint64_t val;                                                                                                       \
+        std::uint64_t val;                                                                                                  \
         asm volatile("mov %%cr" #CR "%0" : "=r"(val));                                                                      \
         return val;                                                                                                         \
     }
@@ -107,7 +107,10 @@ inline void wrmsr(std::uint64_t msr, std::uint64_t value)
 /// \param msr The msr to write to
 /// \param a The a register passed to `wrmsr`
 /// \param d The d register passed to `wrmsr`
-inline void wrmsr(std::uint64_t msr, std::uint32_t a, std::uint32_t d) { asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
+inline void wrmsr(std::uint64_t msr, std::uint32_t a, std::uint32_t d)
+{
+    asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d));
+}
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to read from

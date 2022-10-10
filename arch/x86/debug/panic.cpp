@@ -30,7 +30,7 @@ namespace debug
                 break;
 
             auto symbol = sym_for(ret_addr);
-            std::printf("#%lu: 0x%016lx <\"%s\"+0x%08lx>\n", n++, ret_addr, symbol.name, symbol.offset);
+            std::printf("#%lu: 0x%016lx <\"%s\"+0x%08x>\n", n++, ret_addr, symbol.name, symbol.offset);
             if (old_bp < 0x1000)
             {
                 stack_color = old_bp;

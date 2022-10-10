@@ -24,6 +24,8 @@ namespace klog
         return s1 + s2;
     }
 
+    //[[gnu::format(printf, 1, 2)]] std::size_t log(const char* fmt, ...);
+
     [[noreturn]] inline void panic(const char* msg)
     {
         lock::spinlock_guard g(lock);

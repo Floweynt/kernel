@@ -51,13 +51,12 @@ namespace smp
 
         write_cr3(mm::make_physical(cr3));
 
-
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(core_id));
         wrmsr(msr::IA32_KERNEL_GS_BASE, smp::core_local::gs_of(core_id));
 
-        std::printf("a");
-        wrmsr(msr::IA32_PAT, 0x706050403020100);
-        std::printf("a");
+        // TODO: figure out why this doesnt work in a KVM env
+        // wrmsr(msr::IA32_PAT, 0x706050403020100);
+
         wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
         smp::core_local& local = smp::core_local::get();

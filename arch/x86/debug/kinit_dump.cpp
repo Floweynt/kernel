@@ -77,7 +77,7 @@ namespace debug
         if constexpr (config::get_val<"debug.log.acpi">)
         {
             auto rsdp = boot_resource::instance().rsdp();
-            std::printf("ACPI info:\n", rsdp->xsdt_address);
+            std::printf("ACPI info (%lu):\n", rsdp->xsdt_address);
             std::printf("  rsdp data:\n");
             std::printf("    revision=%d\n", (int)rsdp->revision);
             std::printf("    length=%d\n", (int)rsdp->length);

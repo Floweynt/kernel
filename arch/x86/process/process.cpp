@@ -15,7 +15,10 @@ namespace proc
 
     std::uint32_t make_process() { return -1u; }
 
-    std::uint32_t make_kthread(kthread_ip_t th, std::uint64_t extra) { return make_kthread(th, extra, smp::core_local::get().core_id); }
+    std::uint32_t make_kthread(kthread_ip_t th, std::uint64_t extra)
+    {
+        return make_kthread(th, extra, smp::core_local::get().core_id);
+    }
 
     std::uint32_t make_kthread(kthread_ip_t th_main, std::uint64_t extra, std::size_t core)
     {

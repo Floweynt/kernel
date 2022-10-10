@@ -96,7 +96,7 @@ static void handle_init_warnings()
         for (const auto& i : flags)
         {
             if (instance.warn_init() | i.first)
-                std::printf(i.second); // input is sanitized
+                std::printf("%s", i.second); // input is sanitized
         }
 
         std::printf("\n");
