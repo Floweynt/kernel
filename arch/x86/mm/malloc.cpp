@@ -42,9 +42,11 @@ namespace alloc
 
     void init(void* ptr, std::size_t s) { root = last = new (ptr) block_header{(s - sizeof(block_header)) | 1, nullptr}; }
 
+    inline constexpr auto ALIGN = 16;
+
     void* malloc(std::size_t size)
     {
-        size = (size + 7) & ~7;
+        size = (size + (ALIGN - 1)) & ~(ALIGN - 1);
         if (!size)
             return nullptr;
 
@@ -96,7 +98,7 @@ namespace alloc
 
     void* aligned_malloc(std::size_t s, std::size_t align)
     {
-        if (align <= 8)
+        if (align <= ALIGN)
             return malloc(s);
 
         std::uintptr_t ptr = (std::uintptr_t)malloc(align + s);

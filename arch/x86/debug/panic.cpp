@@ -2,6 +2,7 @@
 #include "debug.h"
 #include <printf.h>
 #include <kinit/boot_resource.h>
+#include <tty/tty.h>
 
 namespace debug
 {
@@ -13,7 +14,7 @@ namespace debug
 
     void panic(const char* msg, bool crash)
     {
-        std::printf("panic: %s\n", msg);
+        std::printf(RED("panic") ": %s\n", msg);
         const char* stage = boot_resource::instance().is_smp() ? "smp" : "kinit";
         std::printf("stage = \033cc;%s\033\n", stage);
         std::printf("crash = %B\n", crash);

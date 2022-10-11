@@ -16,20 +16,20 @@ namespace tty
         tty::rgb color;
     };
 
-    bool is_command = false;
-    bool is_text = false;
-    char current_command = 0;
-    std::uint8_t index = 0;
-    std::uint8_t chindex = 0;
-    char command_buffer[8][32];
-    tty::rgb fg_color = tty::WHITE;
-    tty::rgb bg_color = tty::BLACK;
-    limine_framebuffer buffer;
-    tty::romfont f(8, 8, (void*)font);
-    screen_character* screen_buffer;
-    std::size_t rotate_offset;
-    std::size_t x;
-    std::size_t y;
+    static bool is_command = false;
+    static bool is_text = false;
+    static char current_command = 0;
+    static std::uint8_t index = 0;
+    static std::uint8_t chindex = 0;
+    static char command_buffer[8][32];
+    static tty::rgb fg_color = tty::WHITE;
+    static tty::rgb bg_color = tty::BLACK;
+    static limine_framebuffer buffer;
+    static tty::romfont f(8, 8, (void*)font);
+    static screen_character* screen_buffer;
+    static std::size_t rotate_offset;
+    static std::size_t x;
+    static std::size_t y;
 
     inline void* pixel_at(std::size_t x, std::size_t y)
     {

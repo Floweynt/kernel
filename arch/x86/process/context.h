@@ -5,7 +5,7 @@
 // this is a fully restorable execution context
 namespace proc
 {
-    struct context
+    struct context 
     {
         enum registers
         {

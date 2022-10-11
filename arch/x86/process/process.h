@@ -37,13 +37,11 @@ namespace proc
     {
         context ctx;
         std::uintptr_t cr3;
-
         // scheduler information
         std::size_t sched_index;
         std::size_t latest_scheduled_tick;
-        thread_state state;
-
         const task_id id;
+        thread_state state;
         constexpr thread(const task_id id) : id(id) {}
     };
 
