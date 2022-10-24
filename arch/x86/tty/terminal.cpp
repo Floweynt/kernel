@@ -62,7 +62,7 @@ namespace tty
         buffer.bpp >>= 3;
 
         // Obtains the approx amount of pages required to map the character buffer
-        std::size_t pages = std::detail::div_roundup(cols() * lines() * sizeof(screen_character), paging::PAGE_SMALL_SIZE);
+        std::size_t pages = std::div_roundup(cols() * lines() * sizeof(screen_character), paging::PAGE_SMALL_SIZE);
 
         // Allocate required virtual memory
         for (std::size_t i = 0; i < pages; i++)

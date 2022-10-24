@@ -21,17 +21,17 @@ namespace idt
 
     void install_idt()
     {
-        smp::core_local& local = smp::core_local::get();
-        utils::packed_tuple<std::uint16_t, std::uint64_t> d(sizeof(idt_entry) * 256, (std::uint64_t)local.idt_entries);
+        utils::packed_tuple<std::uint16_t, std::uint64_t> d(sizeof(idt_entry) * 256,
+                                                            (std::uint64_t)smp::core_local::get().idt_entries);
         asm volatile("lidtq %0" : : "m"(d));
     }
 
     bool register_idt(const idt_builder& entry, std::size_t num)
     {
         smp::core_local& local = smp::core_local::get();
-        if(!local.irq_allocator.allocate(num))
+        if (!local.irq_allocator.allocate(num))
             return false;
-        local.idt_handler_entries[num] = (std::uintptr_t) entry.cb();
+        local.idt_handler_entries[num] = (std::uintptr_t)entry.cb();
         local.idt_entries[num].flags = entry.flag();
         return true;
     }
@@ -43,7 +43,7 @@ namespace idt
         if (num == -1ul)
             return -1ul;
 
-        local.idt_handler_entries[num] = (std::uintptr_t) entry.cb();
+        local.idt_handler_entries[num] = (std::uintptr_t)entry.cb();
         local.idt_entries[num].flags = entry.flag();
         return num;
     }

@@ -4,7 +4,8 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
     'warning_level=2',
     'cpp_rtti=false',
     'cpp_eh=none',
-    'error_level=3'
+    'error_level=3',
+    'b_sanitize=undefined',
 ])
 
 build_resources = meson.source_root()/'build-resources'
@@ -66,7 +67,7 @@ opt_to_config = {
     'DEBUG_SPINLOCK_DEP': 'debug_spinlock_dep',
     'SLAB_MIN_ORDER': 'slab_min_order',
     'SLAB_MAX_ORDER': 'slab_max_order',
-    'SLAB_SIZE_ORDER': 'slab_size_order'
+    'SLAB_SIZE_ORDER': 'slab_size_order',
 }
 
 qemu_base_flags = [
@@ -74,7 +75,7 @@ qemu_base_flags = [
     '-hda', meson.build_root()/'kernel.img',    # Kernel image to run
     '-no-reboot',                               # Prevent rebooting on exception
     '-monitor', 'stdio',                        # Monitor output to stdio
-    '-d', 'int',                                # Generate interrupt logging
+    '-d', 'int,cpu_reset',                      # Generate interrupt logging
     '-D', 'qemu.log',                           # QEMU logging output
     '-no-shutdown',                             
     '-s',                                       # Enable debugging port (same as -gdb tcp::1234)
@@ -83,10 +84,10 @@ qemu_base_flags = [
 ]
 
 execution_targets = {
-    'normal': {
+    'emu': {
         'exec': {
-            'smp': ['-smp', '2'],
-            'nosmp': ['-smp', '1'],
+            'smp':    ['-smp', '2'],
+            'nosmp':  ['-smp', '1'],
         },
         'debugger': [
             'b _start',
@@ -96,8 +97,8 @@ execution_targets = {
     },
     'kvm': {
         'exec': {
-            'smp': ['-enable-kvm', '-cpu', 'host', '-smp', '2'],
-            'nosmp': ['-enable-kvm', '-cpu', 'host', '-smp', '1']
+            'smp':    ['-enable-kvm', '-cpu', 'host', '-smp', '2'],
+            'nosmp':  ['-enable-kvm', '-cpu', 'host', '-smp', '1']
         },
         'debugger': [
             'hbreak _start',
@@ -122,9 +123,7 @@ kernel_derivatives = {
     }
 }
 
-# Bunch of ugly implementation details...
-
-add_project_arguments(
+kernel_build_args_cpp = [
     '-ffreestanding',
     '-fno-PIC',
     '-fno-exceptions',
@@ -141,9 +140,21 @@ add_project_arguments(
     '-mno-80387',
     '-Wno-unused-parameter',
     '-Wno-c99-extensions',
+    '-fsanitize-undefined-strip-path-components=1', 
+]
+
+# Bunch of ugly implementation details...
+
+if get_option('debug_stl_assert')
+  kernel_build_args_cpp += '-DDEBUG'
+endif
+
+add_project_arguments(
+    kernel_build_args_cpp,
     language: 'cpp'
 )
 
+    
 add_project_arguments(
     '-ffreestanding',
     '-fno-PIC',
@@ -210,12 +221,13 @@ config_output = custom_target('config_output',
     ],
 )
 
+lds = meson.source_root()/'arch'/'x86'/'kernel.lds'
 kernel = executable('kernel.elf',
     config_output,
     kernel_source,
-    link_depends: meson.source_root()/'kernel.lds',
+    link_depends: lds,
     link_args: [
-        '-T' + (meson.source_root()/'kernel.lds'),
+        '-T' + lds,
         '-static',
         '-nostdlib',
         '-lgcc',
@@ -225,7 +237,6 @@ kernel = executable('kernel.elf',
         '-m64', 
         '-march=x86-64', 
         '-mcmodel=kernel',
-        '-fsanitize=undefined',
         '-fno-sanitize=function'
     ],
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
@@ -263,7 +274,7 @@ foreach type, value : execution_targets
     message('registering targets for: ', type)
 
     foreach name, flags : value.get('exec')
-        real_name = type + '-' + name
+        real_name = 'run-' + type + '-' + name
         message('registering target: ', real_name)
         message('flags: ', qemu_base_flags, flags)
 

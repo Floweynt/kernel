@@ -1,8 +1,13 @@
 #ifndef __ARCH_X86_PROCESS_H__
 #define __ARCH_X86_PROCESS_H__
 #include "context.h"
+#include <mm/pmm.h>
+#include <paging/paging.h>
+#include <asm/asm_cpp.h>
 #include <cstddef>
+#include <cstdint>
 #include <mm/mm.h>
+#include <sync/spinlock.h>
 #include <utils/id_allocator.h>
 
 namespace proc
@@ -38,8 +43,8 @@ namespace proc
         context ctx;
         std::uintptr_t cr3;
         // scheduler information
-        std::size_t sched_index;
-        std::size_t latest_scheduled_tick;
+        // std::size_t sched_index;
+        // std::size_t latest_scheduled_tick;
         const task_id id;
         thread_state state;
         constexpr thread(const task_id id) : id(id) {}
@@ -50,19 +55,32 @@ namespace proc
     public:
         inline static constexpr std::size_t MAX_THREADS = 16;
         inline static constexpr std::size_t MAX_PROCESS = 1;
-
+    private:
         id_allocator<MAX_THREADS> thread_allocator;
         thread* threads[MAX_THREADS];
+    public:
+        std::uint32_t make_thread(std::uintptr_t fp, void* sp, std::uint64_t args, std::size_t core);
+        thread* get_thread(std::uint32_t th) { return threads[th]; }
     };
 
     process& get_process(std::uint32_t pid);
     std::uint32_t make_process();
 
-    constexpr thread& get_thread(task_id id) { return *get_process(id.proc).threads[id.thread]; }
+    constexpr thread& get_thread(task_id id) { return *get_process(id.proc).get_thread(id.thread); }
 
-    using kthread_ip_t = void (*)(std::uint64_t);
-    std::uint32_t make_kthread(kthread_ip_t th, std::uint64_t extra);
-    std::uint32_t make_kthread(kthread_ip_t th, std::uint64_t extra, std::size_t core);
+    using kthread_fn_t = void (*)(std::uint64_t);
+    using kthread_fn_args_t = void (*)(std::uint64_t);
+
+    std::uint32_t make_kthread_args(kthread_fn_args_t th, std::uint64_t extra);
+    
+    inline std::uint32_t make_kthread_args(kthread_fn_args_t th, std::uint64_t extra, std::size_t core)
+    {
+        return get_process(0).make_thread(
+            (std::uintptr_t)th, (void*)((std::uintptr_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE), extra, core);
+    }
+    
+    inline std::uint32_t make_kthread(kthread_fn_t th) { return make_kthread_args(th, 0); }
+    inline std::uint32_t make_kthread(kthread_fn_t th, std::size_t core) { return make_kthread_args(th, 0, core); }
 
     void suspend_self();
 } // namespace proc

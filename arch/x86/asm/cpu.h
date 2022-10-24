@@ -92,6 +92,28 @@ namespace msr
     inline constexpr std::uint64_t IA32_KERNEL_GS_BASE = 0xc0000102;
     inline constexpr std::uint64_t IA32_PAT = 0x277;
 } // namespace msr
+namespace cpuflags
+{
+    enum cpuflags : std::uint32_t
+    {
+        CF = 1ul << 0,
+        FLAGS = 1ul << 1,
+        PF = 1ul << 2,
+        AF = 1ul << 4,
+        ZF = 1ul << 6,
+        SF = 1ul << 7,
+        TF = 1ul << 8,
+        IF = 1ul << 9,
+        DF = 1ul << 10,
+        OF = 1ul << 11,
+        NT = 1ul << 14,
+        RF = 1ul << 16,
+        AC = 1ul << 18,
+        VIF = 1ul << 19,
+        VIP = 1ul << 20,
+        ID = 1ul << 21
+    };
+} // namespace cpuflags
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to write to

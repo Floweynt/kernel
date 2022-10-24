@@ -1,4 +1,5 @@
 #include "handlers.h"
+#include <klog/klog.h>
 
 namespace handlers
 {
@@ -6,7 +7,7 @@ namespace handlers
     {
         if (smp::core_local::get().ctxbuffer->ss == 0)
         {
-            debug::panic("division by zero");
+            klog::panic("division by zero");
         }
 
         // else kill process

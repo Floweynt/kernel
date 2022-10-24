@@ -35,15 +35,6 @@ namespace proc
         std::uint64_t rsp;
         std::uint64_t ss;
         std::uint64_t rgp[15];
-
-        // high
-        // 0x00: SS             <- RSP before interrupt
-        // 0x08: RSP
-        // 0x10: RFLAGS
-        // 0x18: CS
-        // 0x20: RIP
-        // 0x28: ERROR ?? 0
-        // 0x30: interrupt #
     };
 } // namespace proc
 #endif

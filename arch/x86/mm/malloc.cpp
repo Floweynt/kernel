@@ -26,7 +26,7 @@ namespace alloc
 
     inline static std::size_t extend(void* buf, std::size_t n)
     {
-        std::size_t pages = std::detail::div_roundup(n, paging::PAGE_SIZE);
+        std::size_t pages = std::div_roundup(n, paging::PAGE_SIZE);
 
         for (std::size_t i = 0; i < pages; i++)
         {

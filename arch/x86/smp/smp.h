@@ -37,6 +37,7 @@ namespace smp
         // scheduler stuff
         proc::thread* current_thread;
         scheduler::scheduler scheduler;
+
         inline static core_local& get()
         {
             core_local* addr;
@@ -56,6 +57,12 @@ namespace smp
         inline static core_local& get(std::size_t core) { return *entries[core]; }
 
         inline static std::uint64_t gs_of(std::size_t core) { return (std::uint64_t)&entries[core]; }
+
+        core_local() = default;
+        core_local(const core_local&) = delete;
+        core_local(core_local&&) = delete;
+        core_local& operator=(const core_local&) = delete;
+        core_local& operator=(core_local&&) = delete;
     };
 
     [[noreturn]] void init(limine_smp_response* smp);

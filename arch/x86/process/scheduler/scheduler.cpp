@@ -1,10 +1,12 @@
 #include "scheduler.h"
 #include "klog/klog.h"
+#include <cstddef>
 #include <process/process.h>
 #include <smp/smp.h>
 
 namespace scheduler
 {
+    /* TODO: switch to heap sched
     void scheduler::heap_update(std::size_t target_index, std::int64_t priority)
     {
         auto old_priority = task_heap[target_index].task_priority;
@@ -76,5 +78,49 @@ namespace scheduler
         next_thread->latest_scheduled_tick = sched_ticks++;
         local.current_thread = next_thread;
         local.ctxbuffer = &next_thread->ctx;
+    }*/
+
+    void scheduler::add_task(proc::thread* th)
+    {
+        if (th->state == proc::thread_state::WAITING)
+            return; // no-op
+        tasks.push(th);
+    }
+
+    void scheduler::set_state(proc::task_id tid, proc::thread_state state)
+    {
+        SPINLOCK_SYNC_BLOCK;
+        auto* th = &proc::get_thread(tid);
+        if (th->state == state)
+            return;
+
+        if (state == proc::thread_state::RUNNING)
+            tasks.push(th);
+
+        th->state = state;
+    }
+
+    void scheduler::load_sched_task_ctx()
+    {
+        auto& local = smp::core_local::get();
+        proc::thread* next_thread = idle;
+        while (tasks.pop(next_thread))
+        {
+            if (next_thread->state == proc::thread_state::RUNNING)
+                break;
+        }
+
+        if (local.current_thread && local.current_thread->state == proc::thread_state::RUNNING)
+            tasks.push(local.current_thread);
+
+        local.current_thread = next_thread;
+        local.ctxbuffer = &next_thread->ctx;
+    }
+
+    void scheduler::set_idle(proc::thread* th) 
+    {
+        if(th->state != proc::thread_state::IDLE)
+            klog::panic("cannot set non-idle task as idle");
+        idle = th;
     }
 } // namespace scheduler

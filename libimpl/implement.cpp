@@ -50,11 +50,19 @@ namespace std::detail
             debug::panic("__printf_argument_notfound");
             __builtin_unreachable();
         }
+
         [[noreturn]] void __printf_undefined_specifier_for_length()
         {
             debug::panic("printf undefined specifier for length");
             __builtin_unreachable();
         }
+
+        [[noreturn]] void __assert_fail(const char* msg)
+        {
+            debug::panic(msg);
+            __builtin_unreachable();
+        }
+
         [[noreturn]] void __halt()
         {
             while (1)

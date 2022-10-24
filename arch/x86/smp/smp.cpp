@@ -2,6 +2,7 @@
 #include "smp.h"
 #include "kinit/limine.h"
 #include "paging/paging_entries.h"
+#include "process/process.h"
 #include <asm/asm_cpp.h>
 #include <atomic>
 #include <cstdint>
@@ -35,10 +36,10 @@ namespace smp
         local.apic.set_tick(idt::register_idt(idt::idt_builder(handlers::handle_timer)), 20);
     }
 
-    [[noreturn]] static void idle(std::uint64_t)
+    [[noreturn]] static void idle(std::uint64_t = 0)
     {
         enable_interrupt();
-        std::detail::errors::__halt();
+        std::halt();
     }
 
     [[noreturn]] static void smp_main(limine_smp_info* info)
@@ -54,7 +55,7 @@ namespace smp
         wrmsr(msr::IA32_GS_BASE, smp::core_local::gs_of(core_id));
         wrmsr(msr::IA32_KERNEL_GS_BASE, smp::core_local::gs_of(core_id));
 
-        // TODO: figure out why this doesnt work in a KVM env
+        // TODO: figure out why this doesn't work in a KVM env
         // wrmsr(msr::IA32_PAT, 0x706050403020100);
 
         wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
@@ -78,16 +79,40 @@ namespace smp
             if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]), i))
                 klog::panic("failed to allocate irq");
 
-        proc::make_kthread(idle, 0);
+        auto idle_task = proc::make_kthread(idle);
+        auto& idle_th = proc::get_thread(proc::task_id{ 0, idle_task });
+        idle_th.state = proc::thread_state::IDLE;
 
-        proc::make_kthread(
+        proc::make_kthread_args(
             +[](std::uint64_t a) {
-                klog::log("value: %lu\n", a);
-                idle(0);
+                klog::log("example task value 0: %lu\n", a);
+                idle();
             },
             local.core_id);
+
+        proc::make_kthread_args(
+            +[](std::uint64_t a) {
+                klog::log("example task value 1: %lu\n", a);
+                idle();
+            },
+            local.core_id);
+
+        proc::make_kthread_args(
+            +[](std::uint64_t a) {
+                while(1)
+                {
+                    klog::log("example task value 2: %lu\n", a);
+
+                    for(int i = 0; i < 9000000; i++)
+                        asm volatile("nop");
+                }
+                
+            },
+            local.core_id);
+
         initialize_apic(smp::core_local::get());
-        idle(0);
+        local.scheduler.set_idle(&idle_th);
+        idle();
     }
 
     // used for proper frame pointer generation
@@ -111,7 +136,7 @@ namespace smp
             }
 
             core_id++;
-            std::printf("initalizing extra smp core: %lu\n", i);
+            klog::log("initalizing extra smp core: %lu\n", i);
 
             // remember that stack grows down
 
@@ -125,7 +150,7 @@ namespace smp
         }
 
         // initialize myself too!
-        std::printf("bootstraped smp from bootstrap core!\n");
+        klog::log("bootstraped smp from bootstrap core!\n");
         smp::smp_main(smp->cpus[bsp_index]);
     }
 } // namespace smp
