@@ -4,8 +4,6 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
     'warning_level=2',
     'cpp_rtti=false',
     'cpp_eh=none',
-    'error_level=3',
-    'b_sanitize=undefined',
 ])
 
 build_resources = meson.source_root()/'build-resources'
@@ -21,23 +19,35 @@ generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
 
 kernel_source = [
+    'arch/common/terminal/term.cpp',
+    'arch/common/terminal/backends/framebuffer.cpp',
     'arch/x86/idt/idt.cpp',
-    'arch/x86/idt/handlers/div_by_zero.cpp',
+    'arch/x86/idt/handlers/handle_ud.cpp',
     'arch/x86/idt/handlers/handle_gp.cpp',
+    'arch/x86/idt/handlers/handle_overflow.cpp',
+    'arch/x86/idt/handlers/handle_db.cpp',
+    'arch/x86/idt/handlers/handle_div_by_zero.cpp',
+    'arch/x86/idt/handlers/handle_double_fault.cpp',
+    'arch/x86/idt/handlers/handle_bad_tss.cpp',
+    'arch/x86/idt/handlers/handle_bounds.cpp',
+    'arch/x86/idt/handlers/handle_breakpoint.cpp',
     'arch/x86/idt/handlers/handle_timer.cpp',
+    'arch/x86/idt/handlers/handle_nm.cpp',
     'arch/x86/idt/idt.S',
     'arch/x86/debug/kinit_dump.cpp',
     'arch/x86/debug/panic.cpp',
+    'arch/x86/debug/symbols.cpp',
     'arch/x86/syscall/syscall_entry.S',
     'arch/x86/pci/pci_scan.cpp',
     'arch/x86/sync/spinlock.cpp',
+    'arch/x86/san/ubsan.cpp',
     'arch/x86/apic/apic.cpp',
     'arch/x86/kinit/kinit.cpp',
     'arch/x86/process/process.cpp',
     'arch/x86/process/save_ctx_for_reschedule.S',
     'arch/x86/process/scheduler/scheduler.cpp',
     'arch/x86/klog/klog.cpp',
-    'arch/x86/tty/terminal.cpp',
+    'arch/x86/tty/tty.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/mm/malloc.cpp',
     'arch/x86/mm/mm.cpp',
@@ -46,13 +56,11 @@ kernel_source = [
     'arch/x86/paging/paging.cpp',
     'arch/x86/paging/pgfault.cpp',
     'arch/x86/smp/smp.cpp',
-    'arch/x86/debug/symbols.cpp',
     'lib/src/cstring.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
-    'arch/x86/san/ubsan.cpp'
 ]
 
 opt_to_config = {
@@ -139,8 +147,6 @@ kernel_build_args_cpp = [
     '-mno-mmx',
     '-mno-80387',
     '-Wno-unused-parameter',
-    '-Wno-c99-extensions',
-    '-fsanitize-undefined-strip-path-components=1', 
 ]
 
 # Bunch of ugly implementation details...
@@ -168,6 +174,10 @@ endif
 
 if get_option('slab_max_order') >= get_option('slab_size_order')
     error('config: slab_max_order cannot >= slab_size_order')
+endif
+
+if get_option('preallocate_pages') < 0x500
+    warning('config: pre-allocating more than 0x500 pages is recommended')
 endif
 
 # config
@@ -237,7 +247,9 @@ kernel = executable('kernel.elf',
         '-m64', 
         '-march=x86-64', 
         '-mcmodel=kernel',
-        '-fno-sanitize=function'
+        '-fsanitize=undefined',
+        '-fno-sanitize=function',
+        '-fsanitize-undefined-strip-path-components=1',
     ],
     c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
     include_directories : configuration_inc

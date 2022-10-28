@@ -16,8 +16,11 @@ namespace alloc
         block_header* back;
     };
 
-    block_header* root = nullptr;
-    block_header* last = nullptr;
+    static block_header* root = nullptr;
+    static block_header* last = nullptr;
+    static std::size_t malloced_bytes = 0;
+
+    inline constexpr auto ALIGN = 16;
 
     inline static block_header* next_of(block_header* header)
     {
@@ -26,7 +29,7 @@ namespace alloc
 
     inline static std::size_t extend(void* buf, std::size_t n)
     {
-        std::size_t pages = std::div_roundup(n, paging::PAGE_SIZE);
+        std::size_t pages = std::div_roundup(n, paging::PAGE_SMALL_SIZE);
 
         for (std::size_t i = 0; i < pages; i++)
         {
@@ -42,13 +45,15 @@ namespace alloc
 
     void init(void* ptr, std::size_t s) { root = last = new (ptr) block_header{(s - sizeof(block_header)) | 1, nullptr}; }
 
-    inline constexpr auto ALIGN = 16;
+    std::size_t get_alloced_size() { return malloced_bytes; }
 
     void* malloc(std::size_t size)
     {
         size = (size + (ALIGN - 1)) & ~(ALIGN - 1);
         if (!size)
             return nullptr;
+
+        malloced_bytes += size;
 
         block_header* hdr = root;
         while (hdr <= last)
@@ -136,6 +141,8 @@ namespace alloc
 
         std::size_t* type = (std::size_t*)buffer - 1;
         block_header* hdr = (block_header*)buffer - 1;
+
+        malloced_bytes -= hdr->size;
 
         if (*type & 2)
             hdr = (block_header*)(*type);

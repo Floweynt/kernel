@@ -1,14 +1,14 @@
 #ifndef __ARCH_X86_SYNC_SPINLOCK_H__
 #define __ARCH_X86_SYNC_SPINLOCK_H__
 #include "kinit/boot_resource.h"
+#include <atomic>
 #include <cstddef>
 
 namespace lock
 {
     class spinlock
     {
-        volatile unsigned l;
-
+        std::atomic<int> l;
     public:
         constexpr spinlock() : l(0) {}
 
@@ -16,11 +16,10 @@ namespace lock
 
         inline void release()
         {
-            __sync_synchronize();
-            l = 0;
+            l.store(false, std::memory_order_release);
         }
 
-        inline std::size_t owned_core() { return l - 1; }
+        inline std::size_t owned_core() { return l.load() - 1; }
     };
 
     class interrupt_lock

@@ -23,49 +23,43 @@
 
 // LIMINE REQUESTS
 
-[[gnu::used]]
-volatile static limine_smp_request smp_request = {
+[[gnu::used]] volatile static limine_smp_request smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0,
     .flags = 0, // no need for x2apic
 };
 
-[[gnu::used]]
-volatile static limine_memmap_request memmap_request = {.id = LIMINE_MEMMAP_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_memmap_request memmap_request = {.id = LIMINE_MEMMAP_REQUEST, .revision = 0};
 
-[[gnu::used]]
-volatile static limine_framebuffer_request framebuffer_request{
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .revision = 0,
-};
+//[[gnu::used]] volatile static limine_framebuffer_request framebuffer_request{
+//    .id = LIMINE_FRAMEBUFFER_REQUEST,
+//    .revision = 0,
+//};
 
-[[gnu::used]]
-volatile static limine_stack_size_request stack_size_request{
+[[gnu::used]] volatile static limine_stack_size_request stack_size_request{
     .id = LIMINE_STACK_SIZE_REQUEST, .revision = 0, .stack_size = paging::PAGE_SMALL_SIZE};
 
-[[gnu::used]]
-volatile static limine_kernel_file_request kernel_file_request{.id = LIMINE_KERNEL_FILE_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_kernel_file_request kernel_file_request{.id = LIMINE_KERNEL_FILE_REQUEST,
+                                                                             .revision = 0};
 
-[[gnu::used]]
-volatile static limine_kernel_address_request kernel_address_request{.id = LIMINE_KERNEL_ADDRESS_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_kernel_address_request kernel_address_request{.id = LIMINE_KERNEL_ADDRESS_REQUEST,
+                                                                                   .revision = 0};
 
-[[gnu::used]]
-volatile static limine_rsdp_request rsdp_request{.id = LIMINE_RSDP_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_rsdp_request rsdp_request{.id = LIMINE_RSDP_REQUEST, .revision = 0};
 
-[[gnu::used]]
-volatile static limine_bootloader_info_request btl_info_request{.id = LIMINE_BOOTLOADER_INFO_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_bootloader_info_request btl_info_request{.id = LIMINE_BOOTLOADER_INFO_REQUEST,
+                                                                              .revision = 0};
 
-[[gnu::used]]
-volatile static limine_module_request module_request{.id = LIMINE_MODULE_REQUEST, .revision = 0};
+[[gnu::used]] volatile static limine_module_request module_request{.id = LIMINE_MODULE_REQUEST, .revision = 0};
 
 alignas(boot_resource) static char buf[sizeof(boot_resource)];
 boot_resource& boot_resource::instance() { return *(boot_resource*)(buf); }
 
 modules::modules()
 {
-    for(std::size_t i = 0; i < module_request.response->module_count; i++)
+    for (std::size_t i = 0; i < module_request.response->module_count; i++)
     {
-        if(!std::strcmp(module_request.response->modules[i]->cmdline, "symbols"))
+        if (!std::strcmp(module_request.response->modules[i]->cmdline, "symbols"))
             symbols = module_request.response->modules[i]->address;
     }
 }
@@ -139,7 +133,7 @@ extern "C"
         alloc::init((void*)config::get_val<"mmap.start.heap">,
                     paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
 
-        tty::init(framebuffer_request.response);
+        tty::init();
 
         std::printf("kinit: _start() started tty\n");
         std::printf("booted from: %s-v%s\n", btl_info_request.response->name, btl_info_request.response->version);

@@ -1,5 +1,5 @@
 option('max_physical_memory_allocators',  type: 'integer', min: 0x10, value: 0x20)
-option('preallocate_pages',               type: 'integer', min: 50,   value: 100)
+option('preallocate_pages',               type: 'integer', min: 50,   value: 0x100)
 option('klog_size_pages',                 type: 'integer', min: 4,    value: 64)
 option('cpuid_feature_buffer_size',       type: 'integer', min: 5,    value: 5)
 

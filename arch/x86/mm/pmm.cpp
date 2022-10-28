@@ -35,7 +35,7 @@ namespace mm
     {
         lock::spinlock_guard g(pmm_alloc_lock);
         auto index = meta_allocator.allocate();
-        if(index == -1ull)
+        if(index == -1ul)
             klog::panic("pmm buffer exhausted");
         region[index] = pmm_region(start, len);
     }

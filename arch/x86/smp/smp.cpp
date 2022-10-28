@@ -80,7 +80,7 @@ namespace smp
                 klog::panic("failed to allocate irq");
 
         auto idle_task = proc::make_kthread(idle);
-        auto& idle_th = proc::get_thread(proc::task_id{ 0, idle_task });
+        auto& idle_th = proc::get_thread(proc::task_id{ idle_task, 0 });
         idle_th.state = proc::thread_state::IDLE;
 
         proc::make_kthread_args(
@@ -101,12 +101,11 @@ namespace smp
             +[](std::uint64_t a) {
                 while(1)
                 {
-                    klog::log("example task value 2: %lu\n", a);
+                    klog::log("__cycle_task: %lu\n", a);
 
-                    for(int i = 0; i < 9000000; i++)
+                    for(std::size_t i = 0; i < 11000000; i++)
                         asm volatile("nop");
                 }
-                
             },
             local.core_id);
 

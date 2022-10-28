@@ -1,6 +1,7 @@
 #ifndef __ARCH_X86_DEBUG_DEBUG_H__
 #define __ARCH_X86_DEBUG_DEBUG_H__
 
+#include "process/context.h"
 #include <cstdint>
 namespace debug
 {
@@ -12,7 +13,7 @@ namespace debug
     };
 
     void panic(const char* msg, bool crash = true);
-
+    void log_register(proc::context* ctx);
 
     struct symbol
     {
