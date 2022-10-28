@@ -136,6 +136,7 @@ kernel_build_args_cpp = [
     '-fno-PIC',
     '-fno-exceptions',
     '-fno-omit-frame-pointer',
+    '-fno-strict-aliasing',
     '-fcf-protection=none',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
