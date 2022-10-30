@@ -49,7 +49,11 @@ namespace idt
             return *this;
         }
 
-        constexpr std::uint16_t flag() const { return 0x8000 | ((std::uint16_t)_dpl << 14) | ((std::uint16_t)gate << 8) | _ist; }
+        constexpr std::uint16_t flag() const
+        {
+            return 0x8000 | ((std::uint16_t)_dpl << 14) | ((std::uint16_t)gate << 8) | _ist;
+        }
+
         constexpr interrupt_handler cb() const { return handler; }
     };
 

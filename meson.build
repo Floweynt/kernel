@@ -19,14 +19,18 @@ generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
 
 kernel_source = [
-    'arch/common/terminal/term.cpp',
-    'arch/common/terminal/backends/framebuffer.cpp',
+    'arch/common/terminal/term.c',
+    'arch/common/terminal/limine_term_ccompat.cpp',
+    'arch/common/terminal/backends/framebuffer.c',
     'arch/x86/idt/idt.cpp',
     'arch/x86/idt/handlers/handle_ud.cpp',
+    'arch/x86/idt/handlers/handle_np.cpp',
+    'arch/x86/idt/handlers/handle_page_fault.cpp',
     'arch/x86/idt/handlers/handle_gp.cpp',
     'arch/x86/idt/handlers/handle_overflow.cpp',
     'arch/x86/idt/handlers/handle_db.cpp',
     'arch/x86/idt/handlers/handle_div_by_zero.cpp',
+    'arch/x86/idt/handlers/handle_stack.cpp',
     'arch/x86/idt/handlers/handle_double_fault.cpp',
     'arch/x86/idt/handlers/handle_bad_tss.cpp',
     'arch/x86/idt/handlers/handle_bounds.cpp',
@@ -61,6 +65,7 @@ kernel_source = [
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
+
 ]
 
 opt_to_config = {
@@ -100,7 +105,7 @@ execution_targets = {
         'debugger': [
             'b _start',
             'c',
-            'tui enable',
+#            'tui enable',
         ]
     },
     'kvm': {
@@ -111,7 +116,7 @@ execution_targets = {
         'debugger': [
             'hbreak _start',
             'c',
-            'tui enable'
+#            'tui enable'
         ]
     }
 }
@@ -131,7 +136,7 @@ kernel_derivatives = {
     }
 }
 
-kernel_build_args_cpp = [
+kernel_build_args = [
     '-ffreestanding',
     '-fno-PIC',
     '-fno-exceptions',
@@ -153,18 +158,16 @@ kernel_build_args_cpp = [
 # Bunch of ugly implementation details...
 
 if get_option('debug_stl_assert')
-  kernel_build_args_cpp += '-DDEBUG'
+  kernel_build_args += '-DDEBUG'
 endif
 
 add_project_arguments(
-    kernel_build_args_cpp,
+    kernel_build_args,
     language: 'cpp'
 )
-
     
 add_project_arguments(
-    '-ffreestanding',
-    '-fno-PIC',
+   kernel_build_args, 
     language: 'c'
 )
 

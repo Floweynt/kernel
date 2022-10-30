@@ -29,6 +29,7 @@ namespace apic
 
     std::uint64_t local_apic::calibrate()
     {
+        ticks_per_ms = 5000;
         if (ticks_per_ms)
             return ticks_per_ms;
 

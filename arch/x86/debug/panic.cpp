@@ -44,8 +44,7 @@ namespace debug
             base_ptr = (std::size_t*)old_bp;
         }
 
-        klog::log("stack type: " CYAN("%s") "\n",
-                    stack_color < sizeof(STACK_TYPES) ? STACK_TYPES[stack_color] : "unknown");
+        klog::log("stack type: " CYAN("%s") "\n", stack_color < sizeof(STACK_TYPES) ? STACK_TYPES[stack_color] : "unknown");
 
         if (crash)
             std::halt();
@@ -56,12 +55,12 @@ namespace debug
         klog::log("cs=0x%lx | sp=0x%lx\n", ctx->cs, ctx->ss);
         klog::log("rflags=0x%lx\n", ctx->rflags);
         klog::log("rip=0x%016lx\n", ctx->rip);
-        klog::log("rsp=0x%016lx\n", ctx->rip);
+        klog::log("rsp=0x%016lx\n", ctx->rsp);
         klog::log("GP registers:\n");
         for (std::size_t i = 0; i < 5; i++)
-            klog::log("%3s=0x%016lx   %3s=0x%016lx   %3s=0x%016lx\n", proc::context::REGISTER_NAMES[i], ctx->rgp[i],
-                      proc::context::REGISTER_NAMES[i + 1], ctx->rgp[i + 1], proc::context::REGISTER_NAMES[i + 2],
-                      ctx->rgp[i + 2]);
+            klog::log("%3s=0x%016lx   %3s=0x%016lx   %3s=0x%016lx\n", proc::context::REGISTER_NAMES[i * 3], ctx->rgp[i * 3],
+                      proc::context::REGISTER_NAMES[i * 3 + 1], ctx->rgp[i * 3 + 1],
+                      proc::context::REGISTER_NAMES[i * 3 + 2], ctx->rgp[i * 3 + 2]);
     }
 
 } // namespace debug

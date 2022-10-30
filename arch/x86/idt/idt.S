@@ -111,7 +111,6 @@ idt_common:
     movq (0x28 + 0x8 * 13)(%rax), %r15
     movq (0x28 + 0x8 * 14)(%rax), %rbp
     movq (0x28 + 0x8 + 0)(%rax), %rax
-
     iretq
 
 .align 0x10

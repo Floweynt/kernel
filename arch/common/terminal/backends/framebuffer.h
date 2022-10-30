@@ -1,85 +1,92 @@
 #ifndef _TERM_FRAMEBUFFER_H
 #define _TERM_FRAMEBUFFER_H
-
+#include "../limine_term_ccompat.h"
 #include "../term.h"
 
 #define FBTERM_FONT_GLYPHS 256
 
-struct fbterm_char
-{
-    std::uint32_t c;
-    std::uint32_t fg;
-    std::uint32_t bg;
+struct fbterm_char {
+    uint32_t c;
+    uint32_t fg;
+    uint32_t bg;
 };
 
-struct fbterm_queue_item
-{
-    std::size_t x, y;
+struct fbterm_queue_item {
+    size_t x, y;
     struct fbterm_char c;
 };
 
-struct fbterm_context
-{
+struct fbterm_context {
     struct term_context term;
 
-    std::size_t font_width;
-    std::size_t font_height;
-    std::size_t glyph_width;
-    std::size_t glyph_height;
+    size_t font_width;
+    size_t font_height;
+    size_t glyph_width;
+    size_t glyph_height;
 
-    std::size_t font_scale_x;
-    std::size_t font_scale_y;
+    size_t font_scale_x;
+    size_t font_scale_y;
 
-    std::size_t offset_x, offset_y;
+    size_t offset_x, offset_y;
 
-    volatile std::uint32_t* framebuffer;
-    std::size_t pitch;
-    std::size_t width;
-    std::size_t height;
-    std::size_t bpp;
+    volatile uint32_t *framebuffer;
+    size_t pitch;
+    size_t width;
+    size_t height;
+    size_t bpp;
 
-    std::size_t font_bits_size;
-    std::uint8_t* font_bits;
-    std::size_t font_bool_size;
-    bool* font_bool;
+    size_t font_bits_size;
+    uint8_t *font_bits;
+    size_t font_bool_size;
+    bool *font_bool;
 
-    std::uint32_t ansi_colours[8];
-    std::uint32_t ansi_bright_colours[8];
-    std::uint32_t default_fg, default_bg;
+    uint32_t ansi_colours[8];
+    uint32_t ansi_bright_colours[8];
+    uint32_t default_fg, default_bg;
 
-    std::size_t canvas_size;
-    std::uint32_t* canvas;
+    size_t canvas_size;
+    uint32_t *canvas;
 
-    std::size_t grid_size;
-    std::size_t queue_size;
-    std::size_t map_size;
+    size_t grid_size;
+    size_t queue_size;
+    size_t map_size;
 
-    struct fbterm_char* grid;
+    struct fbterm_char *grid;
 
-    struct fbterm_queue_item* queue;
-    std::size_t queue_i;
+    struct fbterm_queue_item *queue;
+    size_t queue_i;
 
-    struct fbterm_queue_item** map;
+    struct fbterm_queue_item **map;
 
-    std::uint32_t text_fg;
-    std::uint32_t text_bg;
+    uint32_t text_fg;
+    uint32_t text_bg;
     bool cursor_status;
-    std::size_t cursor_x;
-    std::size_t cursor_y;
+    size_t cursor_x;
+    size_t cursor_y;
 
-    std::uint32_t saved_state_text_fg;
-    std::uint32_t saved_state_text_bg;
-    std::size_t saved_state_cursor_x;
-    std::size_t saved_state_cursor_y;
+    uint32_t saved_state_text_fg;
+    uint32_t saved_state_text_bg;
+    size_t saved_state_cursor_x;
+    size_t saved_state_cursor_y;
 
-    std::size_t old_cursor_x;
-    std::size_t old_cursor_y;
+    size_t old_cursor_x;
+    size_t old_cursor_y;
 };
 
-struct term_context* fbterm_init(std::uint32_t* framebuffer, std::size_t width, std::size_t height, std::size_t pitch,
-                                 std::uint32_t* canvas, std::uint32_t* ansi_colours, std::uint32_t* ansi_bright_colours,
-                                 std::uint32_t* default_bg, std::uint32_t* default_fg, void* font, std::size_t font_width,
-                                 std::size_t font_height, std::size_t font_spacing, std::size_t font_scale_x,
-                                 std::size_t font_scale_y, std::size_t margin);
+#ifdef __cplusplus
+extern "C"
+#endif
+
+struct term_context *fbterm_init(
+    void *(*_malloc)(size_t),
+    void *(*_malloc2)(size_t),
+    uint32_t *framebuffer, size_t width, size_t height, size_t pitch,
+    uint32_t *canvas,
+    uint32_t *ansi_colours, uint32_t *ansi_bright_colours,
+    uint32_t *default_bg, uint32_t *default_fg,
+    void *font, size_t font_width, size_t font_height, size_t font_spacing,
+    size_t font_scale_x, size_t font_scale_y,
+    size_t margin
+);
 
 #endif

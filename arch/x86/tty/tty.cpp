@@ -2,8 +2,10 @@
 #include <common/terminal/backends/framebuffer.h>
 #include <common/terminal/term.h>
 #include <cstdint>
+#include <cstring>
 #include <kinit/limine.h>
-#include <mm/mm.h>
+#include <mm/pmm.h>
+#include <paging/paging.h>
 
 [[gnu::used]] volatile static limine_framebuffer_request framebuffer_request{
     .id = LIMINE_FRAMEBUFFER_REQUEST,
@@ -28,17 +30,30 @@ namespace tty
     void init()
     {
         auto fb = framebuffer_request.response->framebuffers[0];
-        ctx =
-            fbterm_init(mm::make_virtual<std::uint32_t>((std::uintptr_t)fb->address), fb->width, fb->height, fb->pitch,
-                        nullptr, ansi_colors, ansi_bright_colours, &default_bg, &default_fg, (void*)font, 8, 8, 0, 1, 1, 0);
+        ctx = fbterm_init(
+            +[](std::size_t s) { return std::memset(::operator new(s), 0, s); },
+            +[](std::size_t s) {
+                static constexpr auto SCROLLBACK_START = config::get_val<"mmap.start.scrollback">;
+
+                std::size_t pages = std::div_roundup(s, paging::PAGE_SMALL_SIZE);
+
+                for (std::size_t i = 0; i < pages; i++)
+                {
+                    auto p = mm::pmm_allocate();
+                    paging::request_page(paging::page_type::SMALL, SCROLLBACK_START + i * paging::PAGE_SMALL_SIZE,
+                                         mm::make_physical(p));
+                }
+                return (void*)SCROLLBACK_START;
+            },
+
+            mm::make_virtual<std::uint32_t>((std::uintptr_t)fb->address), fb->width, fb->height, fb->pitch, nullptr,
+            ansi_colors, ansi_bright_colours, &default_bg, &default_fg, (void*)font, 8, 8, 0, 1, 1, 0);
         ctx->full_refresh(ctx);
     }
 } // namespace tty
 
-
 void std::detail::putc(char c)
 {
     term_putchar(tty::ctx, c);
-    if(c == '\n')
-        tty::ctx->double_buffer_flush(tty::ctx);
+    tty::ctx->double_buffer_flush(tty::ctx);
 }

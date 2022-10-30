@@ -84,7 +84,7 @@ namespace debug
             std::printf("    length=%d\n", (int)rsdp->length);
 
             boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-                std::printf("  entry: (sig=0x%08u)\n",
+                std::printf("  entry: (sig=0x%08x)\n",
                             mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry)->signature);
             });
         }
