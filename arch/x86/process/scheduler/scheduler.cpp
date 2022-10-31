@@ -104,15 +104,15 @@ namespace scheduler
     void scheduler::load_sched_task_ctx()
     {
         auto& local = smp::core_local::get();
+        if (local.current_thread && local.current_thread->state == proc::thread_state::RUNNING)
+            tasks.push(local.current_thread);
+
         proc::thread* next_thread = idle;
         while (tasks.pop(next_thread))
         {
             if (next_thread->state == proc::thread_state::RUNNING)
                 break;
         }
-
-        if (local.current_thread && local.current_thread->state == proc::thread_state::RUNNING)
-            tasks.push(local.current_thread);
 
         local.current_thread = next_thread;
         local.ctxbuffer = &next_thread->ctx;

@@ -104,6 +104,7 @@ namespace smp
                     ;
             },
             local.core_id);
+        
         proc::make_kthread_args(
             +[](std::uint64_t a) {
                 klog::log("example task value 1: %lu\n", a);
@@ -111,7 +112,6 @@ namespace smp
                 idle();
             },
             local.core_id);
-
         proc::make_kthread_args(
             +[](std::uint64_t a) {
                 while (1)
@@ -123,11 +123,6 @@ namespace smp
 
         initialize_apic(smp::core_local::get());
         local.scheduler.set_idle(&idle_th);
-        while (1)
-        {
-            klog::log("a");
-        }
-
         idle();
     }
 

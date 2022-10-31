@@ -22,7 +22,7 @@ namespace proc
 
         std::uint32_t id32 = id;
 
-        thread* th = new thread({0, id32});
+        thread* th = new thread({id32, pid});
         threads[id] = th;
         auto& ctx = threads[id]->ctx;
 

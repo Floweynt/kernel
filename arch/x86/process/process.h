@@ -47,7 +47,7 @@ namespace proc
         // std::size_t latest_scheduled_tick;
         const task_id id;
         thread_state state;
-        constexpr thread(const task_id id) : id(id) {}
+        constexpr thread(task_id id) : id(id) {}
     };
 
     class process
@@ -58,6 +58,7 @@ namespace proc
     private:
         id_allocator<MAX_THREADS> thread_allocator;
         thread* threads[MAX_THREADS];
+        std::uint32_t pid = 0;
     public:
         std::uint32_t make_thread(std::uintptr_t fp, void* sp, std::uint64_t args, std::size_t core);
         thread* get_thread(std::uint32_t th) { return threads[th]; }
