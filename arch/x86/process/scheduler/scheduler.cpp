@@ -82,7 +82,7 @@ namespace scheduler
 
     void scheduler::add_task(proc::thread* th)
     {
-        klog::log("added thread %d:%d with stack: 0x%016lx\n", th->id.proc, th->id.thread, th->ctx.rsp);
+        // klog::log("added thread %d:%d with stack: 0x%016lx\n", th->id.proc, th->id.thread, th->ctx.rsp);
         if (th->state == proc::thread_state::WAITING)
             return; // no-op
         tasks.push(th);

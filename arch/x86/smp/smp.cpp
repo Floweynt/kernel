@@ -81,43 +81,11 @@ namespace smp
         auto idle_task = proc::make_kthread(idle);
         auto& idle_th = proc::get_thread(proc::task_id{idle_task, 0});
         idle_th.state = proc::thread_state::IDLE;
-#define r(n, v) asm volatile("movq $" #v ", %r" #n);
-        auto id = proc::make_kthread_args(
-            +[](std::uint64_t a) {
-                klog::log("example task value 0: %lu\n", a);
-                r(ax, 0xdeadbeef001);
-                r(bx, 0xdeadbeef002);
-                r(cx, 0xdeadca70003);
-                r(dx, 0xcafe0000004);
-                r(si, 0x13370000005);
-                r(di, 0x12389700006);
-                r(8, 0x133730de007);
-                r(9, 0x41414141008);
-                r(10, 0x69420000009);
-                r(11, 0x1928282000a);
-                r(12, 0x9182370000b);
-                r(13, 0x9182738000c);
-                r(14, 0x3746200000d);
-                r(15, 0xdeadded000e);
-                r(bp, 0xdeaddead00f);
-                while (1)
-                    ;
-            },
-            local.core_id);
         
         proc::make_kthread_args(
             +[](std::uint64_t a) {
                 klog::log("example task value 1: %lu\n", a);
-                debug::log_register(&proc::get_thread(proc::task_id{1, 0}).ctx);
                 idle();
-            },
-            local.core_id);
-        proc::make_kthread_args(
-            +[](std::uint64_t a) {
-                while (1)
-                {
-                    klog::log("a", a);
-                }
             },
             local.core_id);
 
