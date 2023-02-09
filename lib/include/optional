@@ -1,0 +1,37 @@
+// vim: set ft=cpp:
+#include "type_traits"
+namespace std
+{
+    struct nullopt_t
+    {
+        explicit constexpr nullopt_t(long long) {}
+    };
+
+    inline constexpr auto nullopt = nullopt_t(0x4D4F4E4144494321);
+
+    template <typename T>
+    class optional
+    {
+        typename aligned_storage<sizeof(T), alignof(T)>::type buf;
+        bool holds;
+
+    public:
+        constexpr optional() : holds(false) {}
+        constexpr optional(std::nullopt_t) : optional() {}
+        constexpr optional(const optional& other) : holds(other.holds)
+        {
+            if(other.holds)
+                new (buf.data) T(other.get()); 
+        }
+
+        constexpr optional( optional&& other ) : holds(other.holds)
+        {
+            if(other.holds)
+                new (buf.data) T(std::move(other.get())); 
+        }
+
+        template < class U > 
+        constexpr optional( const optional<U>& other );
+
+    };
+} // namespace std

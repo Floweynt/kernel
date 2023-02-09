@@ -81,6 +81,7 @@ opt_to_config = {
     'SLAB_MIN_ORDER': 'slab_min_order',
     'SLAB_MAX_ORDER': 'slab_max_order',
     'SLAB_SIZE_ORDER': 'slab_size_order',
+    'VMM_SIZE': 'vmm_size'
 }
 
 qemu_base_flags = [
@@ -199,6 +200,7 @@ conf.set('SCROLLBACK_START', '0xffff900000000000')
 conf.set('HEAP_START', '0xffff900080000000')
 conf.set('SLAB_START', '0xffff980000000000')
 conf.set('KLOG_BUFFER', '0xffffa00000000000')
+conf.set('VMM_START', '0xffffb00000000000')
 
 comp_id = meson.get_compiler('cpp').get_id()
 

@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_MM_SLAB_H__
-#define __ARCH_X86_MM_SLAB_H__
+#pragma once
+
 #include <cstddef>
 
 namespace mm
@@ -15,5 +15,3 @@ namespace mm
         return new (slab_allocate(sizeof(T))) T;
     }
 }
-
-#endif

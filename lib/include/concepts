@@ -1,0 +1,112 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_CONCEPTS_H__
+#define __NOSTDLIB_CONCEPTS_H__
+#include "type_traits"
+#include "utility"
+
+namespace std
+{
+    namespace detail
+    {
+        template <typename T, typename U>
+        concept same_as_helper = std::is_same_v<T, U>;
+    }
+
+    template <typename T, typename U>
+    concept same_as = detail::same_as_helper<T, U> && detail::same_as_helper<U, T>;
+
+    template <typename Derived, typename Base>
+    concept derived_from =
+        std::is_base_of_v<Base, Derived> && std::is_convertible_v<const volatile Derived*, const volatile Base*>;
+
+    template <typename _From, typename _To>
+    concept convertible_to = is_convertible_v<_From, _To> && requires
+    {
+        static_cast<_To>(std::declval<_From>());
+    };
+
+    template <typename T>
+    concept integral = is_integral_v<T>;
+
+    template <typename T>
+    concept signed_integral = integral<T> && is_signed_v<T>;
+
+    template <typename T>
+    concept unsigned_integral = integral<T> && !signed_integral<T>;
+
+    template <typename T>
+    concept floating_point = is_floating_point_v<T>;
+
+    namespace detail
+    {
+        template <typename T>
+        using cref = const remove_reference_t<T>&;
+
+        template <typename T>
+        concept class_or_enum = is_class_v<T> || is_union_v<T> || is_enum_v<T>;
+    } // namespace detail
+
+    template <typename T>
+    concept destructible = is_nothrow_destructible_v<T>;
+
+    template <typename T, typename... _Args>
+    concept constructible_from = destructible<T> && is_constructible_v<T, _Args...>;
+
+    template <typename T>
+    concept default_initializable = constructible_from<T> && requires
+    {
+        T{};
+        (void)::new T;
+    };
+
+    template <typename T>
+    concept move_constructible = constructible_from<T, T> && convertible_to<T, T>;
+
+    namespace detail
+    {
+        template <typename T>
+        concept boolean_testable_impl = convertible_to<T, bool>;
+
+        template <typename T>
+        concept boolean_testable = boolean_testable_impl<T> && requires(T&& t)
+        {
+            { !static_cast<T&&>(t) } -> boolean_testable_impl;
+        };
+    } // namespace detail
+
+    namespace detail
+    {
+        template <typename T, typename U>
+        concept weakly_eq_cmp_with = requires(cref<T> t, cref<U> u)
+        {
+            { t == u } -> boolean_testable;
+            { t != u } -> boolean_testable;
+            { u == t } -> boolean_testable;
+            { u != t } -> boolean_testable;
+        };
+    } 
+
+    template <typename T>
+    concept equality_comparable = detail::weakly_eq_cmp_with<T, T>;
+
+    namespace detail
+    {
+        template <typename T, typename U>
+        concept partially_ordered_with = requires(const remove_reference_t<T>& t, const remove_reference_t<U>& u)
+        {
+            { t < u } -> boolean_testable;
+            { t > u } -> boolean_testable;
+            { t <= u } -> boolean_testable;
+            { t >= u } -> boolean_testable;
+            { u < t } -> boolean_testable;
+            { u > t } -> boolean_testable;
+            { u <= t } -> boolean_testable;
+            { u >= t } -> boolean_testable;
+        };
+    } // namespace detail
+
+    template <typename T>
+    concept totally_ordered = equality_comparable<T> && detail::partially_ordered_with<T, T>;
+} // namespace std
+
+#endif 

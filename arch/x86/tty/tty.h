@@ -1,3 +1,5 @@
+#pragma once
+
 #include <kinit/limine.h>
 
 namespace tty

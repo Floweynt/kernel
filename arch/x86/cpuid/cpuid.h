@@ -1,10 +1,10 @@
-#ifndef __ARCH_X86_CPUID_CPUID_H__
-#define __ARCH_X86_CPUID_CPUID_H__
+#pragma once
+
 #include <cstddef>
 
 namespace cpuid_info
 {
-// cSpell:disable
+    // cSpell:disable
     static constexpr const char* FEATURE_STRINGS[] = {
         "fpu",
         "vme",
@@ -167,7 +167,7 @@ namespace cpuid_info
         "IA32_CORE_CAPABILITIES",
         "ssbd",
     };
-// cSpell:enable
+    // cSpell:enable
 
     /// \brief Initializes the caches for cpu-global cpuid based information
     ///
@@ -186,5 +186,3 @@ namespace cpuid_info
     /// \return Wether or not the feature is present
     bool test_feature(std::size_t feature);
 }; // namespace cpuid_info
-
-#endif

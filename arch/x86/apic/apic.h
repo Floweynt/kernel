@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_APIC_APIC_H__
-#define __ARCH_X86_APIC_APIC_H__
+#pragma once
+
 #include <asm/asm_cpp.h>
 #include <cstddef>
 #include <cstdint>
@@ -101,5 +101,3 @@ namespace apic
         inline void end() { mmio_register().eoi.write(0); }
     };
 } // namespace apic
-
-#endif

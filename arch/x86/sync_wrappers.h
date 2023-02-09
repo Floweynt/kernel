@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_IO_WRAPPERS_H__
-#define __ARCH_X86_IO_WRAPPERS_H__
+#pragma once
+
 #include <printf.h>
 #include <sync/spinlock.h>
 #include <utility>
@@ -15,5 +15,3 @@ namespace sync
         return std::printf(fmt, args...);
     }
 } // namespace sync
-
-#endif

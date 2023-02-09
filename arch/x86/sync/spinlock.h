@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_SYNC_SPINLOCK_H__
-#define __ARCH_X86_SYNC_SPINLOCK_H__
+#pragma once
+
 #include "kinit/boot_resource.h"
 #include <atomic>
 #include <cstddef>
@@ -54,4 +54,3 @@ namespace lock
     ::lock::spinlock_guard CONCAT(__guard, n) { CONCAT(__lock, n) }
 
 #define SPINLOCK_SYNC_BLOCK _SPINLOCK_SYNC_BLOCK(__COUNTER__)
-#endif

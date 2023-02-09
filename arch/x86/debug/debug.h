@@ -1,8 +1,8 @@
-#ifndef __ARCH_X86_DEBUG_DEBUG_H__
-#define __ARCH_X86_DEBUG_DEBUG_H__
+#pragma once
 
 #include "process/context.h"
 #include <cstdint>
+
 namespace debug
 {
     enum stack_types
@@ -25,5 +25,3 @@ namespace debug
 }
 
 #define mark_stack(type) asm volatile("movq %0, (%%rbp)" : : "r"((std::uint64_t)type));
-
-#endif

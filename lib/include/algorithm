@@ -1,0 +1,780 @@
+
+#ifndef __NOSTDLIB_ALGORITHM_H__
+#define __NOSTDLIB_ALGORITHM_H__
+#include "initializer_list"
+#include "iterator"
+#include "utility"
+#include "functional"
+
+namespace std
+{
+    template <typename It>
+    constexpr It max_element(It first, It last)
+    {
+        if (first == last)
+            return last;
+
+        It largest = first;
+        ++first;
+
+        for (; first != last; ++first)
+            if (*largest < *first)
+                largest = first;
+
+        return largest;
+    }
+
+    template <typename It, typename C>
+    constexpr It max_element(It first, It last, C comp)
+    {
+        if (first == last)
+            return last;
+
+        It largest = first;
+        ++first;
+
+        for (; first != last; ++first)
+            if (comp(*largest, *first))
+                largest = first;
+
+        return largest;
+    }
+
+    template <typename T>
+    constexpr const T& max(const T& a, const T& b)
+    {
+        return (a < b) ? b : a;
+    }
+
+    template <typename T, typename C>
+    constexpr const T& max(const T& a, const T& b, C comp)
+    {
+        return (comp(a, b)) ? b : a;
+    }
+
+    template <typename T>
+    constexpr T max(initializer_list<T> il)
+    {
+        return *max_element(il.begin(), il.end());
+    }
+
+    template <typename T, typename C>
+    constexpr T max(initializer_list<T> il, C comp)
+    {
+        return *max_element(il.begin(), il.end(), comp);
+    }
+
+    template <typename It>
+    constexpr It min_element(It first, It last)
+    {
+        if (first == last)
+            return last;
+
+        It smallest = first;
+        ++first;
+
+        for (; first != last; ++first)
+            if (*first < *smallest)
+                smallest = first;
+
+        return smallest;
+    }
+
+    template <typename It, typename C>
+    constexpr It min_element(It first, It last, C comp)
+    {
+        if (first == last)
+            return last;
+
+        It smallest = first;
+        ++first;
+
+        for (; first != last; ++first)
+            if (comp(*first, *smallest))
+                smallest = first;
+
+        return smallest;
+    }
+
+    template <typename T>
+    constexpr const T& min(const T& a, const T& b)
+    {
+        return (b < a) ? b : a;
+    }
+
+    template <typename T, typename C>
+    constexpr const T& min(const T& a, const T& b, C comp)
+    {
+        return (comp(b, a)) ? b : a;
+    }
+
+    template <typename T>
+    constexpr T min(initializer_list<T> il)
+    {
+        return *min_element(il.begin(), il.end());
+    }
+
+    template <typename T, typename C>
+    constexpr T min(initializer_list<T> il, C comp)
+    {
+        return *min_element(il.begin(), il.end(), comp);
+    }
+
+    template <class It>
+    pair<It, It> minmax_element(It first, It last)
+    {
+        using value_type = typename iterator_traits<It>::value_type;
+        return minmax_element(first, last, less<value_type>());
+    }
+
+    template <class It, class C>
+    pair<It, It> minmax_element(It first, It last, C comp)
+    {
+        auto min = first, max = first;
+
+        if (first == last || ++first == last)
+            return {min, max};
+
+        if (comp(*first, *min))
+        {
+            min = first;
+        }
+        else
+        {
+            max = first;
+        }
+
+        while (++first != last)
+        {
+            auto i = first;
+            if (++first == last)
+            {
+                if (comp(*i, *min))
+                    min = i;
+                else if (!(comp(*i, *max)))
+                    max = i;
+                break;
+            }
+            else
+            {
+                if (comp(*first, *i))
+                {
+                    if (comp(*first, *min))
+                        min = first;
+                    if (!(comp(*i, *max)))
+                        max = i;
+                }
+                else
+                {
+                    if (comp(*i, *min))
+                        min = i;
+                    if (!(comp(*first, *max)))
+                        max = first;
+                }
+            }
+        }
+        return {min, max};
+    }
+
+    template <typename T>
+    constexpr pair<const T&, const T&> minmax(const T& a, const T& b)
+    {
+        return (b < a) ? pair<const T&, const T&>(b, a) : pair<const T&, const T&>(a, b);
+    }
+
+    template <typename T, typename C>
+    constexpr pair<const T&, const T&> minmax(const T& a, const T& b, C comp)
+    {
+        return comp(b, a) ? pair<const T&, const T&>(b, a) : pair<const T&, const T&>(a, b);
+    }
+
+    template <typename T>
+    constexpr pair<T, T> minmax(initializer_list<T> il)
+    {
+        auto p = minmax_element(il.begin(), il.end());
+        return pair(*p.first, *p.second);
+    }
+
+    template <typename T, typename C>
+    constexpr pair<T, T> minmax(initializer_list<T> il, C comp)
+    {
+        auto p = minmax_element(il.begin(), il.end(), comp);
+        return pair(*p.first, *p.second);
+    }
+
+    template <typename It, typename F>
+    constexpr F for_each(It first, It last, F f)
+    {
+        for (; first != last; ++first)
+            f(*first);
+        return f;
+    }
+
+    template <typename It, typename S, typename F>
+    constexpr It for_each_n(It first, S n, F f)
+    {
+        for (S i = 0; i < n; ++first, (void)++i)
+            f(*first);
+        return first;
+    }
+
+    template <typename It, typename T>
+    constexpr typename iterator_traits<It>::difference_type count(It first, It last, const T& value)
+    {
+        typename iterator_traits<It>::difference_type ret = 0;
+        for (; first != last; ++first)
+            if (*first == value)
+                ret++;
+        return ret;
+    }
+
+    template <typename It, typename F>
+    constexpr typename iterator_traits<It>::difference_type count_if(It first, It last, F p)
+    {
+        typename iterator_traits<It>::difference_type ret = 0;
+        for (; first != last; ++first)
+            if (p(*first))
+                ret++;
+        return ret;
+    }
+
+    /*template <typename It1, typename It2>
+    pair<It1, It2> mismatch(It1 first1, It1 last1, It2 first2)
+    {
+        while (first1 != last1 && *first1 == *first2)
+        {
+            ++first1, ++first2;
+        }
+        return make_pair(first1, first2);
+    }
+
+    template <typename InputIt1, typename InputIt2, typename F>
+    pair<InputIt1, InputIt2> mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, F p)
+    {
+        while (first1 != last1 && p(*first1, *first2))
+        {
+            ++first1, ++first2;
+        }
+        return make_pair(first1, first2);
+    }
+
+    template <typename InputIt1, typename InputIt2>
+    pair<InputIt1, InputIt2> mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2)
+    {
+        while (first1 != last1 && first2 != last2 && *first1 == *first2)
+        {
+            ++first1, ++first2;
+        }
+        return make_pair(first1, first2);
+    }
+
+    template <typename InputIt1, typename InputIt2, typename F>
+    pair<InputIt1, InputIt2> mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2,
+                                           F p)
+    {
+        while (first1 != last1 && first2 != last2 && p(*first1, *first2))
+        {
+            ++first1, ++first2;
+        }
+        return make_pair(first1, first2);
+    }*/
+
+    template <typename It, typename T>
+    constexpr It find(It first, It last, const T& value)
+    {
+        for (; first != last; ++first)
+            if (*first == value)
+                return first;
+        return last;
+    }
+
+    template <typename It, typename P>
+    constexpr It find_if(It first, It last, P p)
+    {
+        for (; first != last; ++first)
+            if (p(*first))
+                return first;
+        return last;
+    }
+
+    template <typename It, typename P>
+    constexpr It find_if_not(It first, It last, P q)
+    {
+        for (; first != last; ++first)
+            if (!q(*first))
+                return first;
+        return last;
+    }
+
+    template <typename It, typename P>
+    constexpr bool all_of(It first, It last, P p)
+    {
+        return find_if_not(first, last, p) == last;
+    }
+
+    template <typename It, typename P>
+    constexpr bool any_of(It first, It last, P p)
+    {
+        return find_if(first, last, p) != last;
+    }
+
+    template <typename It, typename P>
+    constexpr bool none_of(It first, It last, P p)
+    {
+        return find_if(first, last, p) == last;
+    }
+
+    template <typename It1, typename It2>
+    constexpr It1 search(It1 first, It1 last, It2 s_first, It2 s_last)
+    {
+        while (1)
+        {
+            It1 it = first;
+            for (It2 s_it = s_first;; ++it, ++s_it)
+            {
+                if (s_it == s_last)
+                    return first;
+                if (it == last)
+                    return last;
+                if (!(*it == *s_it))
+                    break;
+            }
+            ++first;
+        }
+    }
+
+    template <typename It1, typename It2, typename F>
+    constexpr It1 search(It1 first, It1 last, It2 s_first, It2 s_last, F p)
+    {
+        while (true)
+        {
+            It1 it = first;
+            for (It2 s_it = s_first;; ++it, ++s_it)
+            {
+                if (s_it == s_last)
+                    return first;
+                if (it == last)
+                    return last;
+                if (!p(*it, *s_it))
+                    break;
+            }
+            ++first;
+        }
+    }
+
+    template <typename It1, typename It2>
+    constexpr It1 find_end(It1 first, It1 last, It2 s_first, It2 s_last)
+    {
+        if (s_first == s_last)
+            return last;
+        It1 result = last;
+        while (true)
+        {
+            It1 new_result = search(first, last, s_first, s_last);
+            if (new_result == last)
+                break;
+            else
+            {
+                result = new_result;
+                first = result;
+                ++first;
+            }
+        }
+        return result;
+    }
+
+    template <typename It1, typename It2, typename F>
+    constexpr It1 find_end(It1 first, It1 last, It2 s_first, It2 s_last, F p)
+    {
+        if (s_first == s_last)
+            return last;
+        It1 result = last;
+        while (true)
+        {
+            It1 new_result = search(first, last, s_first, s_last, p);
+            if (new_result == last)
+                break;
+            else
+            {
+                result = new_result;
+                first = result;
+                ++first;
+            }
+        }
+        return result;
+    }
+
+    template <typename It1, typename It2>
+    It1 find_first_of(It1 first, It1 last, It2 s_first, It2 s_last)
+    {
+        for (; first != last; ++first)
+            for (It2 it = s_first; it != s_last; ++it)
+                if (*first == *it)
+                    return first;
+        return last;
+    }
+
+    template <typename InputIt, typename It, typename F>
+    InputIt find_first_of(InputIt first, InputIt last, It s_first, It s_last, F p)
+    {
+        for (; first != last; ++first)
+        {
+            for (It it = s_first; it != s_last; ++it)
+            {
+                if (p(*first, *it))
+                {
+                    return first;
+                }
+            }
+        }
+        return last;
+    }
+    template <typename It>
+    It adjacent_find(It first, It last)
+    {
+        if (first == last)
+        {
+            return last;
+        }
+        It next = first;
+        ++next;
+        for (; next != last; ++next, ++first)
+        {
+            if (*first == *next)
+            {
+                return first;
+            }
+        }
+        return last;
+    }
+
+    template <typename It, typename F>
+    It adjacent_find(It first, It last, F p)
+    {
+        if (first == last)
+        {
+            return last;
+        }
+        It next = first;
+        ++next;
+        for (; next != last; ++next, ++first)
+        {
+            if (p(*first, *next))
+            {
+                return first;
+            }
+        }
+        return last;
+    }
+
+    template <typename It, typename Size, typename T>
+    It search_n(It first, It last, Size count, const T& value)
+    {
+        if (count <= 0)
+        {
+            return first;
+        }
+        for (; first != last; ++first)
+        {
+            if (!(*first == value))
+            {
+                continue;
+            }
+
+            It candidate = first;
+            Size cur_count = 0;
+
+            while (true)
+            {
+                ++cur_count;
+                if (cur_count >= count)
+                {
+
+                    return candidate;
+                }
+                ++first;
+                if (first == last)
+                {
+
+                    return last;
+                }
+                if (!(*first == value))
+                {
+
+                    break;
+                }
+            }
+        }
+        return last;
+    }
+
+    template <typename It, typename Size, typename T, typename F>
+    It search_n(It first, It last, Size count, const T& value, F p)
+    {
+        if (count <= 0)
+        {
+            return first;
+        }
+        for (; first != last; ++first)
+        {
+            if (!p(*first, value))
+            {
+                continue;
+            }
+
+            It candidate = first;
+            Size cur_count = 0;
+
+            while (true)
+            {
+                ++cur_count;
+                if (cur_count >= count)
+                {
+
+                    return candidate;
+                }
+                ++first;
+                if (first == last)
+                {
+
+                    return last;
+                }
+                if (!p(*first, value))
+                {
+
+                    break;
+                }
+            }
+        }
+        return last;
+    }
+
+    template <typename InputIt, typename OutputIt>
+    OutputIt copy(InputIt first, InputIt last, OutputIt d_first)
+    {
+        for (; first != last; (void)++first, (void)++d_first)
+        {
+            *d_first = *first;
+        }
+        return d_first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename UnaryPredicate>
+    OutputIt copy_if(InputIt first, InputIt last, OutputIt d_first, UnaryPredicate pred)
+    {
+        for (; first != last; ++first)
+        {
+            if (pred(*first))
+            {
+                *d_first = *first;
+                ++d_first;
+            }
+        }
+        return d_first;
+    }
+
+    template <typename InputIt, typename Size, typename OutputIt>
+    constexpr OutputIt copy_n(InputIt first, Size count, OutputIt result)
+    {
+        if (count > 0)
+        {
+            *result++ = *first;
+            for (Size i = 1; i < count; ++i)
+            {
+                *result++ = *++first;
+            }
+        }
+        return result;
+    }
+
+    template <typename BidirIt1, typename BidirIt2>
+    BidirIt2 copy_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last)
+    {
+        while (first != last)
+        {
+            *(--d_last) = *(--last);
+        }
+        return d_last;
+    }
+
+    template <typename InputIt, typename OutputIt>
+    OutputIt move(InputIt first, InputIt last, OutputIt d_first)
+    {
+        while (first != last)
+        {
+            *d_first++ = move(*first++);
+        }
+        return d_first;
+    }
+
+    template <typename BidirIt1, typename BidirIt2>
+    BidirIt2 move_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last)
+    {
+        while (first != last)
+        {
+            *(--d_last) = move(*(--last));
+        }
+        return d_last;
+    }
+    template <typename It, typename T>
+    void fill(It first, It last, const T& value)
+    {
+        for (; first != last; ++first)
+        {
+            *first = value;
+        }
+    }
+
+    template <typename OutputIt, typename Size, typename T>
+    OutputIt fill_n(OutputIt first, Size count, const T& value)
+    {
+        for (Size i = 0; i < count; i++)
+        {
+            *first++ = value;
+        }
+        return first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename UnaryOperation>
+    OutputIt transform(InputIt first1, InputIt last1, OutputIt d_first, UnaryOperation unary_op)
+    {
+        while (first1 != last1)
+        {
+            *d_first++ = unary_op(*first1++);
+        }
+        return d_first;
+    }
+
+    template <typename InputIt1, typename InputIt2, typename OutputIt, typename BinaryOperation>
+    OutputIt transform(InputIt1 first1, InputIt1 last1, InputIt2 first2, OutputIt d_first, BinaryOperation binary_op)
+    {
+        while (first1 != last1)
+        {
+            *d_first++ = binary_op(*first1++, *first2++);
+        }
+        return d_first;
+    }
+
+    template <typename It, typename Generator>
+    constexpr void generate(It first, It last, Generator g)
+    {
+        while (first != last)
+        {
+            *first++ = g();
+        }
+    }
+
+    template <typename OutputIt, typename Size, typename Generator>
+    constexpr OutputIt generate_n(OutputIt first, Size count, Generator g)
+    {
+        for (Size i = 0; i < count; ++i)
+        {
+            *first++ = g();
+        }
+        return first;
+    }
+
+    template <typename It, typename T>
+    It remove(It first, It last, const T& value)
+    {
+        first = find(first, last, value);
+        if (first != last)
+            for (It i = first; ++i != last;)
+                if (!(*i == value))
+                    *first++ = move(*i);
+        return first;
+    }
+
+    template <typename It, typename UnaryPredicate>
+    It remove_if(It first, It last, UnaryPredicate p)
+    {
+        first = find_if(first, last, p);
+        if (first != last)
+            for (It i = first; ++i != last;)
+                if (!p(*i))
+                    *first++ = move(*i);
+        return first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename T>
+    OutputIt remove_copy(InputIt first, InputIt last, OutputIt d_first, const T& value)
+    {
+        for (; first != last; ++first)
+        {
+            if (!(*first == value))
+            {
+                *d_first++ = *first;
+            }
+        }
+        return d_first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename UnaryPredicate>
+    OutputIt remove_copy_if(InputIt first, InputIt last, OutputIt d_first, UnaryPredicate p)
+    {
+        for (; first != last; ++first)
+        {
+            if (!p(*first))
+            {
+                *d_first++ = *first;
+            }
+        }
+        return d_first;
+    }
+
+    template <typename It, typename T>
+    void replace(It first, It last, const T& old_value, const T& new_value)
+    {
+        for (; first != last; ++first)
+        {
+            if (*first == old_value)
+            {
+                *first = new_value;
+            }
+        }
+    }
+
+    template <typename It, typename UnaryPredicate, typename T>
+    void replace_if(It first, It last, UnaryPredicate p, const T& new_value)
+    {
+        for (; first != last; ++first)
+        {
+            if (p(*first))
+            {
+                *first = new_value;
+            }
+        }
+    }
+
+    template <typename InputIt, typename OutputIt, typename T>
+    OutputIt replace_copy(InputIt first, InputIt last, OutputIt d_first, const T& old_value, const T& new_value)
+    {
+        for (; first != last; ++first)
+        {
+            *d_first++ = (*first == old_value) ? new_value : *first;
+        }
+        return d_first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename UnaryPredicate, typename T>
+    OutputIt replace_copy_if(InputIt first, InputIt last, OutputIt d_first, UnaryPredicate p, const T& new_value)
+    {
+        for (; first != last; ++first)
+        {
+            *d_first++ = p(*first) ? new_value : *first;
+        }
+        return d_first;
+    }
+
+    template <typename BidirIt, typename OutputIt>
+    constexpr OutputIt reverse_copy(BidirIt first, BidirIt last, OutputIt d_first)
+    {
+        while (first != last)
+        {
+            *(d_first++) = *(--last);
+        }
+        return d_first;
+    }
+} // namespace std
+
+#endif

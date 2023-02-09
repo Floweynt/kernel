@@ -1,0 +1,192 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_ARRAY_H__
+#define __NOSTDLIB_ARRAY_H__
+#include "../bits/iterator_utils.h"
+#include "../bits/reverse_iterator.h"
+#include "../bits/user_implement.h"
+#include "cstddef"
+#include "type_traits"
+
+namespace std
+{
+    namespace detail
+    {
+        template <typename T, size_t N>
+        struct array_helper
+        {
+            using type = T[N];
+
+            static constexpr T* ptr(type& t, size_t index) noexcept { return &t[index]; }
+            static constexpr T& ref(type& t, size_t index) noexcept { return t[index]; }
+        };
+
+        template <typename T>
+        struct array_helper<T, 0>
+        {
+            struct type
+            {
+            };
+            static constexpr T* ptr(type& t, size_t index) noexcept { return nullptr; }
+            static constexpr T& ref(type& t, size_t index) noexcept { return *ptr(t, index); }
+        };
+    } // namespace detail
+    template <typename T, size_t N>
+    struct array
+    {
+        using value_type = T;
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+        using reference = T&;
+        using const_reference = const T&;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using iterator = detail::iterator_wrapper<pointer, array>;
+        using const_iterator = detail::iterator_wrapper<const_pointer, array>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        using __helper = detail::array_helper<T, N>;
+        typename __helper::type __buf;
+
+        constexpr reference at(size_type pos)
+        {
+            if (pos >= N)
+                detail::errors::__stdexcept_out_of_range();
+            return __helper::ref(__buf, pos);
+        }
+
+        constexpr const_reference at(size_type pos) const
+        {
+            if (pos >= N)
+                detail::errors::__stdexcept_out_of_range();
+            return __helper::ref(__buf, pos);
+        }
+
+        constexpr reference operator[](size_type pos) noexcept { return __helper::ref(__buf, pos); }
+
+        constexpr const_reference operator[](size_type pos) const noexcept { return __helper::ref(__buf, pos); }
+
+        constexpr reference front() noexcept { return __helper::ref(__buf, 0); }
+        constexpr const_reference front() const noexcept { return __helper::ref(__buf, 0); }
+
+        constexpr reference back() noexcept { return __helper::ref(__buf, N - 1); }
+        constexpr const_reference back() const noexcept { return __helper::ref(__buf, N - 1); }
+
+        constexpr pointer data() noexcept { return __helper::ptr(__buf, 0); }
+        constexpr const_pointer data() const noexcept { return __helper::ptr(__buf, 0); }
+
+        constexpr iterator begin() noexcept { return iterator(__helper::ptr(__buf, 0)); }
+        constexpr iterator end() noexcept { return iterator(__helper::ptr(__buf, N - 1)); }
+
+        constexpr const_iterator cbegin() const noexcept { return iterator(__helper::ptr(__buf, 0)); }
+        constexpr const_iterator cend() const noexcept { return iterator(__helper::ptr(__buf, N - 1)); }
+
+        constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+        constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
+        constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+
+        constexpr bool empty() const noexcept { return N == 0; }
+        constexpr size_type size() const noexcept { return N; }
+        constexpr size_type max_size() const noexcept { return (size_type)-1; }
+
+        void fill(const T& value)
+        {
+            for (auto& i : *this)
+                i = value;
+        }
+
+        void swap(array& other) noexcept(is_nothrow_swappable_v<T>)
+        {
+            for (size_type i = 0; i < N; i++)
+                swap(__buf[i], other.buf[i]);
+        }
+    };
+
+    template <typename T, size_t N>
+    bool operator==(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        for (size_t i = 0; i < N; i++)
+        {
+            if (lhs[i] != rhs[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    template <typename T, size_t N>
+    bool operator!=(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    template <typename T, size_t N>
+    bool operator<(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        for (size_t i = 0; i < N; i++)
+        {
+            if (lhs[i] < rhs[i])
+                return true;
+            if (lhs[i] > rhs[i])
+                return false;
+        }
+
+        return false;
+    }
+
+    template <typename T, size_t N>
+    bool operator<=(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        return (lhs < rhs) || (lhs == rhs);
+    }
+
+    template <typename T, size_t N>
+    bool operator>(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        return !(lhs <= rhs);
+    }
+
+    template <typename T, size_t N>
+    bool operator>=(const array<T, N>& lhs, const array<T, N>& rhs)
+    {
+        return !(lhs < rhs);
+    }
+
+    template <typename T, size_t N>
+    void swap(array<T, N>& lhs, array<T, N>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+    {
+        lhs.swap(rhs);
+    }
+
+    template <size_t I, typename T, size_t N>
+    constexpr T& get(array<T, N>& a) noexcept
+    {
+        static_assert(I < N, "Index out-of-bounds");
+        return a[I];
+    }
+
+    template <size_t I, typename T, size_t N>
+    constexpr T&& get(array<T, N>&& a) noexcept
+    {
+        static_assert(I < N, "Index out-of-bounds");
+        return a[I];
+    }
+
+    template <size_t I, typename T, size_t N>
+    constexpr const T& get(const array<T, N>& a) noexcept
+    {
+        static_assert(I < N, "Index out-of-bounds");
+        return a[I];
+    }
+
+    template <size_t I, typename T, size_t N>
+    constexpr const T&& get(const array<T, N>&& a) noexcept
+    {
+        static_assert(I < N, "Index out-of-bounds");
+        return a[I];
+    }
+} // namespace std
+
+#endif

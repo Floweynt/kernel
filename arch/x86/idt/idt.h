@@ -1,5 +1,5 @@
-#ifndef __X86_IDT_H__
-#define __X86_IDT_H__
+#pragma once
+
 #include <cstddef>
 #include <cstdint>
 
@@ -79,4 +79,3 @@ namespace idt
         std::uint32_t reserved;
     };
 } // namespace idt
-#endif

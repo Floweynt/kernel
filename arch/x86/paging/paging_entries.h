@@ -1,5 +1,4 @@
-#ifndef __ARCH_X86_PAGING_ENTRIES_H__
-#define __ARCH_X86_PAGING_ENTRIES_H__
+#pragma once
 
 #include "config.h"
 #include <bitmanip.h>
@@ -98,5 +97,3 @@ namespace paging
 
     using page_table_entry = std::uint64_t;
 }; // namespace paging
-
-#endif

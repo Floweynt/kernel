@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_IDT_HANDLERS_HANDLERS_H__
-#define __ARCH_X86_IDT_HANDLERS_HANDLERS_H__
+#pragma once
+
 #include <debug/debug.h>
 #include <idt/idt.h>
 #include <smp/smp.h>
@@ -38,5 +38,3 @@ namespace handlers
         handle_noop,        handle_noop,
     };
 } // namespace handlers
-
-#endif

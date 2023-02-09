@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_MM_MM_H__
-#define __ARCH_X86_MM_MM_H__
+#pragma once
+
 #include <bitmanip.h>
 #include <bitset>
 #include <config.h>
@@ -7,6 +7,7 @@
 #include <cstring>
 #include <kinit/boot_resource.h>
 #include <utils/utils.h>
+
 namespace mm
 {
     class bitmask_allocator
@@ -70,5 +71,3 @@ namespace mm
         return (T*)make_virtual_kern(phy);
     }
 } // namespace mm
-
-#endif

@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_UTILS_ID_ALLOCATOR_H__
-#define __ARCH_X86_UTILS_ID_ALLOCATOR_H__
+#pragma once
+
 #include <bitset>
 #include <cstring>
 #include <type_traits>
@@ -109,5 +109,3 @@ public:
         s.set(0, true);
     }
 };
-
-#endif

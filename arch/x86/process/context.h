@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_CONTEXT_H__
-#define __ARCH_X86_CONTEXT_H__
+#pragma once
+
 #include <cstdint>
 
 // this is a fully restorable execution context
@@ -35,6 +35,8 @@ namespace proc
         std::uint64_t rsp;
         std::uint64_t ss;
         std::uint64_t rgp[15];
+
+        std::uintptr_t cr3; // the current page tables for the process represented by this execution context
+                            // for kernel space, it should point to the global kernel space page tables
     };
 } // namespace proc
-#endif

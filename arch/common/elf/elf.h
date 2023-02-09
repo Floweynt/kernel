@@ -1,5 +1,5 @@
-#ifndef __ARCH_COMMON_ELF_ELF_H__
-#define __ARCH_COMMON_ELF_ELF_H__
+#pragma once
+
 #include <cstdint>
 #include <type_traits>
 
@@ -93,16 +93,13 @@ namespace elf
 
     struct elf32_dynamic
     {
-        int32_t tag;
+        std::int32_t tag;
         std::uint32_t val;
     };
 
     struct elf64_dynamic
     {
-        int64_t tag;
+        std::int64_t tag;
         std::uint64_t val;
     };
-
 } // namespace elf
-
-#endif

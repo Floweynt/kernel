@@ -1,5 +1,4 @@
-#ifndef __ARCH_X86_DEBUG_KINIT_DUMP_H__
-#define __ARCH_X86_DEBUG_KINIT_DUMP_H__
+#pragma once
 
 namespace debug
 {
@@ -8,5 +7,3 @@ namespace debug
     void dump_cpuid_info();
     void dump_acpi_info();
 } // namespace debug
-
-#endif

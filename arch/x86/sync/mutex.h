@@ -1,5 +1,4 @@
-#ifndef __ARCH_X86_SPINLOCK_H__
-#define __ARCH_X86_SPINLOCK_H__
+#pragma once
 
 #include "spinlock.h"
 #include <atomic>
@@ -72,5 +71,3 @@ namespace lock
         inline void release() { s.release(); }
     };
 }
-
-#endif

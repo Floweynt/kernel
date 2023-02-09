@@ -24,10 +24,10 @@ namespace debug
                 switch (e.type)
                 {
                 case LIMINE_MEMMAP_USABLE:
-                    std::printf("[" CYAN  ("USABLE      ") "]: ");
+                    std::printf("[" CYAN("USABLE      ") "]: ");
                     break;
                 case LIMINE_MEMMAP_RESERVED:
-                    std::printf("[" RED   ("RESERVED    ") "]: ");
+                    std::printf("[" RED("RESERVED    ") "]: ");
                     break;
                 case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
                     std::printf("[" YELLOW("ACPI RECLAIM") "]: ");
@@ -36,20 +36,20 @@ namespace debug
                     std::printf("[" YELLOW("ACPI NVS    ") "]: ");
                     break;
                 case LIMINE_MEMMAP_BAD_MEMORY:
-                    std::printf("[" RED   ("BAD         ") "]: ");
+                    std::printf("[" RED("BAD         ") "]: ");
                     break;
                 case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
                     std::printf("[" YELLOW("BTL RECLAIM ") "]: ");
                     break;
                 case LIMINE_MEMMAP_KERNEL_AND_MODULES:
-                    std::printf("[" CYAN  ("K/MOD       ") "]: ");
+                    std::printf("[" CYAN("K/MOD       ") "]: ");
                     break;
                 case LIMINE_MEMMAP_FRAMEBUFFER:
-                    std::printf("[" CYAN  ("FRAMEBUFFER ") "]: ");
+                    std::printf("[" CYAN("FRAMEBUFFER ") "]: ");
                     break;
                 default:
                     // this case should never be reached, but exists as a fallback
-                    std::printf("[" GRAY  ("UNKNOWN     ") "]: ");
+                    std::printf("[" GRAY("UNKNOWN     ") "]: ");
                 }
                 std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
             });

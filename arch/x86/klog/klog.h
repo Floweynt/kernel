@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_UTILS_LOGGING_H__
-#define __ARCH_X86_UTILS_LOGGING_H__
+#pragma once
+
 #include "smp/smp.h"
 #include <printf.h>
 #include <cstddef>
@@ -41,4 +41,3 @@ namespace klog
         debug::panic(msg, crash);
     }
 }
-#endif

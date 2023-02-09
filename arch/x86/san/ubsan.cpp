@@ -104,7 +104,7 @@ struct ubsan_source_location
 #define TYPENAME data->type->get_type_name()
 
 // debugging
-void __ubsan_hook_start() 
+void __ubsan_hook_start()
 {
     // NOTE: because sanitization failures cannot be nested, and is always fatal, the lock will always be held
     static lock::spinlock l;
@@ -217,7 +217,8 @@ namespace ubsan
             if (base > result)
                 klog::log(RED("ubsan") ": addition of unsigned offset to 0x%016lx overflowed to 0x%016lx\n", base, result);
             else
-                klog::log(RED("ubsan") ": subtraction of unsigned offset from 0x%016lx overflowed to 0x%016lx\n", base, result);
+                klog::log(RED("ubsan") ": subtraction of unsigned offset from 0x%016lx overflowed to 0x%016lx\n", base,
+                          result);
         }
         else
         {
@@ -281,8 +282,8 @@ namespace ubsan
         __ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_load_invalid_value", data->loc);
 
-        klog::log(RED("ubsan") ": load of value (pointer-or-integer) 0x%016lx, which is not a valid value for type %s\n", val,
-                  data->type->get_type_name());
+        klog::log(RED("ubsan") ": load of value (pointer-or-integer) 0x%016lx, which is not a valid value for type %s\n",
+                  val, data->type->get_type_name());
 
         klog::panic("__ubsan_handle_load_invalid_value");
     }
@@ -303,7 +304,8 @@ namespace ubsan
         ubsan_typed_value index(*data->index, val);
         UBSAN_LOG_POS("__ubsan_handle_out_of_bounds", data->loc);
 
-        klog::log(RED("ubsan") ": index %lu out of bounds for type %s\n", index.get_unsigned(), data->index->get_type_name());
+        klog::log(RED("ubsan") ": index %lu out of bounds for type %s\n", index.get_unsigned(),
+                  data->index->get_type_name());
 
         klog::panic("__ubsan_handle_out_of_bounds");
     }
@@ -355,8 +357,8 @@ namespace ubsan
         }
         else if (ptr & (alignment - 1))
         {
-            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s\n", type_check_kinds[data->type_check_kind], ptr,
-                      data->type->get_type_name());
+            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s\n", type_check_kinds[data->type_check_kind],
+                      ptr, data->type->get_type_name());
             klog::log(RED("ubsan") " (note): requires 0x%lx byte alignment\n", alignment);
         }
         else
@@ -377,16 +379,18 @@ namespace ubsan
         ubsan_type_descriptor* type;
     };
 
-    NO_UBSAN C void __ubsan_handle_nonnull_return_v1(ubsan_vla_bound* data, value val)
+    C NO_UBSAN void __ubsan_handle_nonnull_return_v1(ubsan_vla_bound* data, value val)
     {
         __ubsan_hook_start();
         ubsan_typed_value value(*data->type, val);
         UBSAN_LOG_POS("__ubsan_handle_nonnull_return_v1", data->loc);
 
         if (data->type->is_signed_integer())
-            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %ld\n", value.get_signed());
+            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %ld\n",
+                      value.get_signed());
         else
-            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %lu\n", value.get_unsigned());
+            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %lu\n",
+                      value.get_unsigned());
         klog::panic("__ubsan_handle_nonnull_return_v1");
     }
 } // namespace ubsan
@@ -400,12 +404,13 @@ namespace ubsan
         int arg_index;
     };
 
-    NO_UBSAN C void __ubsan_handle_nonnull_arg(ubsan_nonnull_arg* data)
+    C NO_UBSAN void __ubsan_handle_nonnull_arg(ubsan_nonnull_arg* data)
     {
         __ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_nonnull_return_v1", data->loc);
 
-        klog::log(RED("ubsan") ": null pointer passed as argument %u, which is declared to never be null\n", data->arg_index);
+        klog::log(RED("ubsan") ": null pointer passed as argument %u, which is declared to never be null\n",
+                  data->arg_index);
 
         if (!data->attr_loc.filename)
             klog::log(RED("ubsan") " (note): nonnull attribute specified here %s:%d,%d\n", data->attr_loc.filename,
@@ -450,7 +455,8 @@ namespace ubsan
     {
         __ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_invalid_builtin", data->loc);
-        klog::log(RED("ubsan") ": passing zero to %s, which is not a valid argument\n", (data->kind == 0) ? "ctz()" : "clz()");
+        klog::log(RED("ubsan") ": passing zero to %s, which is not a valid argument\n",
+                  (data->kind == 0) ? "ctz()" : "clz()");
         klog::panic("__ubsan_handle_invalid_builtin");
     }
 } // namespace ubsan

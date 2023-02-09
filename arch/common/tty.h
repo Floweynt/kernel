@@ -1,7 +1,6 @@
-#ifndef __ARCH_COMMON_TTY_H__
-#define __ARCH_COMMON_TTY_H__
-#include <cstdint>
+#pragma once
 #include <cstddef>
+#include <cstdint>
 
 namespace tty
 {
@@ -76,5 +75,3 @@ namespace tty
     inline constexpr rgb YELLOW = {255, 255, 0};
     inline constexpr rgb CYAN = {0, 230, 230};
 } // namespace tty
-
-#endif

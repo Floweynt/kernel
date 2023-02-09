@@ -1,9 +1,10 @@
 // cSpell:ignore hhdm
-#ifndef __ARCH_X86_PAGING_H__
-#define __ARCH_X86_PAGING_H__
+#pragma once
+
 #include "paging_entries.h"
 #include <bitmanip.h>
 #include <mm/mm.h>
+
 namespace paging
 {
     enum page_type : std::uint8_t
@@ -45,5 +46,3 @@ namespace paging
 
     void sync_page_tables(std::size_t dest_core, std::size_t src_core);
 } // namespace paging
-
-#endif

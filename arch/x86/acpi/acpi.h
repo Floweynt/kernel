@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_ACPI_ACPI_H__
-#define __ARCH_X86_ACPI_ACPI_H__
+#pragma once
+
 #include <cstddef>
 #include <cstdint>
 #include <concepts>
@@ -181,5 +181,3 @@ namespace acpi
         return nullptr;
     }
 } // namespace acpi
-
-#endif

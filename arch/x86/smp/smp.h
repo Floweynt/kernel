@@ -1,6 +1,6 @@
 // cSpell:ignore apic, stivale
-#ifndef __ARCH_X86_SMP_SMP_H__
-#define __ARCH_X86_SMP_SMP_H__
+#pragma once
+
 #include <apic/apic.h>
 #include <process/context.h>
 #include <cstddef>
@@ -67,5 +67,3 @@ namespace smp
 
     [[noreturn]] void init(limine_smp_response* smp);
 } // namespace smp
-
-#endif

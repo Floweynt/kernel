@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_MM_MALLOC_H__
-#define __ARCH_X86_MM_MALLOC_H__
+#pragma once
+
 #include <cstddef>
 
 namespace alloc
@@ -10,5 +10,3 @@ namespace alloc
     void* realloc(void* buf, std::size_t size);
     void free(void* buffer);
 }
-
-#endif

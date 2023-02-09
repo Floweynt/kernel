@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_PCI_PCI_CONFIG_H__
-#define __ARCH_X86_PCI_PCI_CONFIG_H__
+#pragma once
+
 #include <asm/asm_cpp.h>
 
 namespace pci
@@ -51,5 +51,3 @@ namespace pci
 
     void scan();
 } // namespace pci
-
-#endif

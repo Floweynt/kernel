@@ -1,5 +1,4 @@
-#ifndef __ARCH_X86_UTILS_H__
-#define __ARCH_X86_UTILS_H__
+#pragma once
 
 namespace utils
 {
@@ -38,5 +37,3 @@ namespace utils
     template <typename... Ts>
     packed_tuple(Ts&&... args) -> packed_tuple<Ts...>;
 } // namespace utils
-
-#endif

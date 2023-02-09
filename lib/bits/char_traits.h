@@ -1,0 +1,6 @@
+#ifndef __NOSTDLIB_BITS_CHAR_TRAITS_H__
+#define __NOSTDLIB_BITS_CHAR_TRAITS_H__
+
+
+
+#endif

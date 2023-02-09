@@ -1,7 +1,8 @@
-#ifndef __ARCH_X86_MM_PMM_H__
-#define __ARCH_X86_MM_PMM_H__
+#pragma once
+
 #include "mm.h"
 #include "paging/paging.h"
+
 namespace mm
 {
     class pmm_region : public bitmask_allocator
@@ -31,6 +32,4 @@ namespace mm
 
     void add_region(std::uintptr_t, std::size_t);
     void* pmm_allocate(std::size_t len = 1);
-} // namespace mm
-
-#endif
+} // namespace pmm

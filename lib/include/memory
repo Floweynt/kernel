@@ -1,0 +1,146 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_MEMORY_H__
+#define __NOSTDLIB_MEMORY_H__
+#include "../bits/unique_ptr.h"
+#include "../bits/user_implement.h"
+#include "concepts"
+#include "new"
+
+namespace std
+{
+    template <typename T>
+    class allocator
+    {
+    public:
+        using value_type = T;
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+        using propagate_on_container_move_assignment = true_type;
+
+        constexpr allocator() noexcept = default;
+        constexpr allocator(const allocator& other) noexcept = default;
+        template <typename U>
+        constexpr allocator(const allocator<U>& other) noexcept {};
+        constexpr ~allocator() = default;
+
+        [[nodiscard]] constexpr T* allocate(size_t n)
+        {
+#ifdef std
+#undef std
+            return (T*)::operator new(n * sizeof(T), (std::align_val_t)alignof(T));
+#define std nostd
+#else
+            return (T*)::operator new(n * sizeof(T), (std::align_val_t)alignof(T));
+#endif
+        };
+        constexpr void deallocate(T* n)
+        {
+#ifdef std
+#undef std
+            return ::operator delete((void*)n, (std::align_val_t)alignof(T));
+        };
+#define std nostd
+#else
+            return ::operator delete((void*)n, (std::align_val_t)alignof(T));
+        };
+#endif
+    };
+
+    template <typename T, typename V>
+    concept allocator_like = requires(T t, V* v, typename T::size_type s)
+    {
+        {
+            t.allocate(s)
+            } -> same_as<V*>;
+        {
+            t.deallocate(v)
+            } -> same_as<void>;
+        typename T::size_type;
+        typename T::difference_type;
+        typename T::propagate_on_container_move_assignment;
+    };
+
+    template <typename T, typename... Args>
+    constexpr T* construct_at(T* p, Args&&... args)
+    {
+        return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T(std::forward<Args>(args)...);
+    }
+
+    template <typename T>
+    concept refcountable = requires(T& a)
+    {
+        a.unbind_ref_to();
+        a.bind_ref_to();
+        { a.get_ref_count() } -> integral;
+    };
+
+    template<typename T>
+    class deleter 
+    {
+    public:
+        void operator()(const T* t)
+        {
+            delete t;
+        }
+    };
+
+    // TODO: respect allocator rules
+    template <refcountable T, typename Deleter = deleter<T>>
+    class refcounted
+    {
+        pair<T*, Deleter> data;
+
+        constexpr void __set(T* ptr)
+        {
+            if (ptr)
+                ptr->bind_ref_to();
+            data.first = ptr;
+        }
+
+    public:
+        constexpr explicit refcounted(Deleter a = {}) noexcept : data(nullptr, a) {}
+        constexpr explicit refcounted(nullptr_t, Deleter a = {}) noexcept : data(nullptr, a) {}
+        constexpr explicit refcounted(T* ptr, Deleter a = {}) noexcept : data(nullptr, a) { __set(ptr); }
+
+        refcounted& operator=(const refcounted& r) noexcept
+        {
+            reset();
+            __set(r.data.first);
+        }
+
+        refcounted& operator=(refcounted&& r) noexcept
+        {
+            reset();
+            data.first = r.data.first;
+            r.data.first = nullptr;
+        }
+
+        void swap(refcounted& r) noexcept { std::swap(data.first, r.data.first); }
+
+        T* get() const noexcept { return data.first; }
+
+        T& operator*() const noexcept { return *data.first; }
+        T* operator->() const noexcept { return data.first; }
+
+        auto use_count() const noexcept { return data.first->ref_counter; }
+        bool unique() const noexcept { return use_count() == 1; }
+        operator bool() const noexcept { return data.first != nullptr; }
+
+        void reset() noexcept
+        {
+            if(data.first)
+            {
+                data.unbind_ref_to();
+                if(data.get_ref_count() == 0)
+                {
+                    data.second(data.first);
+                    data.first = nullptr;
+                }
+            }
+        }
+
+        constexpr ~refcounted() noexcept { reset(); }
+    };
+} // namespace std
+
+#endif

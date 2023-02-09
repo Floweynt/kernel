@@ -1,0 +1,33 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_LAZY_BUFFER__
+#define __NOSTDLIB_LAZY_BUFFER__
+#include "type_traits"
+
+namespace std
+{
+    struct no_initialize_tag_t
+    {
+    };
+    inline constexpr auto no_initialize_tag = no_initialize_tag_t{};
+
+    template <typename T>
+    class typed_buffer
+    {
+        alignas(T) char buf[sizeof(T)];
+
+    public:
+        template <typename = T>
+        requires(std::is_default_constructible_v<T>) constexpr typed_buffer() { new (buf) T(); }
+
+        template <typename = T>
+        requires(std::is_copy_constructible_v<T>) constexpr typed_buffer(const T& t) { new (buf) T(t); }
+
+        template <typename = T>
+        requires(std::is_move_constructible_v<T>) constexpr typed_buffer(T&& t) { new (buf) T(t); }
+
+        template <typename... U>
+        requires(std::is_constructible_v<T, U...>) constexpr typed_buffer(U&&... u) { new (buf) T(std::forward<U>(u)...); }
+    };
+} // namespace std
+
+#endif

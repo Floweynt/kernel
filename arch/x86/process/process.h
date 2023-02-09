@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_PROCESS_H__
-#define __ARCH_X86_PROCESS_H__
+#pragma once
+
 #include "context.h"
 #include <mm/pmm.h>
 #include <paging/paging.h>
@@ -85,5 +85,3 @@ namespace proc
 
     void suspend_self();
 } // namespace proc
-
-#endif

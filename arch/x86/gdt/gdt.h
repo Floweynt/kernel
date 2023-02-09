@@ -1,6 +1,7 @@
-#ifndef __X86_GDT_H__
-#define __X86_GDT_H__
+#pragma once
+
 #include <cstdint>
+
 namespace gdt
 {
     /// \brief generates and installs a GDT
@@ -54,5 +55,3 @@ namespace gdt
         }
     };
 } // namespace gdt
-
-#endif

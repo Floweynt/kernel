@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_PAGING_PGFAULT_H__
-#define __ARCH_X86_PAGING_PGFAULT_H__
+#pragma once
+
 #include <cstdint>
 #include <debug/debug.h>
 
@@ -13,6 +13,4 @@ namespace paging
 
         debug::panic("unexpected page fault");
     }
-}; // namespace paging
-
-#endif
+} // namespace paging

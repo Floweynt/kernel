@@ -1,0 +1,113 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_FUCNTIONAL_H__
+#define __NOSTDLIB_FUCNTIONAL_H__
+
+#include <memory>
+#include <type_traits>
+
+namespace std
+{
+    template <typename T>
+    class reference_wrapper;
+
+    template <typename T>
+    struct plus
+    {
+        auto operator()(const T& a, const T& b) { return a + b; }
+    };
+    template <typename T>
+    struct minus
+    {
+        auto operator()(const T& a, const T& b) { return a - b; }
+    };
+    template <typename T>
+    struct multiplies
+    {
+        auto operator()(const T& a, const T& b) { return a * b; }
+    };
+    template <typename T>
+    struct divides
+    {
+        auto operator()(const T& a, const T& b) { return a / b; }
+    };
+    template <typename T>
+    struct modulus
+    {
+        auto operator()(const T& a, const T& b) { return a % b; }
+    };
+
+    template <typename T>
+    struct equal_to
+    {
+        auto operator()(const T& a, const T& b) { return a == b; }
+    };
+    template <typename T>
+    struct not_equal_to
+    {
+        auto operator()(const T& a, const T& b) { return a != b; }
+    };
+    template <typename T>
+    struct greater
+    {
+        auto operator()(const T& a, const T& b) { return a > b; }
+    };
+    template <typename T>
+    struct less
+    {
+        auto operator()(const T& a, const T& b) { return a < b; }
+    };
+    template <typename T>
+    struct greater_equal
+    {
+        auto operator()(const T& a, const T& b) { return a >= b; }
+    };
+    template <typename T>
+    struct less_equal
+    {
+        auto operator()(const T& a, const T& b) { return a <= b; }
+    };
+
+    template <typename T>
+    struct logical_and
+    {
+        auto operator()(const T& a, const T& b) { return a && b; }
+    };
+    template <typename T>
+    struct logical_or
+    {
+        auto operator()(const T& a, const T& b) { return a || b; }
+    };
+    template <typename T>
+    struct bit_and
+    {
+        auto operator()(const T& a, const T& b) { return a & b; }
+    };
+    template <typename T>
+    struct bit_or
+    {
+        auto operator()(const T& a, const T& b) { return a | b; }
+    };
+    template <typename T>
+    struct bit_xor
+    {
+        auto operator()(const T& a, const T& b) { return a ^ b; }
+    };
+
+    template <typename T>
+    struct negate
+    {
+        auto operator()(const T& a) { return -a; }
+    };
+    template <typename T>
+    struct logical_not
+    {
+        auto operator()(const T& a) { return !a; }
+    };
+    template <typename T>
+    struct bit_not
+    {
+        auto operator()(const T& a) { return ~a; }
+    };
+} // namespace std
+
+#endif

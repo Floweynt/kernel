@@ -1,0 +1,164 @@
+// vim: set ft=cpp:
+#ifndef __NOSTDLIB_CYCLIC_QUEUE__
+#define __NOSTDLIB_CYCLIC_QUEUE__
+
+#include "cstddef"
+#include "new"
+#include "type_traits"
+#include "utility"
+#include "atomic"
+#include "concepts"
+
+namespace stdext
+{
+    template<typename T>
+    concept circular_queue_like = requires(T t, typename T::value_type v)
+    {
+        { t.size() } -> std::same_as<typename T::size_type>;
+        { t.push(v) } -> std::same_as<bool>;
+        { t.pop(v) } -> std::same_as<bool>;
+        { t.full() } -> std::same_as<bool>;
+    };
+
+    template <typename T, std::size_t N, bool heap = false>
+    class circular_queue
+    {
+        static constexpr std::size_t idx_for(std::size_t v) { return (v % (N + 1)); }
+
+        using queue_t = std::conditional_t<heap, T*, T[(N + 1)]>;
+        queue_t queue;
+        std::atomic<std::size_t> head;
+        std::atomic<std::size_t> tail;
+        std::atomic<std::size_t> max;
+        std::atomic<std::size_t> sz;
+    public:
+        using value_type = T;
+        using size_type = std::size_t;
+        inline static constexpr auto max_size = N;
+        circular_queue() : head(0), tail(0), max(0), sz(0) 
+        {
+            if constexpr(heap)
+                queue = new T[(N + 1)];
+        }
+        ~circular_queue() 
+        {
+            if constexpr(heap)
+                delete queue;
+        };
+
+        std::size_t size() { return sz.load(); }
+        bool full() { return sz.load() == ((N + 1) - 1); }
+        bool push(const T& v)
+        {
+            std::size_t idx;
+            do
+            {
+                idx = head.load();
+                if (idx_for(idx + 1) == idx_for(tail.load()))
+                    return false;
+            } while (!head.compare_exchange_weak(idx, (idx + 1)));
+
+            queue[idx_for(idx)] = v;
+            while (!max.compare_exchange_weak(idx, (idx + 1)))
+                ;
+            sz.fetch_add(1);
+            return true;
+        }
+
+        bool pop(T& a_data)
+        {
+            std::size_t idx;
+
+            do
+            {
+                idx = tail.load();
+
+                if (idx_for(idx) == idx_for(max.load()))
+                    return false;
+
+                a_data = queue[idx_for(idx)];
+
+                if (tail.compare_exchange_strong(idx, (idx + 1)))
+                {
+                    sz.fetch_sub(1);
+                    return true;
+                }
+            } while (1);
+
+            __builtin_unreachable();
+        }
+    };
+    
+    template <typename T>
+    class dynamic_circular_queue
+    {
+        constexpr std::size_t idx_for(std::size_t v) { return (v % (max_sz + 1)); }
+
+        T* queue;
+        std::atomic<std::size_t> head;
+        std::atomic<std::size_t> tail;
+        std::atomic<std::size_t> max;
+        std::atomic<std::size_t> sz;
+        const std::size_t max_sz;
+    public:
+        using value_type = T;
+        using size_type = std::size_t;
+
+        dynamic_circular_queue(std::size_t max_sz) : max_sz(max_sz), head(0), tail(0), max(0), sz(0) 
+        {
+            queue = new T[(max_sz + 1)];
+        }
+        ~dynamic_circular_queue() 
+        {
+            delete queue;
+        };
+
+        std::size_t size() { return sz.load(); }
+        bool full() { return sz.load() == ((max_sz + 1) - 1); }
+        bool push(const T& v)
+        {
+            std::size_t idx;
+            do
+            {
+                idx = head.load();
+                if (idx_for(idx + 1) == idx_for(tail.load()))
+                    return false;
+            } while (!head.compare_exchange_weak(idx, (idx + 1)));
+
+            queue[idx_for(idx)] = v;
+            while (!max.compare_exchange_weak(idx, (idx + 1)))
+                ;
+            sz.fetch_add(1);
+            return true;
+        }
+
+        bool pop(T& a_data)
+        {
+            std::size_t idx;
+
+            do
+            {
+                idx = tail.load();
+
+                if (idx_for(idx) == idx_for(max.load()))
+                    return false;
+
+                a_data = queue[idx_for(idx)];
+
+                if (tail.compare_exchange_strong(idx, (idx + 1)))
+                {
+                    sz.fetch_sub(1);
+                    return true;
+                }
+            } while (1);
+
+            __builtin_unreachable();
+        }
+    };
+
+    static_assert(circular_queue_like<circular_queue<int, 1>>);
+    static_assert(circular_queue_like<dynamic_circular_queue<int>>);
+
+} // namespace std
+
+#endif

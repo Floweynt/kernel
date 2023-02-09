@@ -2,5 +2,4 @@ build/
 *.gch
 .cache
 .vim
-
-serial.txt
+compile_commands.json

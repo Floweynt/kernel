@@ -1,0 +1,78 @@
+#ifndef __NOSTDLIB_FAST_INDEX_TREE_H__
+#define __NOSTDLIB_FAST_INDEX_TREE_H__
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <type_traits>
+
+namespace std
+{
+    namespace detail
+    {
+        constexpr std::size_t fast_exp(std::size_t base, std::size_t pow)
+        {
+            std::size_t res = 1;
+            while (pow > 0)
+            {
+                if (pow & 1)
+                    res = res * base;
+                base = base * base;
+                pow >>= 1;
+            }
+            return res;
+        }
+    } // namespace detail
+
+    /// low memory footprint
+    template <typename T, std::size_t Layers, std::size_t Width, typename Alloc = std::allocator<T>>
+    class fast_index_tree
+    {
+        struct node
+        {
+            std::uintptr_t e[Width];
+
+            template <typename U>
+            constexpr U* at(std::size_t s)
+            {
+                return (U*)(e[s] & ~1);
+            }
+            constexpr bool exists(std::size_t s) { return e[s] & 1; }
+        };
+
+        node my_node;
+        std::size_t sz;
+
+        static_assert(alignof(node) > 1);
+
+        static_assert(Layers > 0, "container must have at least one layer");
+        static_assert(Width > 0, "container must have at least 1 element per layer");
+        static_assert(alignof(T) > 1, "object must be aligned to two bytes for optimization");
+
+    public:
+        using value_type = T;
+        using reference_type = T&;
+        using const_reference = const T&;
+
+        constexpr fast_index_tree() noexcept(noexcept(Alloc())) {}
+        constexpr fast_index_tree(const fast_index_tree&) = delete;
+
+        constexpr T& operator[](std::size_t index) {}
+        constexpr const T& operator[](std::size_t index) {}
+
+        constexpr bool exists(std::size_t index) const 
+        { 
+            const node* n = &my_node;
+            for(std::size_t i = 1; i < Layers; i++)
+            {
+                
+            }
+        }
+
+        constexpr std::size_t insert(const T& value) {}
+        
+        constexpr std::size_t size() const { return sz; }
+        constexpr static std::size_t capacity() { return detail::fast_exp(Width, Layers); }
+    };
+} // namespace std
+
+#endif
