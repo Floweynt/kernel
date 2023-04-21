@@ -5,6 +5,7 @@
 #include "process/process.h"
 #include <asm/asm_cpp.h>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <gdt/gdt.h>
 #include <idt/handlers/handlers.h>
@@ -81,10 +82,21 @@ namespace smp
         auto idle_task = proc::make_kthread(idle);
         auto& idle_th = proc::get_thread(proc::task_id{idle_task, 0});
         idle_th.state = proc::thread_state::IDLE;
-        
+
         proc::make_kthread_args(
             +[](std::uint64_t a) {
-                klog::log("example task value 1: %lu\n", a);
+                static std::size_t last_interrupt_count = 0;
+                klog::log("debugging task value 1: %lu\n", a);
+
+                while (true)
+                {
+                    if (last_interrupt_count != smp::core_local::get().timer_tick_count &&
+                        smp::core_local::get().timer_tick_count % 250 == 0)
+                    {
+                        last_interrupt_count = smp::core_local::get().timer_tick_count;
+                        klog::log("ping\n");
+                    }
+                }
                 idle();
             },
             local.core_id);

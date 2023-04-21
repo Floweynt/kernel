@@ -2,6 +2,7 @@
 
 .global idt_entry_start
 .global idt_entry_end
+.global _handle_irq_common
 
 idt_common:
     cld
@@ -66,16 +67,7 @@ idt_common:
     andq $~0x7, %rsp
     movq %rsp, %rbp
 
-    // do gs stuff
-    movq %gs:0, %rax
-    movq 8(%rax), %rax
-    movq (%rax,%rdi,8), %rax
-
-    subq $0, %rax
-    je .L1
-    // idt_handler_entries[%rax](intno, errno)
-    call *%rax
-.L1:
+    call _handle_irq_common
 
     movq %gs:0, %rax
     movq (%rax), %rax

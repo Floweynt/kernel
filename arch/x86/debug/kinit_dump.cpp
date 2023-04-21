@@ -13,15 +13,18 @@ namespace debug
     void print_kinfo()
     {
         std::printf("kernel v%s (%s)\n", config::get_str<"version.full-version">, config::get_str<"arch">);
+        std::printf("built with cc: %s-%s cxx: %s-%s\n", config::get_str<"version.cc.id">, config::get_str<"version.cc.ver">,
+                    config::get_str<"version.cxx.id">, config::get_str<"version.cxx.ver">);
     }
+
     void dump_memory_map()
     {
         if constexpr (config::get_val<"debug.log.mmap">)
         {
             std::printf("memory map:\n");
 
-            boot_resource::instance().iterate_mmap([](const limine_memmap_entry& e) {
-                switch (e.type)
+            boot_resource::instance().iterate_mmap([](const limine_memmap_entry& entry) {
+                switch (entry.type)
                 {
                 case LIMINE_MEMMAP_USABLE:
                     std::printf("[" CYAN("USABLE      ") "]: ");
@@ -51,7 +54,7 @@ namespace debug
                     // this case should never be reached, but exists as a fallback
                     std::printf("[" GRAY("UNKNOWN     ") "]: ");
                 }
-                std::printf("0x%016lx-0x%016lx length=0x%016lx\n", e.base, e.base + e.length, e.length);
+                std::printf("0x%016lx-0x%016lx length=0x%016lx\n", entry.base, entry.base + entry.length, entry.length);
             });
         }
     }
@@ -66,9 +69,12 @@ namespace debug
             std::printf("cpu features: ");
             for (std::size_t i = 0; i < config::get_val<"cpuid-feature-size"> * 32; i++)
             {
-                if (cpuid_info::test_feature(i) && cpuid_info::FEATURE_STRINGS[i])
+                if (cpuid_info::test_feature(i) && (cpuid_info::FEATURE_STRINGS[i] != nullptr))
+                {
                     std::printf("%s ", cpuid_info::FEATURE_STRINGS[i]);
+                }
             }
+
             std::printf("\n");
         }
     }
@@ -77,15 +83,18 @@ namespace debug
     {
         if constexpr (config::get_val<"debug.log.acpi">)
         {
-            auto rsdp = boot_resource::instance().rsdp();
+            auto* rsdp = boot_resource::instance().rsdp();
             std::printf("ACPI info (0x%016lx):\n", rsdp->xsdt_address);
             std::printf("  rsdp data:\n");
             std::printf("    revision=%d\n", (int)rsdp->revision);
             std::printf("    length=%d\n", (int)rsdp->length);
 
             boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-                std::printf("  entry: (sig=0x%08x)\n",
-                            mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry)->signature);
+                auto signature = mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry)->signature;
+                const auto* signature_ptr = reinterpret_cast<const char*>(&signature);
+
+                std::printf("  entry: (sig=0x%08x '%c%c%c%c')\n", signature, signature_ptr[0], signature_ptr[1],
+                            signature_ptr[2], signature_ptr[3]);
             });
         }
     }

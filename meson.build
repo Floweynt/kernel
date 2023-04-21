@@ -19,9 +19,7 @@ generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
 
 kernel_source = [
-    'arch/common/terminal/term.c',
     'arch/common/terminal/limine_term_ccompat.cpp',
-    'arch/common/terminal/backends/framebuffer.c',
     'arch/x86/idt/idt.cpp',
     'arch/x86/idt/handlers/handle_ud.cpp',
     'arch/x86/idt/handlers/handle_np.cpp',
@@ -41,6 +39,7 @@ kernel_source = [
     'arch/x86/debug/kinit_dump.cpp',
     'arch/x86/debug/panic.cpp',
     'arch/x86/debug/symbols.cpp',
+    'arch/x86/asm/return_to_context.S',
     'arch/x86/syscall/syscall_entry.S',
     'arch/x86/pci/pci_scan.cpp',
     'arch/x86/sync/spinlock.cpp',
@@ -54,7 +53,9 @@ kernel_source = [
     'arch/x86/tty/tty.cpp',
     'arch/x86/mm/pmm.cpp',
     'arch/x86/mm/malloc.cpp',
+    #    'arch/x86/mm/slab.cpp',
     'arch/x86/mm/mm.cpp',
+    #'arch/x86/mm/vmm.cpp',
     'arch/x86/cpuid/cpuid.cpp',
     'arch/x86/gdt/gdt.cpp',
     'arch/x86/paging/paging.cpp',
@@ -65,7 +66,8 @@ kernel_source = [
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
-
+    'arch/common/terminal/backends/framebuffer.c',
+    'arch/common/terminal/term.c'
 ]
 
 opt_to_config = {
@@ -103,23 +105,37 @@ execution_targets = {
             'smp':    ['-smp', '2'],
             'nosmp':  ['-smp', '1'],
         },
-        'debugger': [
-            'b _start',
-            'c',
-#            'tui enable',
-        ]
+        'debugger': {
+            'gef': [
+                'gef-remote --qemu-user --qemu-binary kernel_stripped.elf localhost 1234',
+                'b _start',
+                'c',
+            ],
+            '@default': [
+                'target remote localhost:1234',
+                'b _start',
+                'c',
+            ]
+        }
     },
     'kvm': {
         'exec': {
             'smp':    ['-enable-kvm', '-cpu', 'host', '-smp', '2'],
             'nosmp':  ['-enable-kvm', '-cpu', 'host', '-smp', '1']
         },
-        'debugger': [
-            'hbreak _start',
-            'c',
-#            'tui enable'
-        ]
-    }
+        'debugger': {
+            'gef': [
+                'gef-remote --qemu-user --qemu-binary kernel_stripped.elf localhost 1234',
+                'hbreak _start',
+                'c',
+            ],
+            '@default': [
+                'target remote localhost:1234',
+                'hbreak _start',
+                'c',
+            ]
+        }
+    },
 }
 
 kernel_derivatives = {
@@ -190,6 +206,11 @@ conf = configuration_data()
 conf.set('VERSION', meson.project_version())
 conf.set('ARCH', 'x86_64')
 conf.set('ARCH_PATH', 'x86')
+
+conf.set('COMPILER_C_ID', meson.get_compiler('c').get_id())
+conf.set('COMPILER_C_VER', meson.get_compiler('c').version())
+conf.set('COMPILER_CXX_ID', meson.get_compiler('cpp').get_id())
+conf.set('COMPILER_CXX_VER', meson.get_compiler('cpp').version())
 
 foreach key, opt : opt_to_config
     conf.set(key, get_option(opt).to_string())
@@ -309,24 +330,32 @@ foreach type, value : execution_targets
     endforeach
 
     message('registering debugging for: ', type)
-    gdb_flags = [ '-ex', 'target remote localhost:1234' ]
+    foreach debug_type, flags : value.get('debugger')
+        debugger_name = ''
+        if debug_type != '@default'
+            message('registering debugging type ', debug_type,' for: ', type)
+            debugger_name = 'attach-' + type + '-' + debug_type
+        else 
+            message('registering default dbeugging type for: ', type)
+            debugger_name = 'attach-' + type 
+        endif
 
-    foreach flag : value.get('debugger')
-        gdb_flags += [ '-ex', flag ]
+        gdb_flags = [ ]
+        foreach flag : flags
+            gdb_flags += [ '-ex', flag ]
+        endforeach
+
+        message('flags: ', gdb_flags)
+
+        qemu_targets += {
+            debugger_name: run_target(debugger_name,
+                depends: [kernel_dbg],
+                command: [
+                    gdb,
+                    kernel_dbg,
+                    gdb_flags
+                ]
+            )
+        }
     endforeach
-
-    debugger_name = 'attach-' + type
-
-
-    message('flags: ', gdb_flags)
-    qemu_targets += {
-        debugger_name: run_target(debugger_name,
-            depends: [kernel_dbg],
-            command: [
-                gdb,
-                kernel_dbg,
-                gdb_flags
-            ]
-        )
-    }
 endforeach 

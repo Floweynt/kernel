@@ -38,6 +38,9 @@ namespace smp
         proc::thread* current_thread;
         scheduler::scheduler scheduler;
 
+        // misc
+        std::size_t timer_tick_count{};
+
         inline static core_local& get()
         {
             core_local* addr;

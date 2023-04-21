@@ -5,6 +5,11 @@
 
 extern char idt_entry_start[];
 
+extern "C" void _handle_irq_common(std::uint64_t int_no, std::uint64_t errno) 
+{
+    ((idt::interrupt_handler)smp::core_local::get().idt_handler_entries[int_no])(int_no, errno);
+}
+
 namespace idt
 {
     void init_idt()
