@@ -22,10 +22,10 @@ namespace handlers
     void handle_gp(std::uint64_t, std::uint64_t);
     void handle_page_fault(std::uint64_t, std::uint64_t);
 
-    inline void handle_noop(std::uint64_t c, std::uint64_t)
+    inline void handle_noop(std::uint64_t code, std::uint64_t /*unused*/)
     {
-        sync::printf("c=%lu\n", c);
-        while (1) {}
+        sync::printf("c=%lu\n", code);
+        while (true) {}
     }
     void handle_timer(std::uint64_t, std::uint64_t);
 

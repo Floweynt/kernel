@@ -1,8 +1,9 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <concepts>
+#include <span>
 
 namespace acpi
 {
@@ -78,7 +79,7 @@ namespace acpi
     };
 
     /// \brief The entry within the MADT that contains information about the I/O-APIC
-    /// 
+    ///
     struct [[gnu::packed]] madt_io_apic
     {
         inline constexpr static const std::uint32_t SIGNATURE = 1;
@@ -148,21 +149,24 @@ namespace acpi
     /// \brief Checks an table's checksum value, and return true if the checksum was successful
     /// \return Wether or not the table is valid
     template <typename T>
-    bool check(const T* desc)
+    auto check(const T* desc) -> bool
     {
         char* ptr = (char*)desc;
         std::uint64_t sum = 0;
 
         for (std::size_t i = 0; i < sizeof(T); i++)
+        {
             sum += ptr[i];
+        }
 
         return (sum & 0xff) == 0;
     }
 
-    template<typename T>
-    concept acpi_table = requires(T a)
-    {
-        { T::SIGNATURE } -> std::same_as<const std::uint32_t>;
+    template <typename T>
+    concept acpi_table = requires {
+        {
+            T::SIGNATURE
+        } -> std::same_as<const std::uint32_t>;
     };
 
     /// \brief Obtains a table, given the table type
@@ -172,12 +176,16 @@ namespace acpi
     /// The table type must have a public static const std::uint32_t member called SIGNATURE, which will be checked against in order to
     /// determine table type
     template <acpi_table T>
-    T* get_table(const xsdt* table)
+    auto get_table(const xsdt* table) -> T*
     {
-        std::size_t n = (table->h.length - sizeof(acpi_sdt_header)) / 8;
-        for (std::size_t i = 0; i < n; i++)
-            if (table->table[i]->signature == T::SIGNATURE)
-                return (T*)table->table[i];
+        std::span<const acpi_sdt_header*> tables(table->table, (table->h.length - sizeof(acpi_sdt_header)) / sizeof(acpi_sdt_header*));
+        for (const auto* sdt : tables)
+        {
+            if (sdt->signature == T::SIGNATURE)
+            {
+                return (T*)sdt;
+            }
+        }
         return nullptr;
     }
 } // namespace acpi

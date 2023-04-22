@@ -21,7 +21,7 @@ namespace debug
         std::uint32_t offset;
     };
 
-    symbol sym_for(std::uint64_t address);
+    auto sym_for(std::uint64_t address) -> symbol;
 }
 
 #define mark_stack(type) asm volatile("movq %0, (%%rbp)" : : "r"((std::uint64_t)type));

@@ -80,48 +80,60 @@ namespace scheduler
         local.ctxbuffer = &next_thread->ctx;
     }*/
 
-    void scheduler::add_task(proc::thread* th)
+    void scheduler::add_task(proc::thread* thread)
     {
         // klog::log("added thread %d:%d with stack: 0x%016lx\n", th->id.proc, th->id.thread, th->ctx.rsp);
-        if (th->state == proc::thread_state::WAITING)
+        if (thread->state == proc::thread_state::WAITING)
+        {
             return; // no-op
-        tasks.push(th);
+        }
+        tasks.push(thread);
     }
 
     void scheduler::set_state(proc::task_id tid, proc::thread_state state)
     {
         SPINLOCK_SYNC_BLOCK;
-        auto* th = &proc::get_thread(tid);
-        if (th->state == state)
+        auto* thread = &proc::get_thread(tid);
+        if (thread->state == state)
+        {
             return;
+        }
 
         if (state == proc::thread_state::RUNNING)
-            tasks.push(th);
+        {
+            tasks.push(thread);
+        }
 
-        th->state = state;
+        thread->state = state;
     }
 
     void scheduler::load_sched_task_ctx()
     {
         auto& local = smp::core_local::get();
-        if (local.current_thread && local.current_thread->state == proc::thread_state::RUNNING)
+        if ((local.current_thread != nullptr) && local.current_thread->state == proc::thread_state::RUNNING)
+        {
             tasks.push(local.current_thread);
+        }
 
         proc::thread* next_thread = idle;
         while (tasks.pop(next_thread))
         {
             if (next_thread->state == proc::thread_state::RUNNING)
+            {
                 break;
+            }
         }
 
         local.current_thread = next_thread;
         local.ctxbuffer = &next_thread->ctx;
     }
 
-    void scheduler::set_idle(proc::thread* th) 
+    void scheduler::set_idle(proc::thread* thread)
     {
-        if(th->state != proc::thread_state::IDLE)
+        if (thread->state != proc::thread_state::IDLE)
+        {
             klog::panic("cannot set non-idle task as idle");
-        idle = th;
+        }
+        idle = thread;
     }
 } // namespace scheduler

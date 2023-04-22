@@ -29,31 +29,30 @@ namespace tty
 
     void init()
     {
-        auto fb = framebuffer_request.response->framebuffers[0];
+        auto* fb = framebuffer_request.response->framebuffers[0];
         ctx = fbterm_init(
-            +[](std::size_t s) { return std::memset(::operator new(s), 0, s); },
-            +[](std::size_t s) {
+            +[](std::size_t size) { return std::memset(::operator new(size), 0, size); },
+            +[](std::size_t size) {
                 static constexpr auto SCROLLBACK_START = config::get_val<"mmap.start.scrollback">;
 
-                std::size_t pages = std::div_roundup(s, paging::PAGE_SMALL_SIZE);
+                std::size_t pages = std::div_roundup(size, paging::PAGE_SMALL_SIZE);
 
                 for (std::size_t i = 0; i < pages; i++)
                 {
-                    auto p = mm::pmm_allocate();
-                    paging::request_page(paging::page_type::SMALL, SCROLLBACK_START + i * paging::PAGE_SMALL_SIZE,
-                                         mm::make_physical(p));
+                    auto* p = mm::pmm_allocate();
+                    paging::request_page(paging::page_type::SMALL, SCROLLBACK_START + i * paging::PAGE_SMALL_SIZE, mm::make_physical(p));
                 }
                 return (void*)SCROLLBACK_START;
             },
 
-            mm::make_virtual<std::uint32_t>((std::uintptr_t)fb->address), fb->width, fb->height, fb->pitch, nullptr,
-            ansi_colors, ansi_bright_colours, &default_bg, &default_fg, (void*)font, 8, 8, 0, 1, 1, 0);
+            mm::make_virtual<std::uint32_t>((std::uintptr_t)fb->address), fb->width, fb->height, fb->pitch, nullptr, ansi_colors, ansi_bright_colours,
+            &default_bg, &default_fg, (void*)font, 8, 8, 0, 1, 1, 0);
         ctx->full_refresh(ctx);
     }
 } // namespace tty
 
-void std::detail::putc(char c)
+void std::detail::putc(char ch)
 {
-    term_putchar(tty::ctx, c);
+    term_putchar(tty::ctx, ch);
     tty::ctx->double_buffer_flush(tty::ctx);
 }

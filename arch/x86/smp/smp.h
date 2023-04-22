@@ -41,31 +41,31 @@ namespace smp
         // misc
         std::size_t timer_tick_count{};
 
-        inline static core_local& get()
+        inline static auto get() -> core_local&
         {
-            core_local* addr;
+            core_local* addr = nullptr;
             asm volatile("movq %%gs:0, %0" : "=r"(addr) :);
             return *addr;
         }
 
-        inline static core_local* get_pointer()
+        inline static auto get_pointer() -> core_local*
         {
-            core_local* addr;
+            core_local* addr = nullptr;
             asm volatile("movq %%gs:0, %0" : "=r"(addr) :);
             return addr;
         }
 
         static void create(core_local* cpu0);
-        static inline bool exists() { return entries != nullptr && get_pointer() != nullptr; }
-        inline static core_local& get(std::size_t core) { return *entries[core]; }
+        static inline auto exists() -> bool { return entries != nullptr && get_pointer() != nullptr; }
+        inline static auto get(std::size_t core) -> core_local& { return *entries[core]; }
 
-        inline static std::uint64_t gs_of(std::size_t core) { return (std::uint64_t)&entries[core]; }
+        inline static auto gs_of(std::size_t core) -> std::uint64_t { return (std::uint64_t)&entries[core]; }
 
         core_local() = default;
         core_local(const core_local&) = delete;
         core_local(core_local&&) = delete;
-        core_local& operator=(const core_local&) = delete;
-        core_local& operator=(core_local&&) = delete;
+        auto operator=(const core_local&) -> core_local& = delete;
+        auto operator=(core_local&&) -> core_local& = delete;
     };
 
     [[noreturn]] void init(limine_smp_response* smp);

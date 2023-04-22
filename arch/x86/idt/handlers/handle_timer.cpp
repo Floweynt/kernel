@@ -5,7 +5,7 @@
 
 namespace handlers
 {
-    void handle_timer(std::uint64_t, std::uint64_t)
+    void handle_timer(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
         auto& local = smp::core_local::get();
         local.timer_tick_count++;

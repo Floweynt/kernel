@@ -20,8 +20,7 @@ namespace paging
 
     static lock::spinlock paging_global_lock;
 
-    bool request_page(page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop,
-                      bool overwrite)
+    auto request_page(page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop, bool overwrite) -> bool
     {
         virtual_addr &= ~type2align[pt];
         physical_addr &= ~type2align[pt];
@@ -30,26 +29,31 @@ namespace paging
         // obtain pointer to entry
         page_table_entry* current_entry = smp::core_local::get().pagemap;
         if (current_entry == nullptr)
+        {
             current_entry = smp::core_local::get().pagemap = (page_table_entry*)mm::pmm_allocate();
+        }
 
         for (int i = 0; i < (3 - pt); i++)
         {
-            std::uint64_t& e = current_entry[get_page_entry(virtual_addr, i)];
-            if (!e)
+            std::uint64_t& entry = current_entry[get_page_entry(virtual_addr, i)];
+            if (!entry)
             {
-                auto r = mm::pmm_allocate();
-                if (r == 0)
+                auto* mem = mm::pmm_allocate();
+                if (mem == nullptr)
+                {
                     debug::panic("cannot allocate physical memory for paging");
-                e = make_page_pointer(mm::make_physical(r), prop);
+                }
+                entry = make_page_pointer(mm::make_physical(mem), prop);
             }
 
-            current_entry =
-                mm::make_virtual<page_table_entry>(current_entry[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
+            current_entry = mm::make_virtual<page_table_entry>(current_entry[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
         }
         // writelast entry
         current_entry += get_page_entry(virtual_addr, 3 - pt);
         if (*current_entry && !overwrite)
+        {
             return false;
+        }
         switch (pt)
         {
         case SMALL:
@@ -68,12 +72,14 @@ namespace paging
 
     void sync(std::uintptr_t virtual_addr)
     {
-        lock::spinlock_guard g(paging_global_lock);
+        lock::spinlock_guard guard(paging_global_lock);
         std::uint16_t index = paging::get_page_entry<3>(virtual_addr);
         std::uint64_t value = smp::core_local::get().pagemap[index];
 
         for (std::size_t i = 0; i < boot_resource::instance().core_count(); i++)
+        {
             smp::core_local::get(i).pagemap[index] = value;
+        }
     }
 
     void map_section(std::uintptr_t addr, std::size_t length, paging::page_prop prop)
@@ -83,7 +89,9 @@ namespace paging
         while (addr % paging::PAGE_MEDIUM_SIZE)
         {
             if (pages-- == 0)
+            {
                 return;
+            }
             paging::map_hhdm_phys(paging::page_type::SMALL, addr, prop);
             addr += paging::PAGE_SMALL_SIZE;
         }
@@ -162,10 +170,11 @@ namespace paging
         for (std::size_t i = 0; i < config::get_val<"preallocate-pages">; i++)
         {
             void* d;
-            if (!(d = mm::pmm_allocate()))
+            if ((d = mm::pmm_allocate()) == nullptr)
+            {
                 debug::panic("cannot get memory for heap");
-            paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE,
-                                 mm::make_physical(d));
+            }
+            paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE, mm::make_physical(d));
         }
 
         paging::install();

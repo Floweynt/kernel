@@ -45,111 +45,125 @@ namespace std
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        using __helper = detail::array_helper<T, N>;
-        typename __helper::type __buf;
+        using _helper = detail::array_helper<T, N>;
+        typename _helper::type _buf;
 
-        constexpr reference at(size_type pos)
+        constexpr auto at(size_type pos) -> reference
         {
             if (pos >= N)
+            {
                 detail::errors::__stdexcept_out_of_range();
-            return __helper::ref(__buf, pos);
+            }
+            return _helper::ref(_buf, pos);
         }
 
-        constexpr const_reference at(size_type pos) const
+        constexpr auto at(size_type pos) const -> const_reference
         {
             if (pos >= N)
+            {
                 detail::errors::__stdexcept_out_of_range();
-            return __helper::ref(__buf, pos);
+            }
+            return _helper::ref(_buf, pos);
         }
 
-        constexpr reference operator[](size_type pos) noexcept { return __helper::ref(__buf, pos); }
+        constexpr auto operator[](size_type pos) noexcept -> reference { return _helper::ref(_buf, pos); }
 
-        constexpr const_reference operator[](size_type pos) const noexcept { return __helper::ref(__buf, pos); }
+        constexpr auto operator[](size_type pos) const noexcept -> const_reference { return _helper::ref(_buf, pos); }
 
-        constexpr reference front() noexcept { return __helper::ref(__buf, 0); }
-        constexpr const_reference front() const noexcept { return __helper::ref(__buf, 0); }
+        constexpr auto front() noexcept -> reference { return _helper::ref(_buf, 0); }
+        constexpr auto front() const noexcept -> const_reference { return _helper::ref(_buf, 0); }
 
-        constexpr reference back() noexcept { return __helper::ref(__buf, N - 1); }
-        constexpr const_reference back() const noexcept { return __helper::ref(__buf, N - 1); }
+        constexpr auto back() noexcept -> reference { return _helper::ref(_buf, N - 1); }
+        constexpr auto back() const noexcept -> const_reference { return _helper::ref(_buf, N - 1); }
 
-        constexpr pointer data() noexcept { return __helper::ptr(__buf, 0); }
-        constexpr const_pointer data() const noexcept { return __helper::ptr(__buf, 0); }
+        constexpr auto data() noexcept -> pointer { return _helper::ptr(_buf, 0); }
+        constexpr auto data() const noexcept -> const_pointer { return _helper::ptr(_buf, 0); }
 
-        constexpr iterator begin() noexcept { return iterator(__helper::ptr(__buf, 0)); }
-        constexpr iterator end() noexcept { return iterator(__helper::ptr(__buf, N - 1)); }
+        constexpr auto begin() noexcept -> iterator { return iterator(_helper::ptr(_buf, 0)); }
+        constexpr auto end() noexcept -> iterator { return iterator(_helper::ptr(_buf, N - 1)); }
 
-        constexpr const_iterator cbegin() const noexcept { return iterator(__helper::ptr(__buf, 0)); }
-        constexpr const_iterator cend() const noexcept { return iterator(__helper::ptr(__buf, N - 1)); }
+        constexpr auto cbegin() const noexcept -> const_iterator { return iterator(_helper::ptr(_buf, 0)); }
+        constexpr auto cend() const noexcept -> const_iterator { return iterator(_helper::ptr(_buf, N - 1)); }
 
-        constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
-        constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+        constexpr auto rbegin() noexcept -> reverse_iterator { return reverse_iterator(end()); }
+        constexpr auto rend() noexcept -> reverse_iterator { return reverse_iterator(begin()); }
 
-        constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
-        constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+        constexpr auto crbegin() const noexcept -> const_reverse_iterator { return const_reverse_iterator(cend()); }
+        constexpr auto crend() const noexcept -> const_reverse_iterator { return const_reverse_iterator(cbegin()); }
 
-        constexpr bool empty() const noexcept { return N == 0; }
-        constexpr size_type size() const noexcept { return N; }
-        constexpr size_type max_size() const noexcept { return (size_type)-1; }
+        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return N == 0; }
+        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return N; }
+        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type { return (size_type)-1; }
 
         void fill(const T& value)
         {
-            for (auto& i : *this)
-                i = value;
+            for (auto& val : *this)
+            {
+                val = value;
+            }
         }
 
         void swap(array& other) noexcept(is_nothrow_swappable_v<T>)
         {
             for (size_type i = 0; i < N; i++)
-                swap(__buf[i], other.buf[i]);
+            {
+                swap(_buf[i], other.buf[i]);
+            }
         }
     };
 
     template <typename T, size_t N>
-    bool operator==(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator==(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         for (size_t i = 0; i < N; i++)
         {
             if (lhs[i] != rhs[i])
+            {
                 return false;
+            }
         }
 
         return true;
     }
 
     template <typename T, size_t N>
-    bool operator!=(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator!=(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         return !(lhs == rhs);
     }
 
     template <typename T, size_t N>
-    bool operator<(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator<(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         for (size_t i = 0; i < N; i++)
         {
             if (lhs[i] < rhs[i])
+            {
                 return true;
+            }
             if (lhs[i] > rhs[i])
+            {
                 return false;
+            }
         }
 
         return false;
     }
 
     template <typename T, size_t N>
-    bool operator<=(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator<=(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         return (lhs < rhs) || (lhs == rhs);
     }
 
     template <typename T, size_t N>
-    bool operator>(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator>(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         return !(lhs <= rhs);
     }
 
     template <typename T, size_t N>
-    bool operator>=(const array<T, N>& lhs, const array<T, N>& rhs)
+    auto operator>=(const array<T, N>& lhs, const array<T, N>& rhs) -> bool
     {
         return !(lhs < rhs);
     }
@@ -161,31 +175,31 @@ namespace std
     }
 
     template <size_t I, typename T, size_t N>
-    constexpr T& get(array<T, N>& a) noexcept
+    constexpr auto get(array<T, N>& arr) noexcept -> T&
     {
         static_assert(I < N, "Index out-of-bounds");
-        return a[I];
+        return arr[I];
     }
 
     template <size_t I, typename T, size_t N>
-    constexpr T&& get(array<T, N>&& a) noexcept
+    constexpr auto get(array<T, N>&& arr) noexcept -> T&&
     {
         static_assert(I < N, "Index out-of-bounds");
-        return a[I];
+        return arr[I];
     }
 
     template <size_t I, typename T, size_t N>
-    constexpr const T& get(const array<T, N>& a) noexcept
+    constexpr auto get(const array<T, N>& arr) noexcept -> const T&
     {
         static_assert(I < N, "Index out-of-bounds");
-        return a[I];
+        return arr[I];
     }
 
     template <size_t I, typename T, size_t N>
-    constexpr const T&& get(const array<T, N>&& a) noexcept
+    constexpr auto get(const array<T, N>&& arr) noexcept -> const T&&
     {
         static_assert(I < N, "Index out-of-bounds");
-        return a[I];
+        return arr[I];
     }
 } // namespace std
 

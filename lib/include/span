@@ -1,0 +1,146 @@
+#pragma once
+
+#include <array>
+#include <bits/iterator_utils.h>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <type_traits>
+
+namespace std
+{
+    inline constexpr size_t dynamic_extent = UINT64_MAX;
+
+    namespace detail
+    {
+        template <typename T, size_t Extent>
+        struct span_store
+        {
+            T* data;
+
+            [[nodiscard]] constexpr auto get_size() const -> size_t { return Extent; }
+        };
+
+        template <typename T>
+        struct span_store<T, dynamic_extent>
+        {
+            T* data;
+            size_t size;
+
+            [[nodiscard]] constexpr auto get_size() const -> size_t { return size; }
+        };
+    } // namespace detail
+
+    template <typename T, size_t Extent = dynamic_extent>
+    class span
+    {
+        detail::span_store<T, Extent> store;
+
+    public:
+        using element_type = T;
+        using value_type = remove_cv_t<T>;
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using reference = T&;
+        using const_reference = const T&;
+        using iterator = detail::iterator_wrapper<T*, span>;
+        using reverse_iterator = reverse_iterator<iterator>;
+        inline static constexpr size_t extent = Extent;
+
+        constexpr span() noexcept;
+
+        template <class It>
+        explicit(extent != dynamic_extent) constexpr span(It first, size_type count)
+        {
+            // TODO: be fancy
+            store.data = const_cast<T*>(&(*first));
+            if constexpr (Extent == dynamic_extent)
+            {
+                store.size = count;
+            }
+        }
+
+        template <class It, class End>
+        explicit(extent != dynamic_extent) constexpr span(It first, End last) : span(first, last - first)
+        {
+        }
+
+        template <size_t N>
+            requires(Extent == dynamic_extent || N == Extent)
+        constexpr span(type_identity<element_type>::type (&arr)[N]) noexcept
+        {
+            store.data = arr;
+            if constexpr (Extent == dynamic_extent)
+            {
+                store.size = N;
+            }
+        }
+
+        template <class U, size_t N>
+        constexpr span(array<U, N>& arr) noexcept
+        {
+            store.data = arr;
+            if constexpr (Extent == dynamic_extent)
+            {
+                store.size = N;
+            }
+        }
+
+        template <class U, size_t N>
+        constexpr span(const array<U, N>& arr) noexcept
+        {
+            store.data = arr;
+            if constexpr (Extent == dynamic_extent)
+            {
+                store.size = N;
+            }
+        }
+
+        template <class U, size_t N>
+            requires(extent == dynamic_extent || N == dynamic_extent || N == extent)
+        explicit(extent != dynamic_extent && N == dynamic_extent) constexpr span(const span<U, N>& source) noexcept
+        {
+            store.data = source.data();
+            if constexpr (Extent == dynamic_extent)
+            {
+                store.size = source.size();
+            }
+        }
+
+        constexpr span(const span& other) noexcept = default;
+        constexpr auto operator=(const span& other) noexcept -> span& = default;
+
+        constexpr auto begin() const noexcept -> iterator { return iterator(store.data); }
+        constexpr auto end() const noexcept -> iterator { return iterator(store.data + size()); }
+        constexpr auto rbegin() const noexcept -> reverse_iterator { return reverse_iterator(end()); }
+        constexpr auto rend() const noexcept -> reverse_iterator { return reverse_iterator(begin()); }
+        constexpr auto front() const -> reference { return store.data[0]; }
+        constexpr auto back() const -> reference { return store.data[size() - 1]; }
+        constexpr auto operator[](size_type idx) const -> reference { return store.data[idx]; }
+        constexpr auto data() const noexcept -> pointer { return store.data; }
+        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return store.get_size(); }
+        [[nodiscard]] constexpr auto size_bytes() const noexcept -> size_type { return size() * sizeof(T); }
+        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return size() == 0; }
+
+        template <size_t Count>
+        constexpr auto first() const -> span<element_type, Count>
+        {
+            return span<element_type, Count>(data(), Count);
+        }
+
+        constexpr auto first(size_type Count) const -> span<element_type, dynamic_extent> { return span<element_type>(data(), Count); }
+
+        template <size_t Count>
+        constexpr auto last() const -> span<element_type, Count>
+        {
+            return span<element_type>(data() + size() - Count, Count);
+        }
+
+        constexpr auto last(size_type Count) const -> span<element_type, dynamic_extent>
+        {
+            return span<element_type>(data() + size() - Count, Count);
+        }
+    };
+} // namespace std

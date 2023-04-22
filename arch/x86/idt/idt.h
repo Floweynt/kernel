@@ -22,39 +22,39 @@ namespace idt
     class idt_builder
     {
         interrupt_handler handler;
-        std::uint8_t gate : 4;
-        std::uint8_t _ist : 3;
-        std::uint8_t _dpl : 2;
+        std::uint8_t gate : 4 {0xe};
+        std::uint8_t _ist : 3 {};
+        std::uint8_t _dpl : 2 {};
 
     public:
-        explicit constexpr idt_builder(interrupt_handler handler) : handler(handler), gate(0xe), _ist(0), _dpl(0) {}
-        constexpr idt_builder& gate_intr()
+        explicit constexpr idt_builder(interrupt_handler handler) : handler(handler) {}
+        constexpr auto gate_intr() -> idt_builder&
         {
             gate = 0xe;
             return *this;
         }
-        constexpr idt_builder& gate_trap()
+        constexpr auto gate_trap() -> idt_builder&
         {
             gate = 0xf;
             return *this;
         }
-        constexpr idt_builder& dpl(std::uint8_t d)
+        constexpr auto dpl(std::uint8_t dpl) -> idt_builder&
         {
-            _dpl = d;
+            _dpl = dpl;
             return *this;
         }
-        constexpr idt_builder& ist(std::uint8_t i)
+        constexpr auto ist(std::uint8_t ist) -> idt_builder&
         {
-            _ist = i;
+            _ist = ist;
             return *this;
         }
 
-        constexpr std::uint16_t flag() const
+        [[nodiscard]] constexpr auto flag() const -> std::uint16_t
         {
             return 0x8000 | ((std::uint16_t)_dpl << 14) | ((std::uint16_t)gate << 8) | _ist;
         }
 
-        constexpr interrupt_handler cb() const { return handler; }
+        [[nodiscard]] constexpr auto get_handler() const -> interrupt_handler { return handler; }
     };
 
     /// \brief Registers a handler entry in the IDT
@@ -63,11 +63,11 @@ namespace idt
     /// \param type The gate type
     /// \param dpl The DPL requirement
     /// \return wether or not the handler was registered
-    bool register_idt(const idt_builder&, std::size_t num);
+    auto register_idt(const idt_builder&, std::size_t num) -> bool;
 
     /// \brief Registers a handler entry at an available slot
     ///
-    std::size_t register_idt(const idt_builder&);
+    auto register_idt(const idt_builder&) -> std::size_t;
 
     struct [[gnu::packed]] idt_entry
     {

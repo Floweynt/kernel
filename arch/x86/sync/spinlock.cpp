@@ -12,9 +12,13 @@ namespace lock
             while (true)
             {
                 if (!l.exchange(value, std::memory_order_acquire))
+                {
                     break;
+                }
                 while (l.load(std::memory_order_relaxed))
+                {
                     __builtin_ia32_pause();
+                }
             }
         }
         else
@@ -22,10 +26,14 @@ namespace lock
             while (true)
             {
                 if (!l.exchange(1, std::memory_order_acquire))
+                {
                     break;
+                }
 
                 while (l.load(std::memory_order_relaxed))
+                {
                     __builtin_ia32_pause();
+                }
             }
         }
     }

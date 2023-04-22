@@ -5,7 +5,7 @@
 
 namespace handlers
 {
-    void handle_bad_tss(std::uint64_t i1, std::uint64_t i2)
+    void handle_bad_tss(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
         klog::log("====================== " RED("#TS") " ======================\n");
         klog::log("kernel task state segment corrupted\n");

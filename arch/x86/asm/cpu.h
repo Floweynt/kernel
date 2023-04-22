@@ -13,13 +13,21 @@ inline void cpuid(std::uint32_t code, std::uint32_t* a, std::uint32_t* b, std::u
 {
     std::uint32_t tmp = 0;
     if (a == nullptr)
+    {
         a = &tmp;
+    }
     if (b == nullptr)
+    {
         b = &tmp;
+    }
     if (c == nullptr)
+    {
         c = &tmp;
+    }
     if (d == nullptr)
+    {
         d = &tmp;
+    }
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code));
 }
 
@@ -34,21 +42,21 @@ inline void cpuid(std::uint32_t code, std::uint32_t* a, std::uint32_t* b, std::u
 /// leaf. The value specified in \p feature will be written into the `%ecx` register for the, along with setting `%eax` to 7
 /// The `cpuid` instruction is then executed and loaded into b, c, d parameters from `%e<param>x`.
 /// The arguments to this instruction wrapper must not be null.
-inline std::uint32_t cpuid_ext(std::uint32_t feature, std::uint32_t* b, std::uint32_t* c, std::uint32_t* d)
+inline auto cpuid_ext(std::uint32_t feature, std::uint32_t* b, std::uint32_t* c, std::uint32_t* d) -> std::uint32_t
 {
-    std::uint32_t max;
+    std::uint32_t max = 0;
     asm volatile("cpuid" : "=a"(max), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(7), "c"(feature));
     return max;
 }
 
-#define READ_CR(CR)                                                                                                         \
-    inline std::uint64_t read_cr##CR()                                                                                      \
-    {                                                                                                                       \
-        std::uint64_t val;                                                                                                  \
-        asm volatile("mov %%cr" #CR "%0" : "=r"(val));                                                                      \
-        return val;                                                                                                         \
+#define READ_CR(CR)                                                                                                                                  \
+    inline auto read_cr##CR()->std::uint64_t                                                                                                         \
+    {                                                                                                                                                \
+        std::uint64_t val;                                                                                                                           \
+        asm volatile("mov %%cr" #CR "%0" : "=r"(val));                                                                                               \
+        return val;                                                                                                                                  \
     }
-#define WRITE_CR(CR)                                                                                                        \
+#define WRITE_CR(CR)                                                                                                                                 \
     inline void write_cr##CR(std::uint64_t val) { asm volatile("mov %0, %%cr" #CR : : "r"(val)); }
 
 READ_CR(0)
@@ -73,7 +81,7 @@ WRITE_CR(4)
 
 /// \brief Wrapper for the `invlpg` instruction
 /// \param m The address passed into invlpg
-inline void invlpg(void* m) { asm volatile("invlpg (%0)" : : "b"(m) : "memory"); }
+inline void invlpg(void* addr) { asm volatile("invlpg (%0)" : : "b"(addr) : "memory"); }
 
 /// \brief Wrapper for the `cli` instruction
 ///
@@ -96,22 +104,22 @@ namespace cpuflags
 {
     enum cpuflags : std::uint32_t
     {
-        CF = 1ul << 0,
-        FLAGS = 1ul << 1,
-        PF = 1ul << 2,
-        AF = 1ul << 4,
-        ZF = 1ul << 6,
-        SF = 1ul << 7,
-        TF = 1ul << 8,
-        IF = 1ul << 9,
-        DF = 1ul << 10,
-        OF = 1ul << 11,
-        NT = 1ul << 14,
-        RF = 1ul << 16,
-        AC = 1ul << 18,
-        VIF = 1ul << 19,
-        VIP = 1ul << 20,
-        ID = 1ul << 21
+        CF = 1UL << 0,
+        FLAGS = 1UL << 1,
+        PF = 1UL << 2,
+        AF = 1UL << 4,
+        ZF = 1UL << 6,
+        SF = 1UL << 7,
+        TF = 1UL << 8,
+        IF = 1UL << 9,
+        DF = 1UL << 10,
+        OF = 1UL << 11,
+        NT = 1UL << 14,
+        RF = 1UL << 16,
+        AC = 1UL << 18,
+        VIF = 1UL << 19,
+        VIP = 1UL << 20,
+        ID = 1UL << 21
     };
 } // namespace cpuflags
 
@@ -129,24 +137,22 @@ inline void wrmsr(std::uint64_t msr, std::uint64_t value)
 /// \param msr The msr to write to
 /// \param a The a register passed to `wrmsr`
 /// \param d The d register passed to `wrmsr`
-inline void wrmsr(std::uint64_t msr, std::uint32_t a, std::uint32_t d)
-{
-    asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d));
-}
+inline void wrmsr(std::uint64_t msr, std::uint32_t a, std::uint32_t d) { asm volatile("wrmsr" : : "c"(msr), "a"(a), "d"(d)); }
 
 /// \brief Wrapper for the `wrmsr` instruction
 /// \param msr The msr to read from
 /// \return The value contained in the msr specified in \p msr
-inline std::uint64_t rdmsr(std::uint64_t msr)
+inline auto rdmsr(std::uint64_t msr) -> std::uint64_t
 {
-    std::uint32_t low, high;
+    std::uint32_t low = 0;
+    std::uint32_t high = 0;
     asm volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
     return ((std::uint64_t)high << 32) | low;
 }
 
 /// \brief Sets the stack pointer `%rsp`
 /// \param sp The new stack pointer address
-inline void setstack(std::uintptr_t sp) { asm volatile("mov %0, %%rsp" : : "r"(sp)); }
+inline void setstack(std::uintptr_t new_rsp) { asm volatile("mov %0, %%rsp" : : "r"(new_rsp)); }
 
 /// \brief Preforms a long jump
 /// \param addr The address to jump to

@@ -20,12 +20,12 @@ namespace paging
     constexpr std::uint64_t MASK_PROT_KEY = 0x7800000000000000;
 
     template <typename T>
-    std::uint64_t set_ptr(std::uint64_t table, T* ptr, std::uint64_t mask)
+    auto set_ptr(std::uint64_t table, T* ptr, std::uint64_t mask) -> std::uint64_t
     {
         return (table & ~mask) | ((std::uint64_t)ptr & mask);
     }
 
-    constexpr std::uint64_t set_prot_key(std::uint64_t table, std::uint8_t prot_key)
+    constexpr auto set_prot_key(std::uint64_t table, std::uint8_t  /*prot_key*/) -> std::uint64_t
     {
         return (table & ~MASK_PROT_KEY) | ((((std::uint64_t)table) << 59) & MASK_PROT_KEY);
     }
@@ -50,7 +50,7 @@ namespace paging
         bool x = false;
     };
 
-    constexpr std::uint64_t make_page_pointer(std::uint64_t target, page_prop flags)
+    constexpr auto make_page_pointer(std::uint64_t target, page_prop flags) -> std::uint64_t
     {
         return 1 |
             ((std::uint8_t) flags.rw << 1) |
@@ -59,7 +59,7 @@ namespace paging
             (target & MASK_TABLE_POINTER);
     }
 
-    constexpr std::uint64_t make_page_small(std::uint64_t target, page_prop flags)
+    constexpr auto make_page_small(std::uint64_t target, page_prop flags) -> std::uint64_t
     {
         return 1 |
             PAGE_SIZE |
@@ -71,7 +71,7 @@ namespace paging
             (target & MASK_TABLE_SMALL);
     }
 
-    constexpr std::uint64_t make_page_medium(std::uint64_t target, page_prop flags)
+    constexpr auto make_page_medium(std::uint64_t target, page_prop flags) -> std::uint64_t
     {
         return 1 |
             PAGE_SIZE |
@@ -83,7 +83,7 @@ namespace paging
             (target & MASK_TABLE_MEDIUM);
     }
 
-    constexpr std::uint64_t make_page_large(std::uint64_t target, page_prop flags)
+    constexpr auto make_page_large(std::uint64_t target, page_prop flags) -> std::uint64_t
     {
         return 1 |
             PAGE_SIZE |

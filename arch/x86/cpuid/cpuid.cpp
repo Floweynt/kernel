@@ -1,49 +1,40 @@
 // cpuid support
 #include "cpuid.h"
+#include <array>
 #include <asm/asm_cpp.h>
 #include <config.h>
+#include <cstddef>
 
 namespace cpuid_info
 {
-    static std::uint32_t cpuid_max;
-    static std::uint32_t features[config::get_val<"cpuid-feature-size">];
-    static std::uint32_t vendor_buf[3];
-    static std::uint32_t brand_buf[12];
+    namespace
+    {
+        std::uint32_t cpuid_max;
+        std::array<std::uint32_t, config::get_val<"cpuid-feature-size">> features;
+        std::array<std::uint32_t, 6> vendor_buf;
+        std::array<std::uint32_t, 13> brand_buf;
+    } // namespace
 
     void initialize_cpuglobal()
     {
-        cpuid(0, &cpuid_max, vendor_buf, vendor_buf + 2, vendor_buf + 1);
-        cpuid(1, nullptr, nullptr, features, features + 1);
+        cpuid(0, &cpuid_max, vendor_buf.data(), vendor_buf.data() + 2, vendor_buf.data() + 1);
+        cpuid(1, nullptr, nullptr, features.data(), features.data() + 1);
         for (int i = 0; i < 3; i++)
-            cpuid(0x80000002 + i, brand_buf + i * 4, brand_buf + i * 4 + 1, brand_buf + i * 4 + 2, brand_buf + i * 4 + 3);
+        {
+            cpuid(0x80000002 + i, brand_buf.data() + static_cast<std::ptrdiff_t>(i * 4), brand_buf.data() + static_cast<std::ptrdiff_t>(i * 4 + 1),
+                  brand_buf.data() + static_cast<std::ptrdiff_t>(i * 4 + 2), brand_buf.data() + static_cast<std::ptrdiff_t>(i * 4 + 3));
+        }
     };
 
-    const char* cpu_vendor_string()
+    auto cpu_vendor_string() -> const char*
     {
-        static bool is_init = false;
-        static std::uint32_t buf[3];
-
-        if (!is_init)
-        {
-            cpuid(0, nullptr, buf, buf + 2, buf + 1);
-            is_init = true;
-        }
-        return (const char*)buf;
+        return (const char*)vendor_buf.data();
     }
 
-    const char* cpu_brand_string()
+    auto cpu_brand_string() -> const char*
     {
-        static bool is_init = false;
-        static std::uint32_t buf[12];
-
-        if (!is_init)
-        {
-            for (int i = 0; i < 3; i++)
-                cpuid(0x80000002 + i, buf + i * 4, buf + i * 4 + 1, buf + i * 4 + 2, buf + i * 4 + 3);
-            is_init = true;
-        }
-        return (const char*)buf;
+        return (const char*)brand_buf.data();
     }
 
-    bool test_feature(std::size_t feature) { return features[feature / 32] & (1 << (feature % 32)); }
+    auto test_feature(std::size_t feature) -> bool { return (features.at(feature / 32) & (1 << (feature % 32))) != 0U; }
 } // namespace cpuid_info

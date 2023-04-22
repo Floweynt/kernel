@@ -1,12 +1,12 @@
 #pragma once
 
 #include "context.h"
-#include <mm/pmm.h>
-#include <paging/paging.h>
 #include <asm/asm_cpp.h>
 #include <cstddef>
 #include <cstdint>
 #include <mm/mm.h>
+#include <mm/pmm.h>
+#include <paging/paging.h>
 #include <sync/spinlock.h>
 #include <utils/id_allocator.h>
 
@@ -24,30 +24,27 @@ namespace proc
         std::uint32_t thread;
         std::uint32_t proc;
 
-        static task_id from_int(std::uint64_t v) { return {std::uint32_t(v & 0xffffffff), std::uint32_t(v >> 32)}; }
-        constexpr operator std::uint64_t() { return ((std::uint64_t)proc << 32) | thread; }
-        constexpr bool valid() { return thread != 0xffffffff; }
+        static auto from_int(std::uint64_t value) -> task_id { return {std::uint32_t(value & 0xffffffff), std::uint32_t(value >> 32)}; }
+        constexpr operator std::uint64_t() const { return ((std::uint64_t)proc << 32) | thread; }
+        [[nodiscard]] constexpr auto valid() const -> bool { return thread != 0xffffffff; }
     };
 
     inline constexpr auto NIL_TID = task_id{0xffffffff, 0xffffffff};
 
-    constexpr bool operator==(const task_id& lhs, const task_id& rhs)
-    {
-        return lhs.thread == rhs.thread && rhs.proc == lhs.proc;
-    }
+    constexpr auto operator==(const task_id& lhs, const task_id& rhs) -> bool { return lhs.thread == rhs.thread && rhs.proc == lhs.proc; }
 
-    constexpr bool operator!=(const task_id& lhs, const task_id& rhs) { return !(lhs == rhs); }
+    constexpr auto operator!=(const task_id& lhs, const task_id& rhs) -> bool { return !(lhs == rhs); }
 
     struct thread
     {
-        context ctx;
-        std::uintptr_t cr3;
+        context ctx{};
+        std::uintptr_t cr3{};
         // scheduler information
         // std::size_t sched_index;
         // std::size_t latest_scheduled_tick;
         const task_id id;
-        thread_state state;
-        constexpr thread(task_id id) : id(id) {}
+        thread_state state{};
+        constexpr thread(task_id task_id) : id(task_id) {}
     };
 
     class process
@@ -55,33 +52,34 @@ namespace proc
     public:
         inline static constexpr std::size_t MAX_THREADS = 16;
         inline static constexpr std::size_t MAX_PROCESS = 1;
+
     private:
         id_allocator<MAX_THREADS> thread_allocator;
         thread* threads[MAX_THREADS];
         std::uint32_t pid = 0;
+
     public:
-        std::uint32_t make_thread(std::uintptr_t fp, void* sp, std::uint64_t args, std::size_t core);
-        thread* get_thread(std::uint32_t th) { return threads[th]; }
+        auto make_thread(std::uintptr_t entry, void* stack_ptr, std::uint64_t args, std::size_t core) -> std::uint32_t;
+        auto get_thread(std::uint32_t tid) -> thread* { return threads[tid]; }
     };
 
-    process& get_process(std::uint32_t pid);
-    std::uint32_t make_process();
+    auto get_process(std::uint32_t pid) -> process&;
+    auto make_process() -> std::uint32_t;
 
-    constexpr thread& get_thread(task_id id) { return *get_process(id.proc).get_thread(id.thread); }
+    constexpr auto get_thread(task_id tid) -> thread& { return *get_process(tid.proc).get_thread(tid.thread); }
 
     using kthread_fn_t = void (*)(std::uint64_t);
     using kthread_fn_args_t = void (*)(std::uint64_t);
 
-    std::uint32_t make_kthread_args(kthread_fn_args_t th, std::uint64_t extra);
-    
-    inline std::uint32_t make_kthread_args(kthread_fn_args_t th, std::uint64_t extra, std::size_t core)
+    auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra) -> std::uint32_t;
+
+    inline auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t
     {
-        return get_process(0).make_thread(
-            (std::uintptr_t)th, (void*)((std::uintptr_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE), extra, core);
+        return get_process(0).make_thread((std::uintptr_t)thread_fn, (void*)((std::uintptr_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE), extra, core);
     }
-    
-    inline std::uint32_t make_kthread(kthread_fn_t th) { return make_kthread_args(th, 0); }
-    inline std::uint32_t make_kthread(kthread_fn_t th, std::size_t core) { return make_kthread_args(th, 0, core); }
+
+    inline auto make_kthread(kthread_fn_t thread_fn) -> std::uint32_t { return make_kthread_args(thread_fn, 0); }
+    inline auto make_kthread(kthread_fn_t thread_fn, std::size_t core) -> std::uint32_t { return make_kthread_args(thread_fn, 0, core); }
 
     void suspend_self();
 } // namespace proc

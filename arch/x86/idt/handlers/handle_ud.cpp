@@ -5,10 +5,10 @@
 
 namespace handlers
 {
-    void handle_nm(std::uint64_t i1, std::uint64_t i2)
+    void handle_ud(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#NM") " ======================\n");
+        klog::log("====================== " RED("#UD") " ======================\n");
         debug::log_register(smp::core_local::get().ctxbuffer);
-        klog::panic("#NM");
+        klog::panic("#UD");
     }
 } // namespace handlers

@@ -16,10 +16,10 @@ namespace lock
 
         inline void release()
         {
-            l.store(false, std::memory_order_release);
+            l.store(0, std::memory_order_release);
         }
 
-        inline std::size_t owned_core() { return l.load() - 1; }
+        inline auto owned_core() -> std::size_t { return l.load() - 1; }
     };
 
     class interrupt_lock
@@ -39,7 +39,7 @@ namespace lock
         T& lock;
 
     public:
-        inline lock_guard(T& s) : lock(s) { lock.lock(); }
+        inline lock_guard(T& lock) : lock(lock) { lock.lock(); }
         inline ~lock_guard() { lock.release(); }
     };
 

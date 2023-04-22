@@ -17,10 +17,10 @@ namespace lock
         constexpr semaphore() : count(N) {}
         void lock()
         { 
-            spinlock_guard g(internal_spinlock);
-            if(count)
+            spinlock_guard guard(internal_spinlock);
+            if(count) {
                 count--;
-            else
+            } else
             {
                 q.push(smp::core_local::get().current_thread);
                 // resched
@@ -29,7 +29,7 @@ namespace lock
 
         void release()
         {
-            spinlock_guard g(internal_spinlock);
+            spinlock_guard guard(internal_spinlock);
             count++;
             // scheduler stuff
         }
@@ -41,13 +41,13 @@ namespace lock
         spinlock internal_spinlock;
         stdext::dynamic_circular_queue<proc::thread*> q;
     public:
-        inline dynamic_semaphore(std::size_t n) : count(n), q(n) {}
+        inline dynamic_semaphore(std::size_t count) : count(count), q(count) {}
         void lock()
         { 
-            spinlock_guard g(internal_spinlock);
-            if(count)
+            spinlock_guard guard(internal_spinlock);
+            if(count) {
                 count--;
-            else
+            } else
             {
                 q.push(smp::core_local::get().current_thread);
                 // resched
@@ -56,7 +56,7 @@ namespace lock
 
         void release()
         {
-            spinlock_guard g(internal_spinlock);
+            spinlock_guard guard(internal_spinlock);
             count++;
             // scheduler stuff
         }
@@ -66,7 +66,7 @@ namespace lock
     {
         semaphore<1> s;
     public:
-        constexpr mutex() {}
+        constexpr mutex() = default;
         inline void lock() { s.lock(); }
         inline void release() { s.release(); }
     };

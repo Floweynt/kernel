@@ -5,7 +5,7 @@
 
 namespace handlers
 {
-    void handle_debug(std::uint64_t i1, std::uint64_t i2)
+    void handle_debug(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
         klog::log("====================== " RED("#DB") " ======================\n");
         klog::log("a runtime kernel debug exception has occurred\n");

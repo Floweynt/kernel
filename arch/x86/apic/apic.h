@@ -55,12 +55,12 @@ namespace apic
 
     private:
         apic_registers* reg_start = nullptr;
-        std::uint64_t ticks_per_ms;
+        std::uint64_t ticks_per_ms{};
 
     public:
         /// \brief Check for the presense of an LAPIC on the current core
         ///
-        static bool check_apic();
+        static auto check_apic() -> bool;
 
         /// \brief Enables the LAPIC
         /// Enables the APIC by setting the APIC base, disabling old PIC and setting the spurious interrupt vector
@@ -75,14 +75,14 @@ namespace apic
         ///
         /// This computes the APIT ticks per millisecond, and stores it into a cached value
         /// A call to this function should occur before any call to set_tick()
-        std::uint64_t calibrate();
+        auto calibrate() -> std::uint64_t;
 
         /// \brief Sets the amount of ticks before a timer interrupt
         /// \param irq The irq vector to use
         /// \param ms The number of milliseconds per timer interrupt
         /// The APIT ticks are computed by using the value from calibrate() * \p ms. Interrupts are generated at the IRQ
         /// defined by \p irq, which requires that the core's IDT contain an entry for the specified vector
-        void set_tick(std::uint8_t irq, std::size_t ms);
+        void set_tick(std::uint8_t irq, std::size_t tick_ms);
 
         /// \brief Sets the base address for the APIC
         /// \param addr The new base address
@@ -90,11 +90,11 @@ namespace apic
 
         /// \brief Obtains the APIC base address
         ///
-        inline std::uintptr_t get_apic_base() const { return 0x0ffffff000 & rdmsr(msr::IA32_APIC_BASE); }
+        [[nodiscard]] inline auto get_apic_base() -> std::uintptr_t { return 0x0ffffff000 & rdmsr(msr::IA32_APIC_BASE); }
 
         /// \brief Obtains a reference to the MMIO registers for the LAPIC
         //
-        constexpr apic_registers& mmio_register() const { return *reg_start; }
+        [[nodiscard]] constexpr auto mmio_register() const -> apic_registers& { return *reg_start; }
 
         /// \brief Sets the "end of interrupt" field in the LAPIC
         //

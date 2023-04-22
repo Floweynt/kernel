@@ -175,14 +175,14 @@ namespace cpuid_info
 
     /// \brief Obtains the cpu vendor string
     /// \return The cpu vendor string
-    const char* cpu_vendor_string();
+    auto cpu_vendor_string() -> const char*;
 
     /// \brief Obtains the cpu brand string
     /// \return The cpu brand string
-    const char* cpu_brand_string();
+    auto cpu_brand_string() -> const char*;
 
     /// \brief Check to see if a cpu feature is present
     /// \param feature The cpu feature ID to test
     /// \return Wether or not the feature is present
-    bool test_feature(std::size_t feature);
+    auto test_feature(std::size_t feature) -> bool;
 }; // namespace cpuid_info

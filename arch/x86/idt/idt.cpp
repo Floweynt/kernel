@@ -5,7 +5,7 @@
 
 extern char idt_entry_start[];
 
-extern "C" void _handle_irq_common(std::uint64_t int_no, std::uint64_t errno) 
+extern "C" void _handle_irq_common(std::uint64_t int_no, std::uint64_t errno)
 {
     ((idt::interrupt_handler)smp::core_local::get().idt_handler_entries[int_no])(int_no, errno);
 }
@@ -26,29 +26,32 @@ namespace idt
 
     void install_idt()
     {
-        utils::packed_tuple<std::uint16_t, std::uint64_t> d(sizeof(idt_entry) * 256,
-                                                            (std::uint64_t)smp::core_local::get().idt_entries);
+        utils::packed_tuple<std::uint16_t, std::uint64_t> d(sizeof(idt_entry) * 256, (std::uint64_t)smp::core_local::get().idt_entries);
         asm volatile("lidtq %0" : : "m"(d));
     }
 
-    bool register_idt(const idt_builder& entry, std::size_t num)
+    auto register_idt(const idt_builder& entry, std::size_t num) -> bool
     {
         smp::core_local& local = smp::core_local::get();
         if (!local.irq_allocator.allocate(num))
+        {
             return false;
-        local.idt_handler_entries[num] = (std::uintptr_t)entry.cb();
+        }
+        local.idt_handler_entries[num] = (std::uintptr_t)entry.get_handler();
         local.idt_entries[num].flags = entry.flag();
         return true;
     }
 
-    std::size_t register_idt(const idt_builder& entry)
+    auto register_idt(const idt_builder& entry) -> std::size_t
     {
         smp::core_local& local = smp::core_local::get();
         std::size_t num = local.irq_allocator.allocate();
-        if (num == -1ul)
-            return -1ul;
+        if (num == -1UL)
+        {
+            return -1UL;
+        }
 
-        local.idt_handler_entries[num] = (std::uintptr_t)entry.cb();
+        local.idt_handler_entries[num] = (std::uintptr_t)entry.get_handler();
         local.idt_entries[num].flags = entry.flag();
         return num;
     }

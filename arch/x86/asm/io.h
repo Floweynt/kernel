@@ -18,9 +18,9 @@ inline void outl(std::uint16_t port, std::uint32_t val) { asm volatile("outl %0,
 /// \brief Wrapper for the `in` instruction (byte)
 /// \param port The I/O port to read from
 /// \return The 8-bit read
-inline std::uint8_t inb(std::uint16_t port)
+inline auto inb(std::uint16_t port) -> std::uint8_t
 {
-    std::uint8_t ret;
+    std::uint8_t ret = 0;
     asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
@@ -28,9 +28,9 @@ inline std::uint8_t inb(std::uint16_t port)
 /// \brief Wrapper for the `in` instruction (word)
 /// \param port The I/O port to read from
 /// \return The 16-bit read
-inline std::uint16_t inw(std::uint16_t port)
+inline auto inw(std::uint16_t port) -> std::uint16_t
 {
-    std::uint16_t ret;
+    std::uint16_t ret = 0;
     asm volatile("inw %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
@@ -38,9 +38,9 @@ inline std::uint16_t inw(std::uint16_t port)
 /// \brief Wrapper for the `in` instruction (dword)
 /// \param port The I/O port to read from
 /// \return The 32-bit read
-inline std::uint32_t inl(std::uint16_t port)
+inline auto inl(std::uint16_t port) -> std::uint32_t
 {
-    std::uint32_t ret;
+    std::uint32_t ret = 0;
     asm volatile("inl %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }

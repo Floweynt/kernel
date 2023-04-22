@@ -38,12 +38,12 @@ namespace gdt
         const std::uint64_t user_ds = 0x00aff3000000ffff;
 
         const std::uint16_t limit = 0x6b;
-        std::uint16_t base_lowest;
-        std::uint8_t base_lo;
+        std::uint16_t base_lowest{};
+        std::uint8_t base_lo{};
         const std::uint8_t access = 0x89;
         const std::uint8_t mixed = 0b00000000;
-        std::uint8_t base_mid;
-        std::uint32_t base_high;
+        std::uint8_t base_mid{};
+        std::uint32_t base_high{};
         const std::uint32_t reserved0 = 0;
 
         inline void set_ist(interrupt_stack_table* ist)

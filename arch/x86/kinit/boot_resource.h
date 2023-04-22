@@ -16,11 +16,11 @@ enum init_warn_flags : std::uint32_t
 class modules
 {
     void* symbols;
+
 public:
     modules();
-    constexpr void* get_symbols() const { return symbols; } 
+    [[nodiscard]] constexpr auto get_symbols() const -> void* { return symbols; }
 };
-
 
 class boot_resource
 {
@@ -36,37 +36,42 @@ class boot_resource
     bool smp_status;
     std::uint32_t flags;
     modules mods;
+
 public:
     boot_resource();
-    static boot_resource& instance();
+    static auto instance() -> boot_resource&;
 
-    constexpr std::uint64_t kernel_phys_addr() const { return phys_addr; }
-    constexpr std::uint64_t kernel_size() const { return ksize; }
-    constexpr acpi::rsdp_descriptor* rsdp() const { return root_table; }
-    constexpr std::size_t core_count() const { return cores; }
-    constexpr std::size_t bsp_id() const { return bsp_id_lapic; }
+    [[nodiscard]] constexpr auto kernel_phys_addr() const -> std::uint64_t { return phys_addr; }
+    [[nodiscard]] constexpr auto kernel_size() const -> std::uint64_t { return ksize; }
+    [[nodiscard]] constexpr auto rsdp() const -> acpi::rsdp_descriptor* { return root_table; }
+    [[nodiscard]] constexpr auto core_count() const -> std::size_t { return cores; }
+    [[nodiscard]] constexpr auto bsp_id() const -> std::size_t { return bsp_id_lapic; }
 
     template <typename T>
     void iterate_mmap(T callback)
     {
         for (std::size_t i = 0; i < mmap_length; i++)
+        {
             callback(mmap_entries[i]);
+        }
     }
 
     template <typename T>
     void iterate_xsdt(T callback)
     {
-        acpi::xsdt* table = (acpi::xsdt*)(root_table->xsdt_address + 0xffff800000000000ul);
-        std::size_t n = (table->h.length - sizeof(acpi::acpi_sdt_header)) / 8;
-        for (std::size_t i = 0; i < n; i++)
+        auto* table = (acpi::xsdt*)(root_table->xsdt_address + 0xffff800000000000ul);
+        std::size_t len = (table->h.length - sizeof(acpi::acpi_sdt_header)) / 8;
+        for (std::size_t i = 0; i < len; i++)
+        {
             callback(table->table[i]);
+        }
     }
 
-    bool is_smp() const { return smp_status; }
+    [[nodiscard]] auto is_smp() const -> bool { return smp_status; }
     constexpr void mark_smp_start() { smp_status = true; }
 
-    constexpr void warn_init(init_warn_flags f) { flags = flags | f; }
-    constexpr std::uint32_t warn_init() const { return flags; }
+    constexpr void warn_init(init_warn_flags flag) { flags = flags | flag; }
+    [[nodiscard]] constexpr auto warn_init() const -> std::uint32_t { return flags; }
 
-    constexpr const modules& modules() const { return mods; }
+    [[nodiscard]] constexpr auto modules() const -> const modules& { return mods; }
 };

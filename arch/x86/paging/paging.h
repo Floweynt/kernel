@@ -19,27 +19,27 @@ namespace paging
     inline constexpr std::size_t PAGE_LARGE_SIZE = 0x40000000;
  
     void install();
-    bool request_page(page_type pt, std::uint64_t vaddr, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false);
+    auto request_page(page_type pt, std::uint64_t vaddr, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool;
     void map_section(std::uint64_t addr, std::uint64_t len, paging::page_prop prop);
     void init();
 
     template <std::uint8_t t>
-    constexpr std::uint16_t get_page_entry(std::uint64_t virtual_addr)
+    constexpr auto get_page_entry(std::uint64_t virtual_addr) -> std::uint16_t
     {
         return std::get_bits<(3 - t) * 9 + 12, (3 - t) * 9 + 20>(virtual_addr) >> ((3 - t) * 9 + 12);
     }
 
-    constexpr std::uint16_t get_page_entry(std::uint64_t virtual_addr, std::uint8_t t)
+    constexpr auto get_page_entry(std::uint64_t virtual_addr, std::uint8_t t) -> std::uint16_t
     {
         return std::get_bits(virtual_addr, (3 - t) * 9 + 12, (3 - t) * 9 + 20) >> ((3 - t) * 9 + 12);
     }
     
-    inline bool map_hhdm_phys(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false)
+    inline auto map_hhdm_phys(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
     {
         return request_page(pt, mm::make_virtual(paddr), paddr, prop, overwrite);
     }
 
-    inline bool map_hhdm_virt(page_type pt, std::uint64_t vaddr, page_prop prop = {}, bool overwrite = false)
+    inline auto map_hhdm_virt(page_type pt, std::uint64_t vaddr, page_prop prop = {}, bool overwrite = false) -> bool
     {
         return request_page(pt, mm::make_physical(vaddr), vaddr, prop, overwrite);
     }

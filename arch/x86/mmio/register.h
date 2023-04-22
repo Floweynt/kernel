@@ -10,8 +10,8 @@ namespace mmio
     {
         volatile T t;
     public:
-        inline T read() { return t; }
-        inline void write(T v) { t = v; }
+        inline auto read() -> T { return t; }
+        inline void write(T val) { t = val; }
         inline operator T() const { return t; }
     };
 
@@ -20,7 +20,7 @@ namespace mmio
     {
         volatile T t;
     public:
-        inline T read() { return t; }
+        inline auto read() -> T { return t; }
         inline operator T() const { return t; }
     };
 
@@ -29,7 +29,7 @@ namespace mmio
     {
         volatile T t;
     public:
-        inline void write(T v) { t = v; }
+        inline void write(T val) { t = val; }
     };
 
     template <typename T, std::size_t alignment>

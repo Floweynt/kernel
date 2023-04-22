@@ -1,14 +1,14 @@
 #include "debug.h"
-#include <kinit/boot_resource.h>
 #include <config.h>
 #include <cstdint>
+#include <kinit/boot_resource.h>
 
 namespace debug
 {
     struct hdr
     {
         std::uint64_t header;
-        std::uint64_t count;    
+        std::uint64_t count;
     };
 
     struct entry
@@ -18,40 +18,43 @@ namespace debug
         std::uint64_t name;
     };
 
-    debug::symbol sym_for(std::uint64_t address)
+    auto sym_for(std::uint64_t address) -> debug::symbol
     {
         void* symtab = boot_resource::instance().modules().get_symbols();
         if (symtab != nullptr)
         {
-            hdr* ptr = (hdr*) symtab;
+            hdr* ptr = (hdr*)symtab;
 
-            std::size_t n = ptr->count;
+            std::size_t count = ptr->count;
 
             // binary search
 
-            entry* entries = (entry*)(ptr + 1);
+            auto* entries = (entry*)(ptr + 1);
 
-            std::size_t l = 0;
-            std::size_t r = n;
+            std::size_t left = 0;
+            std::size_t right = count;
 
-            while(l + 1 != r)
+            while (left + 1 != right)
             {
-                std::size_t mid = (l + r + 1) >> 1;
+                std::size_t mid = (left + right + 1) >> 1;
 
-                if(entries[mid].start_addr > address)
-                    r = mid;
+                if (entries[mid].start_addr > address)
+                {
+                    right = mid;
+                }
                 else
-                    l = mid;
+                {
+                    left = mid;
+                }
             }
 
-            if(entries[l].start_addr + entries[l].len > address)
-                return debug::symbol{
-                    (const char*) symtab + entries[l].name,
-                    static_cast<std::uint32_t>(address - entries[l].start_addr)
-                };
+            if (entries[left].start_addr + entries[left].len > address)
+            {
+                return debug::symbol{(const char*)symtab + entries[left].name, static_cast<std::uint32_t>(address - entries[left].start_addr)};
+            }
             return debug::symbol{"unk", 0};
         }
-        else
-            return debug::symbol{"unk", 0};
+
+        return debug::symbol{"unk", 0};
     }
-}
+} // namespace debug

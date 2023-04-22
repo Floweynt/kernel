@@ -5,7 +5,7 @@
 
 namespace gdt
 {
-    static std::uint64_t gdt[] = {0, 0x00af9b000000ffff, 0x00af93000000ffff};
+    static std::uint64_t gdt[] = {0, 0x00af9b000000ffff, 0x00af93000000ffff, 0x00affb000000ffff, 0x00aff3000000ffff};
     using gdt_desc = utils::packed_tuple<std::uint16_t, std::uint64_t>;
     void reload_gdt()
     {
@@ -24,7 +24,6 @@ namespace gdt
                      :
                      :
                      : "%rax");
-        return;
     }
 
     void install_gdt()

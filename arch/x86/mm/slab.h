@@ -6,11 +6,11 @@ namespace mm
 {
     void init_slab();
 
-    void* slab_allocate(std::size_t n);
+    auto slab_allocate(std::size_t size) -> void*;
     void slab_free(void* ptr);
 
     template<typename T>
-    T* slab_allocate()
+    auto slab_allocate() -> T*
     {
         return new (slab_allocate(sizeof(T))) T;
     }

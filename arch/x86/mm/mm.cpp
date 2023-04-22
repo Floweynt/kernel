@@ -4,17 +4,23 @@
 #include <debug/debug.h>
 
 namespace mm
-{ 
-    std::size_t bitmask_allocator::allocate(std::size_t s)
+{
+    auto bitmask_allocator::allocate(std::size_t size) -> std::size_t
     {
         if (!exists())
-            return -1ul;
-        if(s != 1)
+        {
+            return -1UL;
+        }
+        if (size != 1)
+        {
             debug::panic("not implemented yet");
-        std::size_t i = std::first_set_bit(bitmask);
-        if(i == -1ul)
-            return -1ul;
-        bitmask.reset(i);
-        return i;
+        }
+        std::size_t index = std::first_set_bit(bitmask);
+        if (index == -1UL)
+        {
+            return -1UL;
+        }
+        bitmask.reset(index);
+        return index;
     }
 } // namespace mm
