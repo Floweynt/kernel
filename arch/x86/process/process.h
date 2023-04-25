@@ -59,7 +59,7 @@ namespace proc
         std::uint32_t pid = 0;
 
     public:
-        auto make_thread(std::uintptr_t entry, void* stack_ptr, std::uint64_t args, std::size_t core) -> std::uint32_t;
+        auto make_thread(const context& inital_context, std::size_t core) -> std::uint32_t;
         auto get_thread(std::uint32_t tid) -> thread* { return threads[tid]; }
     };
 
@@ -71,13 +71,8 @@ namespace proc
     using kthread_fn_t = void (*)(std::uint64_t);
     using kthread_fn_args_t = void (*)(std::uint64_t);
 
-    auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra) -> std::uint32_t;
-
-    inline auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t
-    {
-        return get_process(0).make_thread((std::uintptr_t)thread_fn, (void*)((std::uintptr_t)mm::pmm_allocate() + paging::PAGE_SMALL_SIZE), extra, core);
-    }
-
+     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t;
+     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra) -> std::uint32_t;
     inline auto make_kthread(kthread_fn_t thread_fn) -> std::uint32_t { return make_kthread_args(thread_fn, 0); }
     inline auto make_kthread(kthread_fn_t thread_fn, std::size_t core) -> std::uint32_t { return make_kthread_args(thread_fn, 0, core); }
 

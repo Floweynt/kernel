@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cast.h>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -151,15 +152,15 @@ namespace acpi
     template <typename T>
     auto check(const T* desc) -> bool
     {
-        char* ptr = (char*)desc;
+        std::span<std::uint8_t> data(cast_ptr(desc), sizeof(T));
         std::uint64_t sum = 0;
 
-        for (std::size_t i = 0; i < sizeof(T); i++)
+        for (auto byte : data)
         {
-            sum += ptr[i];
+            sum += byte;
         }
-
-        return (sum & 0xff) == 0;
+        
+        return (std::uint8_t)sum == 0;
     }
 
     template <typename T>

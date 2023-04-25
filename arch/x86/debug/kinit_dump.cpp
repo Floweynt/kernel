@@ -90,8 +90,8 @@ namespace debug
             std::printf("    length=%d\n", (int)rsdp->length);
 
             boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-                auto signature = mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry)->signature;
-                const auto* signature_ptr = reinterpret_cast<const char*>(&signature);
+                auto signature = mm::make_virtual<acpi::acpi_sdt_header>(as_uptr(entry))->signature;
+                const char* signature_ptr = cast_ptr(&signature);
 
                 std::printf("  entry: (sig=0x%08x '%c%c%c%c')\n", signature, signature_ptr[0], signature_ptr[1],
                             signature_ptr[2], signature_ptr[3]);

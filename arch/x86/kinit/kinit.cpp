@@ -50,7 +50,7 @@
 
 alignas(boot_resource) static char buf[sizeof(boot_resource)];
 
-auto boot_resource::instance() -> boot_resource& { return *(boot_resource*)(buf); }
+auto boot_resource::instance() -> boot_resource& { return *as_ptr<boot_resource>(buf); }
 
 modules::modules()
 {
@@ -82,7 +82,7 @@ boot_resource::boot_resource() : mmap_length(0), pmrs_length(0), mmap_entries(),
     ksize = kernel_file_request.response->kernel_file->size;
     phys_addr = kernel_address_request.response->physical_base;
 
-    root_table = (acpi::rsdp_descriptor*)rsdp_request.response->address;
+    root_table = as_ptr(rsdp_request.response->address);
     auto* smp = smp_request.response;
     cores = smp->cpu_count;
     bsp_id_lapic = smp->bsp_lapic_id;
@@ -125,7 +125,7 @@ extern "C"
         void init_array()
         {
             using init_array_t = void (*)();
-            for (auto* i = (std::uint64_t*)&__start_init_array; i < (std::uint64_t*)&__end_init_array; i++)
+            for (std::uintptr_t* i = as_ptr(&__start_init_array); i < as_ptr(&__end_init_array); i++)
             {
                 if (*i != 0 && *i != -1UL)
                 {
@@ -140,11 +140,11 @@ extern "C"
         init_array();
         new (buf) boot_resource();
         boot_resource& instance = boot_resource::instance();
-        wrmsr(msr::IA32_GS_BASE, (std::uint64_t)&cpu0_ptr);
+        wrmsr(msr::IA32_GS_BASE, as_uptr(&cpu0_ptr));
 
         mm::init();
         paging::init();
-        alloc::init((void*)config::get_val<"mmap.start.heap">, paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
+        alloc::init(as_vptr(config::get_val<"mmap.start.heap">), paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
 
         tty::init();
 
@@ -156,8 +156,8 @@ extern "C"
         debug::dump_cpuid_info();
 
         instance.iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-            paging::map_hhdm_phys(paging::MEDIUM, (std::uint64_t)entry);
-            entry = mm::make_virtual<acpi::acpi_sdt_header>((std::uint64_t)entry);
+            paging::map_hhdm_phys(paging::MEDIUM, as_uptr(entry));
+            entry = mm::make_virtual<acpi::acpi_sdt_header>(as_uptr(entry));
             invlpg((void*)entry);
         });
 

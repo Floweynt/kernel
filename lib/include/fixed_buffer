@@ -1,6 +1,5 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_FIXED_BUFFER_H__
-#define __NOSTDLIB_FIXED_BUFFER_H__
+#pragma once
 #include "cstddef"
 #include "type_traits"
 
@@ -15,7 +14,7 @@ namespace std
         using value_type = T;
         inline static constexpr auto size = N;
 
-        constexpr T* get_buf() { return buffer; }
+        constexpr auto get_buf() -> T* { return buffer; }
     };
 
     template <typename T, std::size_t N>
@@ -29,7 +28,7 @@ namespace std
 
         constexpr heap_fixed_buffer() : buffer(new T[N]) {}
         constexpr ~heap_fixed_buffer() { delete[] buffer; }
-        constexpr T* get_buf() { return buffer; }
+        constexpr auto get_buf() -> T* { return buffer; }
     };
 
     enum class fixed_buffer_type
@@ -43,4 +42,3 @@ namespace std
         std::conditional_t<Type == fixed_buffer_type::HEAP, heap_fixed_buffer<T, N>, inplace_fixed_buffer<T, N>>;
 } // namespace std
 
-#endif

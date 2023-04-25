@@ -1,6 +1,5 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_ARRAY_H__
-#define __NOSTDLIB_ARRAY_H__
+#pragma once
 #include "../bits/iterator_utils.h"
 #include "../bits/reverse_iterator.h"
 #include "../bits/user_implement.h"
@@ -16,8 +15,8 @@ namespace std
         {
             using type = T[N];
 
-            static constexpr T* ptr(type& t, size_t index) noexcept { return &t[index]; }
-            static constexpr T& ref(type& t, size_t index) noexcept { return t[index]; }
+            static constexpr auto ptr(type& val, size_t index) noexcept -> T* { return &val[index]; }
+            static constexpr auto ref(type& val, size_t index) noexcept -> T& { return val[index]; }
         };
 
         template <typename T>
@@ -26,8 +25,8 @@ namespace std
             struct type
             {
             };
-            static constexpr T* ptr(type& t, size_t index) noexcept { return nullptr; }
-            static constexpr T& ref(type& t, size_t index) noexcept { return *ptr(t, index); }
+            static constexpr auto ptr(type&  /*t*/, size_t  /*index*/) noexcept -> T* { return nullptr; }
+            static constexpr auto ref(type& val, size_t index) noexcept -> T& { return *ptr(val, index); }
         };
     } // namespace detail
     template <typename T, size_t N>
@@ -202,5 +201,3 @@ namespace std
         return arr[I];
     }
 } // namespace std
-
-#endif

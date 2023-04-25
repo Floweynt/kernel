@@ -1,41 +1,39 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_CTYPE_H__
-#define __NOSTDLIB_CTYPE_H__
+#pragma once
 
 namespace std
 {
     namespace detail
     {
-        template <typename T, T from, T to>
-        constexpr bool range(T t)
+        template <typename T, T From, T To>
+        constexpr auto range(T val) -> bool
         {
-            return t >= from && t <= to;
+            return val >= From && val <= To;
         }
     } // namespace detail
 
-    constexpr bool isblank(char c) { return c == ' ' || c == '\t'; }
-    constexpr bool iscntrl(char c) { return detail::range<char, 0x00, 0x1f>(c) || c == 0x7F; }
-    constexpr bool isdigit(char c) { return detail::range<char, '0', '9'>(c); }
-    constexpr bool islower(char c) { return detail::range<char, 'a', 'z'>(c); }
-    constexpr bool ispunct(char c)
+    constexpr auto isblank(char ch) -> bool { return ch == ' ' || ch == '\t'; }
+    constexpr auto iscntrl(char ch) -> bool { return detail::range<char, 0x00, 0x1f>(ch) || ch == 0x7F; }
+    constexpr auto isdigit(char ch) -> bool { return detail::range<char, '0', '9'>(ch); }
+    constexpr auto islower(char ch) -> bool { return detail::range<char, 'a', 'z'>(ch); }
+    constexpr auto ispunct(char ch) -> bool
     {
-        return detail::range<char, '!', '/'>(c) || detail::range<char, ';', '@'>(c) || detail::range<char, '[', '`'>(c) ||
-               detail::range<char, '{', '~'>(c);
+        return detail::range<char, '!', '/'>(ch) || detail::range<char, ';', '@'>(ch) || detail::range<char, '[', '`'>(ch) ||
+               detail::range<char, '{', '~'>(ch);
     }
 
-    constexpr bool isspace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'; }
+    constexpr auto isspace(char ch) -> bool { return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\v' || ch == '\f' || ch == '\r'; }
 
-    constexpr bool isupper(char c) { return detail::range<char, 'A', 'Z'>(c); }
+    constexpr bool isupper(char ch) { return detail::range<char, 'A', 'Z'>(ch); }
     constexpr bool isxdigit(char c)
     {
         return isdigit(c) || detail::range<char, 'a', 'f'>(c) || detail::range<char, 'A', 'F'>(c);
     }
 
-    constexpr bool isalpha(char c) { return isupper(c) || islower(c); }
-    constexpr bool isalnum(char c) { return isalpha(c) || isdigit(c); }
-    constexpr bool isgraph(char c) { return isalnum(c) || ispunct(c); }
-    constexpr bool isprint(char c) { return isgraph(c) || isspace(c); }
+    constexpr auto isalpha(char ch) -> bool { return isupper(ch) || islower(ch); }
+    constexpr auto isalnum(char ch) -> bool { return isalpha(ch) || isdigit(ch); }
+    constexpr auto isgraph(char ch) -> bool { return isalnum(ch) || ispunct(ch); }
+    constexpr auto isprint(char ch) -> bool { return isgraph(ch) || isspace(ch); }
 
 } // namespace std
 
-#endif

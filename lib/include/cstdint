@@ -1,34 +1,31 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_INCLUDE_CSTDINT_H__
-#define __NOSTDLIB_INCLUDE_CSTDINT_H__
+#pragma once
 
-namespace std
+namespace std::detail
 {
-    namespace detail
+    template <int size, typename T, typename... Ts>
+    auto select_integral()
     {
-        template <int size, typename T, typename... Ts>
-        auto select_integral()
+        if constexpr (sizeof(T) == size)
         {
-            if constexpr (sizeof(T) == size)
-                return T{};
-            else
-            {
-                static_assert(sizeof...(Ts) != 0, "Unable to find proper type for stdint");
-                return select_integral<size, Ts...>();
-            }
+            return T{};
         }
+        else
+        {
+            static_assert(sizeof...(Ts) != 0, "Unable to find proper type for stdint");
+            return select_integral<size, Ts...>();
+        }
+    }
 
-        template <int size>
-        using int_select_t = decltype(select_integral<size, signed char, short, int, long, long long>());
+    template <int size>
+    using int_select_t = decltype(select_integral<size, signed char, short, int, long, long long>());
 
-        template <int size>
-        using uint_select_t = decltype(select_integral<size, unsigned char, unsigned short, unsigned int, unsigned long,
-                                                            unsigned long long>());
+    template <int size>
+    using uint_select_t = decltype(select_integral<size, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>());
 
-        template <int size>
-        inline constexpr __INTMAX_TYPE__ intmax_of = (1ULL << (size * 8 - 1)) - 1;
-    } // namespace detail
-} // namespace std
+    template <int size>
+    inline constexpr __INTMAX_TYPE__ intmax_of = (1ULL << (size * 8 - 1)) - 1;
+} // namespace std::detail
 
 namespace std
 {
@@ -57,12 +54,12 @@ namespace std
     inline constexpr auto INT8_MAX = 127;
     inline constexpr auto INT16_MAX = 32767;
     inline constexpr auto INT32_MAX = 2147483647;
-    inline constexpr auto INT64_MAX = 9223372036854775807l;
+    inline constexpr auto INT64_MAX = 9223372036854775807L;
 
     inline constexpr auto INT8_MIN = -128;
     inline constexpr auto INT16_MIN = -32768;
     inline constexpr auto INT32_MIN = -2147483648;
-    inline constexpr auto INT64_MIN = (-9223372036854775807l - 1);
+    inline constexpr auto INT64_MIN = (-9223372036854775807L - 1);
 
     inline constexpr auto INT_LEAST8_MAX = 127;
     inline constexpr auto INT_LEAST16_MAX = 32767;
@@ -102,10 +99,9 @@ namespace std
     inline constexpr auto INT_FAST8_MIN = -2147483648;
     inline constexpr auto INT_FAST16_MIN = -2147483648;
     inline constexpr auto INT_FAST32_MIN = -2147483648;
-    inline constexpr auto INT_FAST64_MIN = (-9223372036854775807l - 1);
+    inline constexpr auto INT_FAST64_MIN = (-9223372036854775807L - 1);
 #endif
 
     inline constexpr auto INTPTR_MAX = detail::intmax_of<sizeof(intptr_t)>;
     inline constexpr auto INTMAX_MAX = detail::intmax_of<sizeof(intmax_t)>;
 } // namespace std
-#endif

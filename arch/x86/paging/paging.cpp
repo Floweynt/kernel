@@ -169,12 +169,12 @@ namespace paging
 
         for (std::size_t i = 0; i < config::get_val<"preallocate-pages">; i++)
         {
-            void* d;
-            if ((d = mm::pmm_allocate()) == nullptr)
+            void* ptr = nullptr;
+            if ((ptr = mm::pmm_allocate()) == nullptr)
             {
                 debug::panic("cannot get memory for heap");
             }
-            paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE, mm::make_physical(d));
+            paging::request_page(paging::page_type::SMALL, config::get_val<"mmap.start.heap"> + i * PAGE_SMALL_SIZE, mm::make_physical(ptr));
         }
 
         paging::install();
@@ -182,8 +182,11 @@ namespace paging
 
     void sync_page_tables(std::size_t dest_core, std::size_t src_core)
     {
-        std::memcpy(smp::core_local::get(dest_core).pagemap + 256, smp::core_local::get(src_core).pagemap + 256,
-                    256 * sizeof(paging::page_table_entry));
+        copy_kernel_page_tables(smp::core_local::get(dest_core).pagemap, smp::core_local::get(src_core).pagemap);
     }
 
+    void copy_kernel_page_tables(page_table_entry* dest, const page_table_entry* src)
+    {
+        std::memcpy(dest + 256, src + 256, 256 * sizeof(paging::page_table_entry));
+    }
 } // namespace paging

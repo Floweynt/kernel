@@ -1,6 +1,5 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_FORWARD_LIST_H__
-#define __NOSTDLIB_FORWARD_LIST_H__
+#pragma once
 #include "cstddef"
 #include "initializer_list"
 #include "iterator"
@@ -10,16 +9,16 @@ namespace std
     template <typename T>
     class forward_list
     {
-        struct __data
+        struct _data
         {
-            __data* next;
+            _data* next;
             T value;
 
-            __data() : next(nullptr), value() {}
-            __data(T&& t) : next(nullptr), value(forward(t)) {}
+            _data() : next(nullptr), value() {}
+            _data(T&& val) : next(nullptr), value(forward(val)) {}
 
             template <typename... Args>
-            __data(Args&&... args) : next(nullptr), value(forward(args)...)
+            _data(Args&&... args) : next(nullptr), value(forward(args)...)
             {
             }
         };
@@ -27,7 +26,7 @@ namespace std
         class iterator
         {
             friend forward_list;
-            __data* val;
+            _data* val;
 
         public:
             using value_type = T;
@@ -37,13 +36,13 @@ namespace std
             using iterator_category = forward_iterator_tag;
 
             iterator() noexcept : val() {}
-            explicit iterator(__data* v) noexcept : val(v) {}
+            explicit iterator(_data* ptr) noexcept : val(ptr) {}
 
-            [[nodiscard]] reference operator*() const noexcept { return val->value; }
+            [[nodiscard]] auto operator*() const noexcept -> reference { return val->value; }
 
-            [[nodiscard]] pointer operator->() const noexcept { return &val->value; }
+            [[nodiscard]] auto operator->() const noexcept -> pointer { return &val->value; }
 
-            iterator& operator++() noexcept
+            auto operator++() noexcept -> iterator&
             {
                 val = val->next;
                 return *this;
@@ -51,28 +50,29 @@ namespace std
 
             iterator operator++(int) noexcept
             {
-                iterator __tmp(*this);
+                auto _tmp(*this);
                 val = val->next;
-                return __tmp;
+                return _tmp;
             }
 
-            [[nodiscard]] friend bool operator==(const iterator& x, const iterator& y) noexcept { return x.val == y.val; }
+            [[nodiscard]] friend auto operator==(const iterator& x, const iterator& y) noexcept -> bool { return x.val == y.val; }
 
-            [[nodiscard]] friend bool operator!=(const iterator& x, const iterator& y) noexcept { return x.val != y.val; }
+            [[nodiscard]] friend auto operator!=(const iterator& x, const iterator& y) noexcept -> bool { return x.val != y.val; }
 
-            iterator next() const noexcept
+            auto next() const noexcept -> iterator
             {
                 if (val)
+                {
                     return iterator(val->next);
-                else
-                    return iterator(nullptr);
+                }
+                return iterator(nullptr);
             }
         };
 
         class const_iterator
         {
             friend forward_list;
-            __data* val;
+            _data* val;
 
         public:
             using value_type = T;
@@ -83,49 +83,42 @@ namespace std
 
             const_iterator() noexcept : val() {}
 
-            explicit const_iterator(const __data* __n) noexcept : val(__n) {}
+            explicit const_iterator(const _data* _n) noexcept : val(_n) {}
 
-            const_iterator(const iterator& __iter) noexcept : val(__iter.val) {}
+            const_iterator(const iterator& _iter) noexcept : val(_iter.val) {}
 
-            [[nodiscard]] reference operator*() const noexcept { return this->val->value; }
+            [[nodiscard]] auto operator*() const noexcept -> reference { return this->val->value; }
 
-            [[nodiscard]] pointer operator->() const noexcept { return &this->val->value; }
+            [[nodiscard]] auto operator->() const noexcept -> pointer { return &this->val->value; }
 
-            iterator& operator++() noexcept
+            auto operator++() noexcept -> iterator&
             {
                 val = val->next;
                 return *this;
             }
 
-            iterator operator++(int) noexcept
+            const iterator operator++(int) noexcept
             {
-                const_iterator __tmp(*this);
+                auto _tmp(*this);
                 val = val->next;
-                return __tmp;
+                return _tmp;
             }
 
-            [[nodiscard]] friend bool operator==(const const_iterator& __x, const const_iterator& __y) noexcept
-            {
-                return __x.val == __y.val;
-            }
+            [[nodiscard]] friend auto operator==(const const_iterator& _x, const const_iterator& _y) noexcept -> bool { return _x.val == _y.val; }
 
-            [[nodiscard]] friend bool operator!=(const const_iterator& __x, const const_iterator& __y) noexcept
-            {
-                return __x.val != __y.val;
-            }
+            [[nodiscard]] friend auto operator!=(const const_iterator& _x, const const_iterator& _y) noexcept -> bool { return _x.val != _y.val; }
 
-            const_iterator next() const noexcept
+            auto next() const noexcept -> const_iterator
             {
-                if (this->val)
+                if (this->val) {
                     return const_iterator(val->next);
-                else
-                    return const_iterator(nullptr);
+                }                      return const_iterator(nullptr);
             }
         };
 
-        __data* start;
-        __data* end_element;
-        size_t s;
+        _data* start;
+        _data* end_element;
+        size_t s{};
 
     public:
         using value_type = T;
@@ -139,14 +132,14 @@ namespace std
         constexpr forward_list() : s(0), start(nullptr) {}
         forward_list(size_type count, const T& value) { assign(count, value); }
 
-        explicit forward_list(size_type count)
+        explicit forward_list(size_type count) : s(count)
         {
             start = end_element = nullptr;
-            __data* curr = (__data*)&start;
-            s = count;
+            auto* curr = (_data*)&start;
+            
             while (count--)
             {
-                end_element = curr->next = new __data();
+                end_element = curr->next = new _data();
                 curr = curr->next;
             }
         }
@@ -159,22 +152,22 @@ namespace std
 
         forward_list(const forward_list& other) : forward_list(other.begin(), other.end()) {}
         forward_list(forward_list&& other)
-        {
-            s = other.s;
-            start = other.start;
+ noexcept : start(other.start), s(other.s)         {
+            
+            
             other.s = 0;
             other.s = nullptr;
         }
 
         forward_list(initializer_list<T> init) : forward_list(init.begin(), init.end()) {}
 
-        forward_list& operator=(const forward_list& other)
+        auto operator=(const forward_list& other) -> forward_list&
         {
             assign(other.begin(), other.end());
             return *this;
         }
 
-        forward_list& operator=(forward_list&& other)
+        auto operator=(forward_list&& other) -> forward_list&
         {
             s = other.s;
             start = other.start;
@@ -182,7 +175,7 @@ namespace std
             other.start = nullptr;
             return *this;
         }
-        forward_list& operator=(initializer_list<T> il)
+        auto operator=(initializer_list<T> il) -> forward_list&
         {
             assign(il);
             return *this;
@@ -193,11 +186,11 @@ namespace std
         void assign(size_type count, const T& value)
         {
             clear();
-            __data* curr = (__data*)&start;
+            auto* curr = (_data*)&start;
             s = count;
             while (count--)
             {
-                end_element = curr->next = new __data(value);
+                end_element = curr->next = new _data(value);
                 curr = curr->next;
             }
         }
@@ -206,10 +199,10 @@ namespace std
         void assign(It first, It last)
         {
             clear();
-            __data* curr = (__data*)&start;
+            auto* curr = (_data*)&start;
             while (first != last)
             {
-                end_element = curr->next = new __data(*first);
+                end_element = curr->next = new _data(*first);
                 curr = curr->next;
                 first++;
                 s++;
@@ -218,23 +211,23 @@ namespace std
 
         void assign(initializer_list<T> il) { assign(il.begin(), il.end()); }
 
-        reference front() { return start->value; }
-        const_reference front() const { return start->value; }
+        auto front() -> reference { return start->value; }
+        auto front() const -> const_reference { return start->value; }
 
-        iterator before_begin() noexcept { return iterator((__data*)&start); }
-        const_iterator before_begin() const noexcept { return const_iterator((__data*)&start); }
-        const_iterator cbefore_begin() const noexcept { return const_iterator((__data*)&start); }
+        auto before_begin() noexcept -> iterator { return iterator((_data*)&start); }
+        auto before_begin() const noexcept -> const_iterator { return const_iterator((_data*)&start); }
+        auto cbefore_begin() const noexcept -> const_iterator { return const_iterator((_data*)&start); }
 
-        iterator begin() noexcept { return iterator(start); }
-        const_iterator begin() const noexcept { return const_iterator(start); }
-        const_iterator cbegin() const noexcept { return const_iterator(start); }
+        auto begin() noexcept -> iterator { return iterator(start); }
+        auto begin() const noexcept -> const_iterator { return const_iterator(start); }
+        auto cbegin() const noexcept -> const_iterator { return const_iterator(start); }
 
-        iterator end() noexcept { return iterator(end_element); }
-        const_iterator end() const noexcept { return const_iterator(end_element); }
-        const_iterator cend() const noexcept { return const_iterator(end_element); }
+        auto end() noexcept -> iterator { return iterator(end_element); }
+        auto end() const noexcept -> const_iterator { return const_iterator(end_element); }
+        auto cend() const noexcept -> const_iterator { return const_iterator(end_element); }
 
-        [[nodiscard]] bool empty() const noexcept { return s == 0; }
-        size_type max_size() const noexcept { return (size_type)-1; }
+        [[nodiscard]] auto empty() const noexcept -> bool { return s == 0; }
+        [[nodiscard]] size_type max_size() const noexcept { return (size_type)-1; }
 
         void clear()
         {
@@ -242,41 +235,42 @@ namespace std
             end_element = nullptr;
             while (start)
             {
-                __data* tmp = start;
+                _data* tmp = start;
                 start = start->next;
                 delete tmp;
             }
         }
 
-        iterator insert_after(const_iterator pos, const T& value)
+        auto insert_after(const_iterator pos, const T& value) -> iterator
         {
             s++;
             auto newval = pos.val;
-            pos.val = new __data(value);
+            pos.val = new _data(value);
             pos.val->next = newval;
             return iterator(pos.next().val);
         }
 
-        iterator insert_after(const_iterator pos, T&& value)
+        auto insert_after(const_iterator pos, T&& value) -> iterator
         {
             s++;
             auto newval = pos.val;
-            pos.val = new __data(value);
+            pos.val = new _data(value);
             pos.val->next = newval;
             return iterator(pos.val->next);
         }
 
-        iterator insert_after(const_iterator pos, size_type count, const T& value)
+        auto insert_after(const_iterator pos, size_type count, const T& value) -> iterator
         {
             s += count;
-            while (count--)
+            while (count--) {
                 insert_after(pos, value);
+}
 
             return iterator(pos.val->next);
         }
 
         template <typename It>
-        iterator insert_after(const_iterator pos, It first, It last)
+        auto insert_after(const_iterator pos, It first, It last) -> iterator
         {
             while (first != last)
             {
@@ -288,14 +282,14 @@ namespace std
             return iterator(pos.val->next);
         }
 
-        iterator insert_after(const_iterator pos, initializer_list<T> il) { insert_after(pos, il.begin(), il.end()); }
+        auto insert_after(const_iterator pos, initializer_list<T> il) -> iterator { insert_after(pos, il.begin(), il.end()); }
 
         template <typename... Args>
         iterator emplace_after(const_iterator pos, Args&&... args)
         {
             s++;
             auto newval = pos.val;
-            pos.val = new __data(forward(args)...);
+            pos.val = new _data(forward(args)...);
             pos.val->next = newval;
             return iterator(pos.next().val);
         }

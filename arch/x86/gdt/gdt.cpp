@@ -28,14 +28,14 @@ namespace gdt
 
     void install_gdt()
     {
-        gdt_desc desc(sizeof(gdt), (std::uint64_t)gdt);
+        gdt_desc desc(sizeof(gdt), as_uptr(gdt));
         asm volatile("lgdtq %0" : : "m"(desc));
         reload_gdt();
     }
 
     void reload_gdt_smp()
     {
-        gdt_desc desc(sizeof(gdt_entries), (std::uint64_t)&smp::core_local::get().gdt);
+        gdt_desc desc(sizeof(gdt_entries), as_uptr(&smp::core_local::get().gdt));
         asm volatile("lgdtq %0" : : "m"(desc));
         reload_gdt();
         ltr(40);

@@ -21,8 +21,11 @@ namespace idt
 
     class idt_builder
     {
+        inline static constexpr auto GATE_INTR = 0xe;
+        inline static constexpr auto GATE_TRAP = 0xf;
+
         interrupt_handler handler;
-        std::uint8_t gate : 4 {0xe};
+        std::uint8_t gate : 4 {GATE_INTR};
         std::uint8_t _ist : 3 {};
         std::uint8_t _dpl : 2 {};
 
@@ -30,12 +33,12 @@ namespace idt
         explicit constexpr idt_builder(interrupt_handler handler) : handler(handler) {}
         constexpr auto gate_intr() -> idt_builder&
         {
-            gate = 0xe;
+            gate = GATE_INTR;
             return *this;
         }
         constexpr auto gate_trap() -> idt_builder&
         {
-            gate = 0xf;
+            gate = GATE_TRAP;
             return *this;
         }
         constexpr auto dpl(std::uint8_t dpl) -> idt_builder&

@@ -17,7 +17,7 @@ namespace paging
     inline constexpr std::size_t PAGE_SMALL_SIZE = 0x1000;
     inline constexpr std::size_t PAGE_MEDIUM_SIZE = 0x200000;
     inline constexpr std::size_t PAGE_LARGE_SIZE = 0x40000000;
- 
+
     void install();
     auto request_page(page_type pt, std::uint64_t vaddr, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool;
     void map_section(std::uint64_t addr, std::uint64_t len, paging::page_prop prop);
@@ -33,7 +33,7 @@ namespace paging
     {
         return std::get_bits(virtual_addr, (3 - t) * 9 + 12, (3 - t) * 9 + 20) >> ((3 - t) * 9 + 12);
     }
-    
+
     inline auto map_hhdm_phys(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
     {
         return request_page(pt, mm::make_virtual(paddr), paddr, prop, overwrite);
@@ -45,4 +45,5 @@ namespace paging
     }
 
     void sync_page_tables(std::size_t dest_core, std::size_t src_core);
+    void copy_kernel_page_tables(page_table_entry* dest, const page_table_entry* src);
 } // namespace paging

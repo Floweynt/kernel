@@ -40,6 +40,7 @@ kernel_source = [
     'arch/x86/debug/panic.cpp',
     'arch/x86/debug/symbols.cpp',
     'arch/x86/asm/return_to_context.S',
+    'arch/x86/asm/return_to_context.cpp',
     'arch/x86/syscall/syscall_entry.S',
     'arch/x86/pci/pci_scan.cpp',
     'arch/x86/sync/spinlock.cpp',

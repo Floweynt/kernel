@@ -23,13 +23,13 @@ namespace debug
         void* symtab = boot_resource::instance().modules().get_symbols();
         if (symtab != nullptr)
         {
-            hdr* ptr = (hdr*)symtab;
+            hdr* ptr = as_ptr(symtab);
 
             std::size_t count = ptr->count;
 
             // binary search
 
-            auto* entries = (entry*)(ptr + 1);
+            entry* entries = as_ptr(ptr + 1);
 
             std::size_t left = 0;
             std::size_t right = count;
@@ -50,7 +50,7 @@ namespace debug
 
             if (entries[left].start_addr + entries[left].len > address)
             {
-                return debug::symbol{(const char*)symtab + entries[left].name, static_cast<std::uint32_t>(address - entries[left].start_addr)};
+                return debug::symbol{as_ptr<const char>(symtab) + entries[left].name, static_cast<std::uint32_t>(address - entries[left].start_addr)};
             }
             return debug::symbol{"unk", 0};
         }

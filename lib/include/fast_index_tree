@@ -1,5 +1,5 @@
-#ifndef __NOSTDLIB_FAST_INDEX_TREE_H__
-#define __NOSTDLIB_FAST_INDEX_TREE_H__
+// vim: set ft=cpp:
+#pragma once
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -9,13 +9,14 @@ namespace std
 {
     namespace detail
     {
-        constexpr std::size_t fast_exp(std::size_t base, std::size_t pow)
+        constexpr auto fast_exp(std::size_t base, std::size_t pow) -> std::size_t
         {
             std::size_t res = 1;
             while (pow > 0)
             {
-                if (pow & 1)
+                if (pow & 1) {
                     res = res * base;
+}
                 base = base * base;
                 pow >>= 1;
             }
@@ -32,15 +33,15 @@ namespace std
             std::uintptr_t e[Width];
 
             template <typename U>
-            constexpr U* at(std::size_t s)
+            constexpr auto at(std::size_t s) -> U*
             {
                 return (U*)(e[s] & ~1);
             }
-            constexpr bool exists(std::size_t s) { return e[s] & 1; }
+            constexpr auto exists(std::size_t s) -> bool { return e[s] & 1; }
         };
 
         node my_node;
-        std::size_t sz;
+        std::size_t sz{};
 
         static_assert(alignof(node) > 1);
 

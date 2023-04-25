@@ -1,11 +1,10 @@
-// vim: set ft=cpp
-#ifndef __NOSTDLIB_INCLUDE_CSTDDEF_H__
-#define __NOSTDLIB_INCLUDE_CSTDDEF_H__
+// vim: set ft=cpp:
+#pragma once
 
 namespace std
 {
     using size_t = decltype(sizeof(int));
-    using ssize_t = signed long; 
+    using ssize_t = signed long;
     using ptrdiff_t = decltype(((char*)1) - ((char*)1));
     using nullptr_t = decltype(nullptr);
 
@@ -20,19 +19,24 @@ namespace std
         auto max_align_of()
         {
             if constexpr (sizeof...(Ts) == 0)
+            {
                 return T{};
+            }
             else
             {
                 using t = decltype(max_align_of<Ts...>());
                 if constexpr (alignof(T) > alignof(t))
+                {
                     return T{};
+                }
                 else
+                {
                     return t{};
+                }
             }
         }
     } // namespace detail
-    struct alignas(decltype(std::detail::max_align_of<char, short, int, long, long long, double, float>()))
-        max_align_t
+    struct alignas(decltype(std::detail::max_align_of<char, short, int, long, long long, double, float>())) max_align_t
     {
     };
 } // namespace std
@@ -49,4 +53,3 @@ namespace std
 #endif
 #endif
 
-#endif

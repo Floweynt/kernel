@@ -2,6 +2,7 @@
 #include "cpuid.h"
 #include <array>
 #include <asm/asm_cpp.h>
+#include <cast.h>
 #include <config.h>
 #include <cstddef>
 
@@ -28,12 +29,12 @@ namespace cpuid_info
 
     auto cpu_vendor_string() -> const char*
     {
-        return (const char*)vendor_buf.data();
+        return cast_ptr(vendor_buf.data());
     }
 
     auto cpu_brand_string() -> const char*
     {
-        return (const char*)brand_buf.data();
+        return cast_ptr(brand_buf.data());
     }
 
     auto test_feature(std::size_t feature) -> bool { return (features.at(feature / 32) & (1 << (feature % 32))) != 0U; }

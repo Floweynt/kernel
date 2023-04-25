@@ -1,6 +1,5 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_CONCEPTS_H__
-#define __NOSTDLIB_CONCEPTS_H__
+#pragma once
 #include "type_traits"
 #include "utility"
 
@@ -19,10 +18,10 @@ namespace std
     concept derived_from =
         std::is_base_of_v<Base, Derived> && std::is_convertible_v<const volatile Derived*, const volatile Base*>;
 
-    template <typename _From, typename _To>
-    concept convertible_to = is_convertible_v<_From, _To> && requires
+    template <typename From, typename To>
+    concept convertible_to = is_convertible_v<From, To> && requires
     {
-        static_cast<_To>(std::declval<_From>());
+        static_cast<To>(std::declval<From>());
     };
 
     template <typename T>
@@ -49,8 +48,8 @@ namespace std
     template <typename T>
     concept destructible = is_nothrow_destructible_v<T>;
 
-    template <typename T, typename... _Args>
-    concept constructible_from = destructible<T> && is_constructible_v<T, _Args...>;
+    template <typename T, typename... Args>
+    concept constructible_from = destructible<T> && is_constructible_v<T, Args...>;
 
     template <typename T>
     concept default_initializable = constructible_from<T> && requires
@@ -109,4 +108,3 @@ namespace std
     concept totally_ordered = equality_comparable<T> && detail::partially_ordered_with<T, T>;
 } // namespace std
 
-#endif 

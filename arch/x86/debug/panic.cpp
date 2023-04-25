@@ -43,7 +43,7 @@ namespace debug
                 break;
             }
 
-            base_ptr = (std::size_t*)old_bp;
+            base_ptr = as_ptr(old_bp);
         }
 
         klog::log("stack type: " CYAN("%s") "\n", stack_color < sizeof(STACK_TYPES) ? STACK_TYPES[stack_color] : "unknown");

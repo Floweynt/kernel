@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cast.h>
 #include <cstdint>
 
 namespace gdt
@@ -48,10 +49,15 @@ namespace gdt
 
         inline void set_ist(interrupt_stack_table* ist)
         {
-            base_lowest = (std::uintptr_t)ist;
-            base_lo = ((std::uintptr_t)ist) >> 16;
-            base_mid = ((std::uintptr_t)ist) >> 24;
-            base_high = ((std::uintptr_t)ist) >> 32;
+            base_lowest = as_uptr(ist);
+            base_lo = as_uptr(ist) >> 16;
+            base_mid = as_uptr(ist) >> 24;
+            base_high = as_uptr(ist) >> 32;
         }
     };
+
+    inline static constexpr auto KERNEL_CS = 0x8;
+    inline static constexpr auto KERNEL_DS = 0x10;
+    inline static constexpr auto USER_CS = 0x18;
+    inline static constexpr auto USER_DS = 0x20;
 } // namespace gdt

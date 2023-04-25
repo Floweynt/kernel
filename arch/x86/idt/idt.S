@@ -70,7 +70,9 @@ idt_common:
     call _handle_irq_common
 
     movq %gs:0, %rax
-    movq (%rax), %rax
+    movq (%rax), %rdi
+
+    call return_to_context
 
     // load the things on the stack
     movq (%rax), %rbx

@@ -31,7 +31,7 @@ namespace smp
 
     namespace
     {
-         void initialize_apic(smp::core_local& local)
+        void initialize_apic(smp::core_local& local)
         {
             std::uint64_t base = local.apic.get_apic_base();
             paging::map_hhdm_phys(paging::page_type::SMALL, base);
@@ -40,13 +40,25 @@ namespace smp
             local.apic.set_tick(idt::register_idt(idt::idt_builder(handlers::handle_timer)), 20);
         }
 
-        [[noreturn]]  void idle(std::uint64_t /*unused*/ = 0)
+        [[noreturn]] void idle(std::uint64_t /*unused*/ = 0)
         {
             enable_interrupt();
             std::halt();
         }
 
-        [[noreturn]]  void smp_main(limine_smp_info* info)
+        void run_init()
+        {
+            if (smp::core_local::get().core_id != 0)
+            {
+                return;
+            }
+
+            auto init_pid = proc::make_process();
+            klog::log("init process pid: %d", init_pid);
+            //proc::get_process(init_pid).make_thread();
+        }
+
+        [[noreturn]] void smp_main(limine_smp_info* info)
         {
             mark_stack(debug::SMP);
             disable_interrupt();
@@ -79,20 +91,25 @@ namespace smp
             idt::install_idt();
 
             klog::log("SMP started\n");
-            for (std::size_t i = 0; i < 32; i++) {
-                if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]), i)) {
+
+            /*
+            for (std::size_t i = 0; i < 32; i++)
+            {
+                if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]), i))
+                {
                     klog::panic("failed to allocate irq");
-}
-}
+                }
+            }
+            */
 
             auto idle_task = proc::make_kthread(idle);
             auto& idle_th = proc::get_thread(proc::task_id{idle_task, 0});
             idle_th.state = proc::thread_state::IDLE;
 
             proc::make_kthread_args(
-                +[](std::uint64_t a) {
+                +[](std::uint64_t arg) {
                     static std::size_t last_interrupt_count = 0;
-                    klog::log("debugging task value 1: %lu\n", a);
+                    klog::log("debugging task value 1: %lu\n", arg);
 
                     while (true)
                     {
@@ -112,7 +129,7 @@ namespace smp
         }
 
         // used for proper frame pointer generation
-         void main_wrapper(limine_smp_info* smp) { smp_main(smp); }
+        void main_wrapper(limine_smp_info* smp) { smp_main(smp); }
     } // namespace
 
     [[noreturn]] void init(limine_smp_response* smp)

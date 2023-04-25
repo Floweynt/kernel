@@ -1,9 +1,11 @@
 #include "bits/mathhelper.h"
 #include <asm/asm_cpp.h>
+#include <cast.h>
 #include <config.h>
 #include <cstddef>
 #include <cstdint>
 #include <debug/debug.h>
+#include <gsl/pointer>
 #include <mm/pmm.h>
 #include <new>
 #include <paging/paging.h>
@@ -24,10 +26,7 @@ namespace alloc
     } // namespace
     inline constexpr auto ALIGN = 16;
 
-    inline static block_header* next_of(block_header* header)
-    {
-        return (block_header*)((std::uint8_t*)header + sizeof(block_header) + (header->size & ~1));
-    }
+    inline static block_header* next_of(block_header* header) { return as_ptr(as_uptr(header) + sizeof(block_header) + (header->size & ~1)); }
 
     inline static auto extend(void* buf, std::size_t size) -> std::size_t
     {
@@ -35,19 +34,19 @@ namespace alloc
 
         for (std::size_t i = 0; i < pages; i++)
         {
-            void* d;
-            if ((d = mm::pmm_allocate()) == nullptr)
+            void* buf = mm::pmm_allocate();
+            if (buf == nullptr)
             {
                 debug::panic("cannot get memory for heap");
             }
-            paging::request_page(paging::page_type::SMALL, (std::uint64_t)buf + i * paging::PAGE_SIZE, mm::make_physical(d));
-            invlpg((std::uint8_t*)buf + i * paging::PAGE_SMALL_SIZE);
+            paging::request_page(paging::page_type::SMALL, as_uptr(buf) + i * paging::PAGE_SIZE, mm::make_physical(buf));
+            invlpg(as_vptr(as_uptr(buf) + i * paging::PAGE_SMALL_SIZE));
         }
 
         return paging::PAGE_SMALL_SIZE * pages;
     }
 
-    void init(void* ptr, std::size_t s) { root = last = new (ptr) block_header{(s - sizeof(block_header)) | 1, nullptr}; }
+    void init(void* ptr, std::size_t size) { root = last = new (ptr) block_header{(size - sizeof(block_header)) | 1, nullptr}; }
 
     auto get_alloced_size() -> std::size_t { return malloced_bytes; }
 
@@ -72,7 +71,7 @@ namespace alloc
                 if (bsize - size > sizeof(block_header))
                 {
                     hdr->size = size;
-                    auto* next_block = new (next_of(hdr)) block_header{(bsize - size - sizeof(block_header)) | 1, hdr};
+                    gsl::owner<block_header*> next_block = new (next_of(hdr)) block_header{(bsize - size - sizeof(block_header)) | 1, hdr};
 
                     if (hdr == last)
                     {
@@ -118,16 +117,16 @@ namespace alloc
             return malloc(size);
         }
 
-        auto ptr = (std::uintptr_t)malloc(align + size);
+        auto ptr = as_uptr(malloc(align + size));
         std::uintptr_t aligned_ptr = std::div_roundup(ptr, align);
 
         if (ptr != align)
         {
             // insert unaligned pointer back to real root
-            ((std::uintptr_t*)aligned_ptr)[-1] = ptr | 1;
+            as_ptr<std::uintptr_t>(aligned_ptr)[-1] = ptr | 1;
         }
 
-        return (void*)aligned_ptr;
+        return as_ptr(aligned_ptr);
     }
 
     auto realloc(void* buf, std::size_t size) -> void*
@@ -138,8 +137,8 @@ namespace alloc
             return buf;
         }
 
-        char* src = (char*)buf;
-        char* target = (char*)malloc(size + 16);
+        char* src = as_ptr(buf);
+        char* target = as_ptr(malloc(size + 16));
         for (std::size_t i = 0; i < hdr->size; i++)
         {
             target[i] = src[i];
@@ -154,13 +153,13 @@ namespace alloc
             return;
         }
 
-        if (((std::uintptr_t*)buffer)[-1])
+        if (as_ptr<std::uintptr_t>(buffer)[-1])
         {
-            buffer = (void*)(((std::uintptr_t*)buffer)[-1] & ~1);
+            buffer = as_vptr(as_ptr<std::uintptr_t>(buffer)[-1] & ~1);
         }
 
-        std::size_t* type = (std::size_t*)buffer - 1;
-        block_header* hdr = (block_header*)buffer - 1;
+        auto* type = as_ptr<std::size_t>(buffer) - 1;
+        auto* hdr = as_ptr<block_header>(buffer) - 1;
 
         malloced_bytes -= hdr->size;
 
@@ -227,6 +226,5 @@ namespace alloc
             hdr->size |= 1;
         }
     }
-
 } // namespace alloc
 

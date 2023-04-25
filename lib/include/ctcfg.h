@@ -8,7 +8,7 @@ namespace ctcfg
     namespace detail
     {
         template <typename T>
-        std::add_rvalue_reference_t<T> _declval()
+        auto _declval() -> std::add_rvalue_reference_t<T>
         {
             __builtin_unreachable();
         }
@@ -51,14 +51,14 @@ namespace ctcfg
             using first = error;
         };
 
-        template<typename T, typename... Ts>
+        template <typename T, typename... Ts>
         struct type_list<T, Ts...>
         {
             using first = T;
         };
 
         template <typename... T1, typename... T2>
-        type_list<T1..., T2...> operator+(type_list<T1...>, type_list<T2...>)
+        auto operator+(type_list<T1...> /*unused*/, type_list<T2...> /*unused*/) -> type_list<T1..., T2...>
         {
             return _declval<type_list<T1..., T2...>>();
         }
@@ -71,19 +71,22 @@ namespace ctcfg
         };
 
         template <typename T>
-        concept config_entry_concept = requires(T a)
-        {
-            { T::name } -> strlit<>;
+        concept config_entry_concept = requires(T a) {
+            {
+                T::name
+            } -> strlit<>;
             std::is_class_v<typename T::type>;
         };
 
         template <string_literal v1, string_literal v2>
-        constexpr bool is_eq()
+        constexpr auto is_eq() -> bool
         {
             bool flag = decltype(v1)::size == decltype(v2)::size;
             auto min_len = decltype(v1)::size > decltype(v2)::size ? decltype(v1)::size : decltype(v2)::size;
             for (std::size_t i = 0; i < min_len && flag; i++)
+            {
                 flag = v1.value[i] == v2.value[i];
+            }
             return flag;
         }
 
@@ -113,9 +116,9 @@ namespace ctcfg
     template <detail::config_entry_concept... Opts>
     struct config_holder
     {
-        template <detail::string_literal str> 
-                requires(!std::is_same_v<detail::error, typename detail::search_result_t<str, Opts...>>) 
-            using get = typename detail::search_result_t<str, Opts...>::type;
+        template <detail::string_literal str>
+            requires(!std::is_same_v<detail::error, typename detail::search_result_t<str, Opts...>>)
+        using get = typename detail::search_result_t<str, Opts...>::type;
 
         template <detail::string_literal str>
         inline static constexpr auto get_val = get<str>::value;
@@ -139,9 +142,11 @@ namespace ctcfg
         constexpr operator const char*() const { return value; }
         char value[N];
     };
-#define __MAKE_ENTRY(_n, t)                                                                                                 \
-    template <detail::string_literal n, t v>                                                                                \
-    struct _n : simple_entry<n, decltype(v), v> {};
+#define __MAKE_ENTRY(_n, t)                                                                                                                          \
+    template <detail::string_literal n, t v>                                                                                                         \
+    struct _n : simple_entry<n, decltype(v), v>                                                                                                      \
+    {                                                                                                                                                \
+    };
     __MAKE_ENTRY(bool_entry, bool);
     __MAKE_ENTRY(int_entry, int);
     __MAKE_ENTRY(size_entry, std::size_t);

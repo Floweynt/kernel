@@ -1,53 +1,51 @@
 // vim: set ft=cpp:
-#ifndef __NOSTDLIB_CSTRING_H__
-#define __NOSTDLIB_CSTRING_H__
+#pragma once
 #include "cstddef"
 
 namespace std
 {
-    extern char* strcpy(char* __restrict dest, const char* __restrict src);
-    extern char* strncpy(char* __restrict dest, const char* __restrict src, size_t n);
+    auto strcpy(char* __restrict dest, const char* __restrict src) -> char*;
+    auto strncpy(char* __restrict dest, const char* __restrict src, size_t size) -> char*;
 
-    extern char* strcat(char* __restrict dest, const char* __restrict src);
-    extern char* strncat(char* __restrict dest, const char* __restrict src, size_t n);
+    auto strcat(char* __restrict dest, const char* __restrict src) -> char*;
+    auto strncat(char* __restrict dest, const char* __restrict src, size_t size) -> char*;
 
-    extern size_t strxfrm(char* __restrict dest, const char* __restrict src, size_t n);
+    auto strxfrm(char* __restrict dest, const char* __restrict src, size_t size) -> size_t;
 
-    [[gnu::malloc]] extern char* strdup(const char* s);
-    [[gnu::malloc]] extern char* strndup(const char* string, size_t n);
+    [[gnu::malloc]] auto strdup(const char* str) -> char*;
+    [[gnu::malloc]] auto strndup(const char* str, size_t size) -> char*;
 
-    extern size_t strlen(const char* s);
+    auto strlen(const char* str) -> size_t;
 
-    extern int strcmp(const char* s1, const char* s2);
-    extern int strncmp(const char* s1, const char* s2, size_t n);
+    auto strcmp(const char* str1, const char* str2) -> int;
+    auto strncmp(const char* str1, const char* str2, size_t size) -> int;
 
-    extern int strcoll(const char* s1, const char* s2);
+    auto strcoll(const char* str1, const char* str2) -> int;
 
-    extern char* strchr(char* s, int c);
-    extern const char* strchr(const char* s, int c);
+    auto strchr(char* str, int ch) -> char*;
+    auto strchr(const char* str, int ch) -> const char*;
 
-    extern char* strrchr(char* s, int c);
-    extern const char* strrchr(const char* s, int c);
+    auto strrchr(char* str, int ch) -> char*;
+    auto strrchr(const char* str, int ch) -> const char*;
 
-    extern size_t strspn(const char* s, const char* accept);
-    extern size_t strcspn(const char* s, const char* reject);
+    auto strspn(const char* str, const char* accept) -> size_t;
+    auto strcspn(const char* str, const char* reject) -> size_t;
 
-    extern char* strpbrk(char* s, const char* accept);
-    extern const char* strpbrk(const char* s, const char* accept);
+    auto strpbrk(char* str, const char* accept) -> char*;
+    auto strpbrk(const char* str, const char* accept) -> const char*;
 
-    extern char* strstr(char* s, const char* target);
-    extern const char* strstr(const char* s, const char* target);
+    auto strstr(char* str, const char* target) -> char*;
+    auto strstr(const char* str, const char* target) -> const char*;
 
-    extern char* strtok(char* __restrict s, const char* __restrict delim);
+    auto strtok(char* __restrict str, const char* __restrict delim) -> char*;
 
-    extern void* memchr(void* s, int c, size_t n);
-    extern const void* memchr(const void* s, int c, size_t n);
+    auto memchr(void* buf, int ch, size_t size) -> void*;
+    auto memchr(const void* buf, int ch, size_t size) -> const void*;
 
-    extern int memcmp(const void* s1, const void* s2, size_t n);
-    extern void* memset(void* s, int c, size_t n);
-    extern void* memcpy(void* __restrict dest, const void* __restrict src, size_t n);
-    extern void* memccpy(void* __restrict dest, const void* __restrict src, int c, size_t n);
-    extern void* memmove(void* dest, const void* src, size_t n);
+    auto memcmp(const void* str1, const void* str2, size_t size) -> int;
+    auto memset(void* buf, int ch, size_t size) -> void*;
+    auto memcpy(void* __restrict dest, const void* __restrict src, size_t size) -> void*;
+    auto memccpy(void* __restrict dest, const void* __restrict src, int ch, size_t size) -> void*;
+    auto memmove(void* dest, const void* src, size_t size) -> void*;
 } // namespace std
 
-#endif
