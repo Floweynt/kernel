@@ -8,7 +8,7 @@ _return_to_context_asm:
     // okay, we then restore the rest of context
     
     movq (0x28 + 0x8 * 0)(%rdi), %rax    
-    movq (0x28 + 0x8 * 1)(%rax), %rbx
+    movq (0x28 + 0x8 * 1)(%rdi), %rbx
     movq (0x28 + 0x8 * 2)(%rdi), %rcx
     movq (0x28 + 0x8 * 3)(%rdi), %rdx
     movq (0x28 + 0x8 * 4)(%rdi), %rsi

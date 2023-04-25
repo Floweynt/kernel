@@ -92,7 +92,6 @@ namespace smp
 
             klog::log("SMP started\n");
 
-            /*
             for (std::size_t i = 0; i < 32; i++)
             {
                 if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]), i))
@@ -100,7 +99,6 @@ namespace smp
                     klog::panic("failed to allocate irq");
                 }
             }
-            */
 
             auto idle_task = proc::make_kthread(idle);
             auto& idle_th = proc::get_thread(proc::task_id{idle_task, 0});

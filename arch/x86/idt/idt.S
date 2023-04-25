@@ -3,7 +3,7 @@
 .global idt_entry_start
 .global idt_entry_end
 .global _handle_irq_common
-
+.global return_to_context
 idt_common:
     cld
     pushq %rax
@@ -69,43 +69,7 @@ idt_common:
 
     call _handle_irq_common
 
-    movq %gs:0, %rax
-    movq (%rax), %rdi
-
-    call return_to_context
-
-    // load the things on the stack
-    movq (%rax), %rbx
-    movq %rbx, (%rsp)
-
-    movq 0x8(%rax), %rbx
-    movq %rbx, 0x8(%rsp)
-
-    movq 0x10(%rax), %rbx
-    movq %rbx, 0x10(%rsp)
-
-    movq 0x18(%rax), %rbx
-    movq %rbx, 0x18(%rsp)
-
-    movq 0x20(%rax), %rbx
-    movq %rbx, 0x20(%rsp)
-
-    movq (0x28 + 0x8 * 1)(%rax), %rbx
-    movq (0x28 + 0x8 * 2)(%rax), %rcx
-    movq (0x28 + 0x8 * 3)(%rax), %rdx
-    movq (0x28 + 0x8 * 4)(%rax), %rsi
-    movq (0x28 + 0x8 * 5)(%rax), %rdi
-    movq (0x28 + 0x8 * 6)(%rax), %r8
-    movq (0x28 + 0x8 * 7)(%rax), %r9
-    movq (0x28 + 0x8 * 8)(%rax), %r10
-    movq (0x28 + 0x8 * 9)(%rax), %r11
-    movq (0x28 + 0x8 * 10)(%rax), %r12
-    movq (0x28 + 0x8 * 11)(%rax), %r13
-    movq (0x28 + 0x8 * 12)(%rax), %r14
-    movq (0x28 + 0x8 * 13)(%rax), %r15
-    movq (0x28 + 0x8 * 14)(%rax), %rbp
-    movq (0x28 + 0x8 * 0)(%rax), %rax
-    iretq
+    // this should be unreachable
 
 .align 0x10
 idt_entry_start:
