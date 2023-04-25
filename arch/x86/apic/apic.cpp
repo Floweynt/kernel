@@ -1,7 +1,9 @@
 #include "apic.h"
 #include <asm/asm_cpp.h>
 #include <cstdint>
+#include <klog/klog.h>
 #include <mm/mm.h>
+#include <sync/spinlock.h>
 
 namespace apic
 {
@@ -15,51 +17,80 @@ namespace apic
 
     void local_apic::set_apic_base(std::uintptr_t addr)
     {
+        static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR = 0xfffff0000;
+        static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR_HI = 0x0f;
+
         reg_start = mm::make_virtual<apic_registers>(addr);
-        wrmsr(msr::IA32_APIC_BASE, (addr & 0xfffff0000) | IA32_APIC_BASE_MSR_ENABLE, (addr >> 32) & 0x0f);
+        wrmsr(msr::IA32_APIC_BASE, (addr & MASK_LAPIC_BASE_ADDR) | IA32_APIC_BASE_MSR_ENABLE, (addr >> 32) & MASK_LAPIC_BASE_ADDR_HI);
     }
 
     void local_apic::enable()
     {
-        outb(0xa1, 0xff);
-        outb(0x21, 0xff);
+        outb(ioports::PIC_SLAVE_DATA, 0xff);
+        outb(ioports::PIC_MASTER_DATA, 0xff);
 
         set_apic_base(get_apic_base());
         reg_start->siv.write(reg_start->siv.read() | 0x100);
     }
 
+    namespace
+    {
+        inline constexpr auto TIMER_INIT_VALUE = 0xffff;
+        inline constexpr auto TIMER_AFTER_10MS = 11932;
+
+        void write_pit_timer(std::uint16_t ticks)
+        {
+            outb(ioports::PIT_DATA_CHAN_0, ticks);
+            outb(ioports::PIT_DATA_CHAN_0, ticks >> 8);
+            outb(ioports::PIT_MODE_COMMAND, 0b00110000);
+        }
+
+        auto read_pit_timer() -> std::uint16_t
+        {
+            outb(ioports::PIT_MODE_COMMAND, 0);
+            unsigned count = inb(ioports::PIT_DATA_CHAN_0);
+            count |= inb(ioports::PIT_DATA_CHAN_0) << 8;
+            return count;
+        }
+
+        void wait_10ms()
+        {
+            // TODO: figure out we need to write twice for it to work...
+            write_pit_timer(TIMER_INIT_VALUE);
+            write_pit_timer(TIMER_INIT_VALUE);
+
+            while (true)
+            {
+                auto count = read_pit_timer();
+
+                if (TIMER_INIT_VALUE - count > TIMER_AFTER_10MS)
+                {
+                    break;
+                }
+            }
+        }
+    } // namespace
+
     auto local_apic::calibrate() -> std::uint64_t
     {
-        ticks_per_ms = 5000;
         if (ticks_per_ms)
         {
             return ticks_per_ms;
         }
 
         mmio_register().timer_divide.write(3);
-        mmio_register().inital_timer_count.write(0xffffffff);
+        mmio_register().inital_timer_count.write(~0U);
         mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
 
-        outb(0x40, 0xff);
-        outb(0x40, 0xff);
-        outb(0x43, 0b00110000);
-
-        while (true)
-        {
-            outb(0x43, 0);
-            unsigned count = inb(0x40);
-            count |= inb(0x40) << 8;
-
-            if (0xffff - count > 1193)
-            {
-                break;
-            }
-        }
+        wait_10ms();
+        // wait_10ms();
+        // wait_10ms();
+        // wait_10ms();
 
         mmio_register().lvt_timer.write(mmio_register().lvt_timer | (1 << 16));
-        std::uint64_t ticks = 0xffffffff - mmio_register().current_timer_count;
+        std::uint64_t ticks = ~0U - mmio_register().current_timer_count;
 
-        return ticks_per_ms = ticks;
+        return ticks_per_ms = ticks / 10;
     }
 
     void local_apic::set_tick(std::uint8_t irq, std::size_t tick_ms)

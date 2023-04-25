@@ -48,3 +48,15 @@ inline auto inl(std::uint16_t port) -> std::uint32_t
 /// \brief Waits for the time it takes to preform 1 I/O port operation
 ///
 inline void io_wait() { outb(0x80, 0); }
+
+namespace ioports 
+{
+    inline static constexpr auto PIC_MASTER_COMMAND = 0x20;
+    inline static constexpr auto PIC_MASTER_DATA = 0x21;
+    inline static constexpr auto PIC_SLAVE_COMMAND = 0xa0;
+    inline static constexpr auto PIC_SLAVE_DATA = 0xa1;
+    inline static constexpr auto PIT_DATA_CHAN_0 = 0x40;
+    inline static constexpr auto PIT_DATA_CHAN_1 = 0x41;
+    inline static constexpr auto PIT_DATA_CHAN_2 = 0x42;
+    inline static constexpr auto PIT_MODE_COMMAND = 0x43;
+}

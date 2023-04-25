@@ -33,6 +33,7 @@ namespace smp
     {
         void initialize_apic(smp::core_local& local)
         {
+            SPINLOCK_SYNC_BLOCK;
             std::uint64_t base = local.apic.get_apic_base();
             paging::map_hhdm_phys(paging::page_type::SMALL, base);
             local.apic.enable();
@@ -55,7 +56,7 @@ namespace smp
 
             auto init_pid = proc::make_process();
             klog::log("init process pid: %d", init_pid);
-            //proc::get_process(init_pid).make_thread();
+            // proc::get_process(init_pid).make_thread();
         }
 
         [[noreturn]] void smp_main(limine_smp_info* info)
@@ -111,7 +112,7 @@ namespace smp
 
                     while (true)
                     {
-                        if (last_interrupt_count != smp::core_local::get().timer_tick_count && smp::core_local::get().timer_tick_count % 250 == 0)
+                        if (last_interrupt_count != smp::core_local::get().timer_tick_count && smp::core_local::get().timer_tick_count % 50 == 0)
                         {
                             last_interrupt_count = smp::core_local::get().timer_tick_count;
                             klog::log("ping\n");
