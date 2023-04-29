@@ -36,13 +36,13 @@ namespace apic
     namespace
     {
         inline constexpr auto TIMER_INIT_VALUE = 0xffff;
-        inline constexpr auto TIMER_AFTER_10MS = 11932;
+        inline constexpr auto TIMER_AFTER_MS = 1193;
 
         void write_pit_timer(std::uint16_t ticks)
         {
+            outb(ioports::PIT_MODE_COMMAND, 0b00110000);
             outb(ioports::PIT_DATA_CHAN_0, ticks);
             outb(ioports::PIT_DATA_CHAN_0, ticks >> 8);
-            outb(ioports::PIT_MODE_COMMAND, 0b00110000);
         }
 
         auto read_pit_timer() -> std::uint16_t
@@ -53,17 +53,15 @@ namespace apic
             return count;
         }
 
-        void wait_10ms()
+        void wait_ms()
         {
-            // TODO: figure out we need to write twice for it to work...
-            write_pit_timer(TIMER_INIT_VALUE);
             write_pit_timer(TIMER_INIT_VALUE);
 
             while (true)
             {
                 auto count = read_pit_timer();
 
-                if (TIMER_INIT_VALUE - count > TIMER_AFTER_10MS)
+                if (TIMER_INIT_VALUE - count > TIMER_AFTER_MS)
                 {
                     break;
                 }
@@ -82,7 +80,7 @@ namespace apic
         mmio_register().inital_timer_count.write(~0U);
         mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
 
-        wait_10ms();
+        wait_ms();
         // wait_10ms();
         // wait_10ms();
         // wait_10ms();
@@ -90,7 +88,7 @@ namespace apic
         mmio_register().lvt_timer.write(mmio_register().lvt_timer | (1 << 16));
         std::uint64_t ticks = ~0U - mmio_register().current_timer_count;
 
-        return ticks_per_ms = ticks / 10;
+        return ticks_per_ms = ticks ;
     }
 
     void local_apic::set_tick(std::uint8_t irq, std::size_t tick_ms)

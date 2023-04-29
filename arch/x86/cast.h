@@ -46,8 +46,8 @@ inline auto cast_ptr(auto* ptr) -> T*
 {
     return reinterpret_cast<T*>(ptr);
 }
-template <typename U>
-inline auto cast_ptr(U* ptr)
+
+inline auto cast_ptr(auto* ptr)
 {
     return detail::_castable_to_any_pointer(as_vptr(ptr));
 }

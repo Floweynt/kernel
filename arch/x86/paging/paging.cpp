@@ -20,19 +20,13 @@ namespace paging
 
     static lock::spinlock paging_global_lock;
 
-    auto request_page(page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop, bool overwrite) -> bool
+    auto map_page_for(page_table_entry* table, page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop,
+                      bool overwrite) -> bool
     {
         virtual_addr &= ~type2align[pt];
         physical_addr &= ~type2align[pt];
 
-        lock::spinlock_guard g(paging_global_lock);
-        // obtain pointer to entry
-        page_table_entry* current_entry = smp::core_local::get().pagemap;
-        if (current_entry == nullptr)
-        {
-            current_entry = smp::core_local::get().pagemap = (page_table_entry*)mm::pmm_allocate();
-        }
-
+        page_table_entry* current_entry = table;
         for (int i = 0; i < (3 - pt); i++)
         {
             std::uint64_t& entry = current_entry[get_page_entry(virtual_addr, i)];
@@ -68,6 +62,22 @@ namespace paging
         }
 
         return true;
+    }
+
+    auto request_page(page_type pt, std::uintptr_t virtual_addr, std::uintptr_t physical_addr, page_prop prop, bool overwrite) -> bool
+    {
+        virtual_addr &= ~type2align[pt];
+        physical_addr &= ~type2align[pt];
+
+        lock::spinlock_guard g(paging_global_lock);
+        // obtain pointer to entry
+        page_table_entry* current_entry = smp::core_local::get().pagemap;
+        if (current_entry == nullptr)
+        {
+            current_entry = smp::core_local::get().pagemap = as_ptr(mm::pmm_allocate());
+        }
+
+        return map_page_for(current_entry, pt, virtual_addr, physical_addr, prop, overwrite);
     }
 
     void sync(std::uintptr_t virtual_addr)

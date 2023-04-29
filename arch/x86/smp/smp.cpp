@@ -5,6 +5,7 @@
 #include "process/process.h"
 #include <asm/asm_cpp.h>
 #include <atomic>
+#include <cast.h>
 #include <cstddef>
 #include <cstdint>
 #include <gdt/gdt.h>
@@ -47,6 +48,8 @@ namespace smp
             std::halt();
         }
 
+        inline constexpr std::uint8_t simple_init_instr[] = {0xCD, 0x80, 0xEB, 0xFE};
+
         void run_init()
         {
             if (smp::core_local::get().core_id != 0)
@@ -54,9 +57,25 @@ namespace smp
                 return;
             }
 
+            auto* code_buf = mm::pmm_allocate();
+            if (code_buf == nullptr)
+            {
+                klog::panic("failed to allocate memory");
+            }
+
             auto init_pid = proc::make_process();
-            klog::log("init process pid: %d", init_pid);
-            // proc::get_process(init_pid).make_thread();
+            klog::log("init process pid: %d\n", init_pid);
+            proc::get_process(init_pid).make_thread(proc::context_builder(proc::context_builder::USER, 0x2000000).build(), 0);
+            paging::page_table_entry* ptr = as_ptr(proc::get_process(0).get_thread(0)->ctx.cr3);
+            paging::map_page_for(ptr, paging::SMALL, 0x2000000, mm::make_physical(code_buf),
+                                 paging::page_prop{
+                                     .rw = false,
+                                     .us = true,
+                                     .x = true,
+                                 },
+                                 false);
+
+            std::memcpy(code_buf, simple_init_instr, sizeof(simple_init_instr));
         }
 
         [[noreturn]] void smp_main(limine_smp_info* info)
@@ -85,6 +104,9 @@ namespace smp
             local.idt_handler_entries = new std::uintptr_t[256];
             local.idt_entries = new idt::idt_entry[256];
 
+            // TODO: check non-null IST
+            local.ist.ist1 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+
             local.gdt.set_ist(&local.ist);
             gdt::install_gdt();
             gdt::reload_gdt_smp();
@@ -95,11 +117,18 @@ namespace smp
 
             for (std::size_t i = 0; i < 32; i++)
             {
-                if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]), i))
+                if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]).ist(1), i))
                 {
                     klog::panic("failed to allocate irq");
                 }
             }
+
+            idt::register_idt(idt::idt_builder(+[](std::uint64_t idt, std::uint64_t err) {
+                                  klog::log("hello from user space (actually this is kernel space, this is a syscall)");
+                              })
+                                  .dpl(0x3)
+                                  .ist(1),
+                              0x80);
 
             auto idle_task = proc::make_kthread(idle);
             auto& idle_th = proc::get_thread(proc::task_id{idle_task, 0});
@@ -108,10 +137,11 @@ namespace smp
             proc::make_kthread_args(
                 +[](std::uint64_t arg) {
                     static std::size_t last_interrupt_count = 0;
-                    klog::log("debugging task value 1: %lu\n", arg);
+                    klog::log("debugging task value: %lu\n", arg);
 
                     while (true)
                     {
+                        // this is to test the timer
                         if (last_interrupt_count != smp::core_local::get().timer_tick_count && smp::core_local::get().timer_tick_count % 50 == 0)
                         {
                             last_interrupt_count = smp::core_local::get().timer_tick_count;
@@ -124,6 +154,8 @@ namespace smp
 
             initialize_apic(smp::core_local::get());
             local.scheduler.set_idle(&idle_th);
+
+            run_init();
             idle();
         }
 

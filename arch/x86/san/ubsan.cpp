@@ -453,6 +453,14 @@ namespace ubsan
         klog::log(RED("ubsan") ": reached code marked as unreachable\n");
         klog::panic("__ubsan_handle_builtin_unreachable");
     }
+
+    C [[noreturn]] NO_UBSAN void __ubsan_handle_missing_return(ubsan_unreachable* data)
+    {
+        __ubsan_hook_start();
+        UBSAN_LOG_POS("__ubsan_handle_missing_return", data->loc);
+        klog::log(RED("ubsan") ": reached end-of-function without return\n");
+        klog::panic("__ubsan_handle_missing_return");
+    }
 } // namespace ubsan
 struct ubsan_function_type_mismatch
 {

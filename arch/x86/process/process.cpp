@@ -39,7 +39,8 @@ namespace proc
 
     auto get_process(std::uint32_t pid) -> process& { return processes[pid]; }
 
-    auto make_process() -> std::uint32_t { return -1U; }
+    // TODO: allocate process
+    auto make_process() -> std::uint32_t { return 1U; }
 
     void suspend_self()
     {

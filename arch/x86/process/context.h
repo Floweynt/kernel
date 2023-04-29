@@ -56,9 +56,9 @@ namespace proc
         constexpr context_builder(mode mode, std::uintptr_t entry)
             : my_context{
                   .rip = entry,
-                  .cs = static_cast<std::uint64_t>(mode == KERNEL ? gdt::KERNEL_CS : gdt::USER_CS),
+                  .cs = static_cast<std::uint64_t>(mode == KERNEL ? gdt::KERNEL_CS : (gdt::USER_CS | 3)),
                   .rflags = cpuflags::FLAGS,
-                  .ss = static_cast<std::uint64_t>(mode == KERNEL ? gdt::KERNEL_DS : gdt::USER_DS),
+                  .ss = static_cast<std::uint64_t>(mode == KERNEL ? gdt::KERNEL_DS : (gdt::USER_DS | 3)),
               }
         {
         }

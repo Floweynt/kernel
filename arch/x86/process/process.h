@@ -38,7 +38,6 @@ namespace proc
     struct thread
     {
         context ctx{};
-        std::uintptr_t cr3{};
         // scheduler information
         // std::size_t sched_index;
         // std::size_t latest_scheduled_tick;
