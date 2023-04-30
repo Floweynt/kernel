@@ -37,7 +37,11 @@ namespace proc
         return tid;
     }
 
-    auto get_process(std::uint32_t pid) -> process& { return processes[pid]; }
+    auto get_process(std::uint32_t pid) -> process&
+    {
+        processes[pid].pid = pid;
+        return processes[pid];
+    }
 
     // TODO: allocate process
     auto make_process() -> std::uint32_t { return 1U; }

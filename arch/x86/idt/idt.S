@@ -11,9 +11,9 @@ idt_common:
 
     xorq %rbx, %rbx
     cmp 0x48(%rsp), %rbx
-    jne .L0
-    swapgs
-.L0:
+#    jne .L0
+#    swapgs
+#.L0:
 
     movq %gs:0, %rbx
     movq (%rbx), %rbx
@@ -73,6 +73,8 @@ idt_common:
 
 .align 0x10
 idt_entry_start:
+
+
 
 
     // auto generated IDT handler stubs

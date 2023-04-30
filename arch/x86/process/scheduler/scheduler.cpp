@@ -1,5 +1,6 @@
 #include "scheduler.h"
 #include "klog/klog.h"
+#include <cast.h>
 #include <cstddef>
 #include <process/process.h>
 #include <smp/smp.h>
@@ -82,7 +83,6 @@ namespace scheduler
 
     void scheduler::add_task(proc::thread* thread)
     {
-        // klog::log("added thread %d:%d with stack: 0x%016lx\n", th->id.proc, th->id.thread, th->ctx.rsp);
         if (thread->state == proc::thread_state::WAITING)
         {
             return; // no-op
@@ -126,6 +126,8 @@ namespace scheduler
 
         local.current_thread = next_thread;
         local.ctxbuffer = &next_thread->ctx;
+        // klog::log("sched task %d:%d\n", next_thread->id.proc, next_thread->id.thread);
+        // debug::log_register(&next_thread->ctx);
     }
 
     void scheduler::set_idle(proc::thread* thread)

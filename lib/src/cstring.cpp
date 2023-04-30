@@ -326,7 +326,14 @@ namespace std
 
     void* memcpy(void* __restrict dest, const void* __restrict src, size_t n)
     {
-#ifdef __x86_64__
+        char* d = (char*) dest;
+        const char* s = (const char* ) src;
+        for(size_t i = 0; i < n; i++)
+        {
+            *d++ = *s++;
+        }
+
+#ifdef _no 
         // optimized implementation for x86
         char* d = (char*)dest;
         const char* s = (const char*)src;
@@ -350,9 +357,8 @@ namespace std
         s = (const char*)ss;
         while (n--)
             *d++ = *s++;
-
-        return dest;
 #endif
+        return dest;
     }
 
     void* memccpy(void* __restrict dest, const void* __restrict src, int c, size_t n);

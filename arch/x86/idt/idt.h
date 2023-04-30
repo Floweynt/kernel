@@ -54,7 +54,7 @@ namespace idt
 
         [[nodiscard]] constexpr auto flag() const -> std::uint16_t
         {
-            return 0x8000 | ((std::uint16_t)_dpl << 14) | ((std::uint16_t)gate << 8) | _ist;
+            return 0x8000 | ((std::uint16_t)_dpl << 13) | ((std::uint16_t)gate << 8) | _ist;
         }
 
         [[nodiscard]] constexpr auto get_handler() const -> interrupt_handler { return handler; }

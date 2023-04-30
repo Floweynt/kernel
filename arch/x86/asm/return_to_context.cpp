@@ -7,6 +7,6 @@ extern "C" [[noreturn]] void _return_to_context_asm(proc::context* ptr);
 
 extern "C" [[noreturn]] void return_to_context(proc::context* ptr)
 {
-    //write_cr3(mm::make_physical(ptr->cr3));
+    write_cr3(mm::make_physical(ptr->cr3));
     _return_to_context_asm(ptr);
 }

@@ -53,7 +53,7 @@ inline auto cpuid_ext(std::uint32_t feature, std::uint32_t* b, std::uint32_t* c,
     inline auto read_cr##CR()->std::uint64_t                                                                                                         \
     {                                                                                                                                                \
         std::uint64_t val;                                                                                                                           \
-        asm volatile("mov %%cr" #CR "%0" : "=r"(val));                                                                                               \
+        asm volatile("mov %%cr" #CR ", %0" : "=r"(val));                                                                                               \
         return val;                                                                                                                                  \
     }
 #define WRITE_CR(CR)                                                                                                                                 \
@@ -161,3 +161,5 @@ inline void setstack(std::uintptr_t new_rsp) { asm volatile("mov %0, %%rsp" : : 
     asm volatile("push %0\nret" : : "r"(addr));
     __builtin_unreachable();
 }
+
+#define intr(int_no) asm volatile("int $" #int_no);

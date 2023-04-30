@@ -42,7 +42,7 @@ namespace paging
 
             current_entry = mm::make_virtual<page_table_entry>(current_entry[get_page_entry(virtual_addr, i)] & MASK_TABLE_POINTER);
         }
-        // writelast entry
+        // write last entry
         current_entry += get_page_entry(virtual_addr, 3 - pt);
         if (*current_entry && !overwrite)
         {
@@ -69,7 +69,7 @@ namespace paging
         virtual_addr &= ~type2align[pt];
         physical_addr &= ~type2align[pt];
 
-        lock::spinlock_guard g(paging_global_lock);
+        lock::spinlock_guard guard(paging_global_lock);
         // obtain pointer to entry
         page_table_entry* current_entry = smp::core_local::get().pagemap;
         if (current_entry == nullptr)

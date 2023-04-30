@@ -17,6 +17,7 @@
 #include <paging/paging.h>
 #include <process/context.h>
 #include <sync_wrappers.h>
+#include <utility>
 
 namespace smp
 {
@@ -39,7 +40,7 @@ namespace smp
             paging::map_hhdm_phys(paging::page_type::SMALL, base);
             local.apic.enable();
             klog::log("APIC: ticks per ms: %lu\n", local.apic.calibrate());
-            local.apic.set_tick(idt::register_idt(idt::idt_builder(handlers::handle_timer)), 20);
+            local.apic.set_tick(idt::register_idt(idt::idt_builder(handlers::handle_timer).ist(1)), 20);
         }
 
         [[noreturn]] void idle(std::uint64_t /*unused*/ = 0)
@@ -48,7 +49,7 @@ namespace smp
             std::halt();
         }
 
-        inline constexpr std::uint8_t simple_init_instr[] = {0xCD, 0x80, 0xEB, 0xFE};
+        inline constexpr std::uint8_t simple_init_instr[] = {0xcd, 0x80, 0xeb, 0xfe};
 
         void run_init()
         {
@@ -58,20 +59,52 @@ namespace smp
             }
 
             auto* code_buf = mm::pmm_allocate();
+            auto* stack_buf = mm::pmm_allocate();
+            auto* page_buf = mm::pmm_allocate();
+
             if (code_buf == nullptr)
             {
-                klog::panic("failed to allocate memory");
+                klog::panic("failed to allocate memory for init code");
+            }
+
+            if (stack_buf == nullptr)
+            {
+                klog::panic("failed to allocate memory for init stack");
+            }
+
+            if (page_buf == nullptr)
+            {
+                klog::panic("failed to allocate memory for init page tables");
             }
 
             auto init_pid = proc::make_process();
-            klog::log("init process pid: %d\n", init_pid);
-            proc::get_process(init_pid).make_thread(proc::context_builder(proc::context_builder::USER, 0x2000000).build(), 0);
-            paging::page_table_entry* ptr = as_ptr(proc::get_process(0).get_thread(0)->ctx.cr3);
+            klog::log("init process pid: %u\n", init_pid);
+
+            paging::copy_kernel_page_tables(as_ptr(page_buf), smp::core_local::get().pagemap);
+            auto init_tid = proc::get_process(init_pid).make_thread(proc::context_builder(proc::context_builder::USER, 0x2000000)
+                                                                        .set_flag(cpuflags::IF)
+                                                                        .set_stack(0x40000000 + paging::PAGE_SMALL_SIZE)
+                                                                        .set_cr3(as_uptr(page_buf))
+                                                                        .build(),
+                                                                    0);
+
+            klog::log("init process tid: %u\n", init_tid);
+
+            paging::page_table_entry* ptr = as_ptr(proc::get_process(init_pid).get_thread(init_tid)->ctx.cr3);
+
             paging::map_page_for(ptr, paging::SMALL, 0x2000000, mm::make_physical(code_buf),
                                  paging::page_prop{
                                      .rw = false,
                                      .us = true,
                                      .x = true,
+                                 },
+                                 false);
+
+            paging::map_page_for(ptr, paging::SMALL, 0x40000000, mm::make_physical(stack_buf),
+                                 paging::page_prop{
+                                     .rw = true,
+                                     .us = true,
+                                     .x = false,
                                  },
                                  false);
 
@@ -106,6 +139,12 @@ namespace smp
 
             // TODO: check non-null IST
             local.ist.ist1 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist2 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist3 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist4 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist5 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist6 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
+            local.ist.ist7 = as_uptr(mm::pmm_allocate()) + paging::PAGE_SMALL_SIZE;
 
             local.gdt.set_ist(&local.ist);
             gdt::install_gdt();
@@ -119,12 +158,12 @@ namespace smp
             {
                 if (!idt::register_idt(idt::idt_builder(handlers::INTERRUPT_HANDLERS[i]).ist(1), i))
                 {
-                    klog::panic("failed to allocate irq");
+                    klog::panic("failed to allocate irq for cpu exceptions");
                 }
             }
 
             idt::register_idt(idt::idt_builder(+[](std::uint64_t idt, std::uint64_t err) {
-                                  klog::log("hello from user space (actually this is kernel space, this is a syscall)");
+                                  klog::log("Hello world from user space! (actually this is kernel space, this is a syscall)\n");
                               })
                                   .dpl(0x3)
                                   .ist(1),
@@ -138,17 +177,16 @@ namespace smp
                 +[](std::uint64_t arg) {
                     static std::size_t last_interrupt_count = 0;
                     klog::log("debugging task value: %lu\n", arg);
-
                     while (true)
                     {
-                        // this is to test the timer
-                        if (last_interrupt_count != smp::core_local::get().timer_tick_count && smp::core_local::get().timer_tick_count % 50 == 0)
+                        auto& local = smp::core_local::get();
+                        // klog::log("alive\n");
+                        if (last_interrupt_count + 50 < local.timer_tick_count)
                         {
-                            last_interrupt_count = smp::core_local::get().timer_tick_count;
+                            last_interrupt_count = local.timer_tick_count;
                             klog::log("ping\n");
                         }
                     }
-                    idle();
                 },
                 local.core_id);
 

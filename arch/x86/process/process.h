@@ -51,6 +51,7 @@ namespace proc
     public:
         inline static constexpr std::size_t MAX_THREADS = 16;
         inline static constexpr std::size_t MAX_PROCESS = 1;
+        friend auto get_process(std::uint32_t pid) -> process&;
 
     private:
         id_allocator<MAX_THREADS> thread_allocator;
@@ -70,8 +71,8 @@ namespace proc
     using kthread_fn_t = void (*)(std::uint64_t);
     using kthread_fn_args_t = void (*)(std::uint64_t);
 
-     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t;
-     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra) -> std::uint32_t;
+    auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t;
+    auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra) -> std::uint32_t;
     inline auto make_kthread(kthread_fn_t thread_fn) -> std::uint32_t { return make_kthread_args(thread_fn, 0); }
     inline auto make_kthread(kthread_fn_t thread_fn, std::size_t core) -> std::uint32_t { return make_kthread_args(thread_fn, 0, core); }
 
