@@ -26,6 +26,8 @@ gen_dbg = executable('gen-dbg',
 strip_debug =       find_program(build_resources/'strip_debug.sh')
 generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
+mcopy =             find_program('mcopy')
+parted =            find_program('parted')
 
 kernel_source = [
     'arch/common/terminal/limine_term_ccompat.cpp',

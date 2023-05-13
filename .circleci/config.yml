@@ -12,7 +12,7 @@ jobs:
       - checkout
       - run:
           name: "Download deps"
-          command: "sudo pacman -Sy fmt qemu-full pkgconf gdb -y --needed --noconfirm"
+          command: "sudo pacman -Sy fmt qemu-full pkgconf gdb mtools parted -y --needed --noconfirm"
       - run:
           name: "Meson configure"
           command: "CC=clang CXX=clang++ meson setup build --buildtype debug -Ddebug_log_mmap=false"
