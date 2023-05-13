@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   build-kernel:
     docker:
-      - image: archlinux/latest
+      - image: archlinux
     steps:
       - checkout
       - run:
