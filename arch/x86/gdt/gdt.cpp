@@ -28,7 +28,7 @@ namespace gdt
 
     void install_gdt()
     {
-        gdt_desc desc(sizeof(gdt), as_uptr(gdt));
+        gdt_desc desc(sizeof(gdt), as_uptr(decay_arr(gdt)));
         asm volatile("lgdtq %0" : : "m"(desc));
         reload_gdt();
     }

@@ -15,8 +15,8 @@ namespace std
         {
             using type = T[N];
 
-            static constexpr auto ptr(type& val, size_t index) noexcept -> T* { return &val[index]; }
-            static constexpr auto ref(type& val, size_t index) noexcept -> T& { return val[index]; }
+            static constexpr auto ptr(const type& val, size_t index) noexcept -> T* { return &const_cast<decay_t<type>>(val)[index]; }
+            static constexpr auto ref(const type& val, size_t index) noexcept -> T& { return const_cast<decay_t<type>>(val)[index]; }
         };
 
         template <typename T>
@@ -25,8 +25,8 @@ namespace std
             struct type
             {
             };
-            static constexpr auto ptr(type&  /*t*/, size_t  /*index*/) noexcept -> T* { return nullptr; }
-            static constexpr auto ref(type& val, size_t index) noexcept -> T& { return *ptr(val, index); }
+            static constexpr auto ptr(const type& /*val*/, size_t /*index*/) noexcept -> T* { return nullptr; }
+            static constexpr auto ref(const type& val, size_t index) noexcept -> T& { return *ptr(val, index); }
         };
     } // namespace detail
     template <typename T, size_t N>
@@ -200,4 +200,7 @@ namespace std
         static_assert(I < N, "Index out-of-bounds");
         return arr[I];
     }
+
+    template <class T, class... U>
+    array(T, U...) -> array<T, 1 + sizeof...(U)>;
 } // namespace std

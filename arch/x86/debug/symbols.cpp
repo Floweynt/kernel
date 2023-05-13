@@ -25,7 +25,7 @@ namespace debug
         {
             hdr* ptr = as_ptr(symtab);
 
-            std::size_t count = ptr->count;
+            const std::size_t count = ptr->count;
 
             // binary search
 
@@ -36,7 +36,7 @@ namespace debug
 
             while (left + 1 != right)
             {
-                std::size_t mid = (left + right + 1) >> 1;
+                const std::size_t mid = (left + right + 1) >> 1;
 
                 if (entries[mid].start_addr > address)
                 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cast.h>
+#include <arch/common/misc/cast.h>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -159,7 +159,7 @@ namespace acpi
         {
             sum += byte;
         }
-        
+
         return (std::uint8_t)sum == 0;
     }
 

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 
 namespace cpuid_info
 {
     // cSpell:disable
-    static constexpr const char* FEATURE_STRINGS[] = {
+    static constexpr std::array FEATURE_STRINGS = {
         "fpu",
         "vme",
         "de",

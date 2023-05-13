@@ -12,6 +12,14 @@ namespace apic
     /// The MMIO registers used in this class are referenced from https://wiki.osdev.org/APIC#Local_APIC_registers
     class local_apic
     {
+        inline static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR = 0xfffff0000;
+        inline static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR_HI = 0x0f;
+
+        inline static constexpr std::uint32_t SIV_MASK_VECTOR = 0x000000ff;
+        inline static constexpr std::uint32_t SIV_APIC_SOFTWARE_ENABLE = 1 << 8;
+        inline static constexpr std::uint32_t SIV_FOCUS_PROCESSOR_CHECK = 1 << 9;
+        inline static constexpr std::uint32_t SIV_EOI_BROADCAST_SUPRESSION = 1 << 12;
+
     public:
         using register_rw = mmio::register_rw<std::uint32_t, 16>;
         using register_rdonly = mmio::register_rdonly<std::uint32_t, 16>;
@@ -94,7 +102,8 @@ namespace apic
 
         /// \brief Obtains a reference to the MMIO registers for the LAPIC
         //
-        [[nodiscard]] constexpr auto mmio_register() const -> apic_registers& { return *reg_start; }
+        [[nodiscard]] constexpr auto mmio_register() -> apic_registers& { return *reg_start; }
+        [[nodiscard]] constexpr auto mmio_register() const -> const apic_registers& { return *reg_start; }
 
         /// \brief Sets the "end of interrupt" field in the LAPIC
         //

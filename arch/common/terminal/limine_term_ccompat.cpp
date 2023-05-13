@@ -1,5 +1,5 @@
 #include <cstddef>
 #include <cstring>
 
-extern "C" void* memset(void *s, int c, std::size_t n) { return std::memset(s,c,n); }
-extern "C" void* memcpy(void* a, const void* b, std::size_t c) { return std::memcpy(a, b, c); }
+extern "C" auto memset(void *str, int val, std::size_t len) -> void* { return std::memset(str,val,len); }
+extern "C" auto memcpy(void* dest, const void* src, std::size_t len) -> void* { return std::memcpy(dest, src, len); }

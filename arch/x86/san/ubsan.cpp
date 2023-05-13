@@ -1,5 +1,6 @@
 // cSpell:ignore ubsan
 #include "sync/spinlock.h"
+#include <common/misc/cast.h>
 #include <cstdint>
 #include <klog/klog.h>
 #include <tty/tty.h>
@@ -29,11 +30,11 @@ public:
         UNKNOWN = 0xffff
     };
 
-    [[nodiscard]] constexpr auto get_type_name() const -> const char* { return type_name; }
+    [[nodiscard]] constexpr auto get_type_name() const -> const char* { return decay_arr(type_name); }
     [[nodiscard]] constexpr auto get_type() const -> type { return static_cast<type>(type_kind); }
     [[nodiscard]] constexpr auto is_integer() const -> bool { return get_type() == INTEGER; }
-    [[nodiscard]] constexpr auto is_signed_integer() const -> bool { return is_integer() && (type_info & 1); }
-    [[nodiscard]] constexpr auto is_unsigned_integer() const -> bool { return is_integer() && !(type_info & 1); }
+    [[nodiscard]] constexpr auto is_signed_integer() const -> bool { return is_integer() && ((type_info & 1) != 0); }
+    [[nodiscard]] constexpr auto is_unsigned_integer() const -> bool { return is_integer() && ((type_info & 1) == 0); }
     [[nodiscard]] constexpr auto get_integer_bit_width() const -> std::uint32_t { return 1 << (type_info >> 1); }
     [[nodiscard]] constexpr auto is_float() const -> bool { return get_type() == FLOAT; }
     [[nodiscard]] constexpr auto get_float_bit_width() const -> std::uint32_t { return type_info; }
@@ -70,7 +71,7 @@ public:
 
         if (desc.get_integer_bit_width() == 64)
         {
-            return *reinterpret_cast<std::int64_t*>(val);
+            return *as_ptr<std::int64_t>(val);
         }
 
         klog::panic("reached unreachable");
@@ -84,7 +85,7 @@ public:
         }
         if (desc.get_integer_bit_width() == 64)
         {
-            return *reinterpret_cast<std::uint64_t*>(val);
+            return *as_ptr<std::uint64_t>(val);
         }
         __builtin_unreachable();
     }
@@ -106,12 +107,13 @@ struct ubsan_source_location
     std::uint32_t column;
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define UBSAN_LOG_POS(name, loc) klog::log(RED("ubsan") ": " name " @ %s:%d:%d\n", (loc).filename, (loc).line, (loc).column);
 
 #define TYPENAME data->type->get_type_name()
 
 // debugging
-void __ubsan_hook_start()
+void ubsan_hook_start()
 {
     // NOTE: because sanitization failures cannot be nested, and is always fatal, the lock will always be held
     SPINLOCK_SYNC_BLOCK;
@@ -132,7 +134,7 @@ namespace ubsan
 
     NO_UBSAN [[noreturn]] void handle_math_overflow(ubsan_overflow* data, value lhs, value rhs, char oper)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value lhs_typed(*data->type, lhs);
         ubsan_typed_value rhs_typed(*data->type, rhs);
         UBSAN_LOG_POS("__ubsan_handle_math_overflow", data->loc);
@@ -151,25 +153,29 @@ namespace ubsan
         klog::panic("__ubsan_handle_math_overflow");
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_add_overflow(ubsan_overflow* data, value lhs, value rhs)
     {
         handle_math_overflow(data, lhs, rhs, '+');
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_sub_overflow(ubsan_overflow* data, value lhs, value rhs)
     {
 
         handle_math_overflow(data, lhs, rhs, '/');
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_mul_overflow(ubsan_overflow* data, value lhs, value rhs)
     {
         handle_math_overflow(data, lhs, rhs, '*');
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_divrem_overflow(ubsan_overflow* data, value lhs, value rhs)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value lhs_typed(*data->type, lhs);
         ubsan_typed_value rhs_typed(*data->type, rhs);
 
@@ -188,9 +194,10 @@ namespace ubsan
         klog::panic("__ubsan_handle_divrem_overflow");
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_negate_overflow(ubsan_overflow* data, value val)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value val_typed(*data->type, val);
 
         UBSAN_LOG_POS("__ubsan_handle_negate_overflow", data->loc);
@@ -210,9 +217,10 @@ namespace ubsan
         klog::panic("__ubsan_handle_negate_overflow");
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_pointer_overflow(ubsan_overflow* data, value base, value result)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_pointer_overflow", data->loc);
 
         if (base == 0 && result == 0)
@@ -257,9 +265,10 @@ namespace ubsan
         ubsan_type_descriptor* rhs_type;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_shift_out_of_bounds(ubsan_shift_out_of_bounds* data, value lhs, value rhs)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value lhs_value(*data->lhs_type, lhs);
         ubsan_typed_value rhs_value(*data->rhs_type, rhs);
         UBSAN_LOG_POS("__ubsan_handle_shift_out_of_bounds", data->loc);
@@ -302,9 +311,10 @@ namespace ubsan
         ubsan_type_descriptor* type;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_load_invalid_value(ubsan_invalid_value* data, value val)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_load_invalid_value", data->loc);
 
         klog::log(RED("ubsan") ": load of value (pointer-or-integer) 0x%016lx, which is not a valid value for type %s\n", val,
@@ -323,9 +333,10 @@ namespace ubsan
         ubsan_type_descriptor* index;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_out_of_bounds(ubsan_oob* data, value val)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value index(*data->index, val);
         UBSAN_LOG_POS("__ubsan_handle_out_of_bounds", data->loc);
 
@@ -335,7 +346,7 @@ namespace ubsan
     }
 } // namespace ubsan
 
-inline constexpr const char* const type_check_kinds[] = {
+inline constexpr std::array type_check_kinds = {
     "load of",     "store to",  "reference binding to",    "member access within", "member call on",       "constructor call on", "downcast of",
     "downcast of", "upcast of", "cast to virtual base of", "_Nonnull binding to",  "dynamic operation on",
 };
@@ -350,9 +361,10 @@ namespace ubsan
         unsigned char type_check_kind;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_type_mismatch_v1(ubsan_type_mismatch_v1* data, std::uintptr_t ptr)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
 
         std::uintptr_t alignment = (std::uintptr_t)1 << data->log_alignment;
         const ubsan_source_location* location = &data->loc;
@@ -368,18 +380,18 @@ namespace ubsan
 
         if (!ptr)
         {
-            klog::log(RED("ubsan") ": %s null pointer of type %s\n", type_check_kinds[data->type_check_kind], data->type->get_type_name());
+            klog::log(RED("ubsan") ": %s null pointer of type %s\n", type_check_kinds.at(data->type_check_kind), data->type->get_type_name());
         }
         else if (ptr & (alignment - 1))
         {
-            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s\n", type_check_kinds[data->type_check_kind], ptr,
+            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s\n", type_check_kinds.at(data->type_check_kind), ptr,
                       data->type->get_type_name());
             klog::log(RED("ubsan") " (note): requires 0x%lx byte alignment\n", alignment);
         }
         else
         {
             klog::log(RED("ubsan") ": %s address 0x%016lx with insufficient space for an object of type %s\n",
-                      type_check_kinds[data->type_check_kind], ptr, data->type->get_type_name());
+                      type_check_kinds.at(data->type_check_kind), ptr, data->type->get_type_name());
         }
 
         klog::panic("__ubsan_handle_type_mismatch_v1");
@@ -394,9 +406,10 @@ namespace ubsan
         ubsan_type_descriptor* type;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C NO_UBSAN void __ubsan_handle_nonnull_return_v1(ubsan_vla_bound* data, value val)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         ubsan_typed_value value(*data->type, val);
         UBSAN_LOG_POS("__ubsan_handle_nonnull_return_v1", data->loc);
 
@@ -421,14 +434,15 @@ namespace ubsan
         int arg_index;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C NO_UBSAN void __ubsan_handle_nonnull_arg(ubsan_nonnull_arg* data)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_nonnull_return_v1", data->loc);
 
         klog::log(RED("ubsan") ": null pointer passed as argument %u, which is declared to never be null\n", data->arg_index);
 
-        if (!data->attr_loc.filename)
+        if (data->attr_loc.filename == nullptr)
         {
             klog::log(RED("ubsan") " (note): nonnull attribute specified here %s:%d,%d\n", data->attr_loc.filename, data->attr_loc.line,
                       data->attr_loc.column);
@@ -446,17 +460,19 @@ namespace ubsan
         ubsan_source_location loc;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_builtin_unreachable(ubsan_unreachable* data)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_builtin_unreachable", data->loc);
         klog::log(RED("ubsan") ": reached code marked as unreachable\n");
         klog::panic("__ubsan_handle_builtin_unreachable");
     }
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_missing_return(ubsan_unreachable* data)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_missing_return", data->loc);
         klog::log(RED("ubsan") ": reached end-of-function without return\n");
         klog::panic("__ubsan_handle_missing_return");
@@ -477,9 +493,10 @@ namespace ubsan
         unsigned char kind;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_invalid_builtin(ubsan_invalid_builtin* data)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_invalid_builtin", data->loc);
         klog::log(RED("ubsan") ": passing zero to %s, which is not a valid argument\n", (data->kind == 0) ? "ctz()" : "clz()");
         klog::panic("__ubsan_handle_invalid_builtin");
@@ -495,9 +512,10 @@ namespace ubsan
         ubsan_type_descriptor* type;
     };
 
+    // NOLINTNEXTLINE(cert-dcl51-cpp,cert-dcl37-c,bugprone-reserved-identifier)
     C [[noreturn]] NO_UBSAN void __ubsan_handle_alignment_assumption(ubsan_alignment_assumption* data, value ptr, value align, value off)
     {
-        __ubsan_hook_start();
+        ubsan_hook_start();
 
         std::uintptr_t real_ptr = ptr - off;
         std::uintptr_t real_align = std::uintptr_t(1) << __builtin_ctzl(real_ptr);

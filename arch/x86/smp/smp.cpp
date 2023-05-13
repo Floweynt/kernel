@@ -5,7 +5,6 @@
 #include "process/process.h"
 #include <asm/asm_cpp.h>
 #include <atomic>
-#include <cast.h>
 #include <cstddef>
 #include <cstdint>
 #include <gdt/gdt.h>

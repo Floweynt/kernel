@@ -1,4 +1,5 @@
 #include "apic.h"
+#include <apic/apic_flag_builder.h>
 #include <asm/asm_cpp.h>
 #include <cstdint>
 #include <klog/klog.h>
@@ -17,9 +18,6 @@ namespace apic
 
     void local_apic::set_apic_base(std::uintptr_t addr)
     {
-        static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR = 0xfffff0000;
-        static constexpr std::uintptr_t MASK_LAPIC_BASE_ADDR_HI = 0x0f;
-
         reg_start = mm::make_virtual<apic_registers>(addr);
         wrmsr(msr::IA32_APIC_BASE, (addr & MASK_LAPIC_BASE_ADDR) | IA32_APIC_BASE_MSR_ENABLE, (addr >> 32) & MASK_LAPIC_BASE_ADDR_HI);
     }
@@ -30,7 +28,7 @@ namespace apic
         outb(ioports::PIC_MASTER_DATA, 0xff);
 
         set_apic_base(get_apic_base());
-        reg_start->siv.write(reg_start->siv.read() | 0x100);
+        reg_start->siv.write(reg_start->siv.read() | SIV_APIC_SOFTWARE_ENABLE);
     }
 
     namespace
@@ -75,31 +73,24 @@ namespace apic
         {
             return ticks_per_ms;
         }
+        auto lvt_timer_reg = mmio_register().lvt_timer.read();
 
         mmio_register().timer_divide.write(3);
         mmio_register().inital_timer_count.write(~0U);
-        mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
+        mmio_register().lvt_timer.write(build_lvt_timer(lvt_timer_mode::ONE_SHOT, false, false, 0));
 
         wait_ms();
-        // wait_10ms();
-        // wait_10ms();
-        // wait_10ms();
 
-        mmio_register().lvt_timer.write(mmio_register().lvt_timer | (1 << 16));
+        mmio_register().lvt_timer.write(lvt_timer_reg);
         std::uint64_t ticks = ~0U - mmio_register().current_timer_count;
 
-        return ticks_per_ms = ticks ;
+        return ticks_per_ms = ticks;
     }
 
     void local_apic::set_tick(std::uint8_t irq, std::size_t tick_ms)
     {
         mmio_register().timer_divide.write(3);
-        std::uint32_t timer = mmio_register().lvt_timer;
-        timer &= ~(0b11 << 17);
-        timer |= 1 << 17;
-        mmio_register().lvt_timer.write(timer);
-        mmio_register().lvt_timer.write((mmio_register().lvt_timer & 0xffffff00) | irq);
         mmio_register().inital_timer_count.write(ticks_per_ms * tick_ms);
-        mmio_register().lvt_timer.write(mmio_register().lvt_timer & ~(1 << 16));
+        mmio_register().lvt_timer.write(build_lvt_timer(lvt_timer_mode::PERIODIC, false, false, irq));
     }
 } // namespace apic

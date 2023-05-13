@@ -13,7 +13,16 @@ gdb = find_program('gdb')
 objcopy = find_program('objcopy')
 qemu = find_program('qemu-system-x86_64')
 
-gen_dbg =           find_program(build_resources/'gen-dbg')
+gen_dbg = executable('gen-dbg',
+    build_resources/'gen_dbg.cpp',
+    cpp_args: [
+    ],
+    dependencies: dependency('fmt'),
+    override_options: [
+        'cpp_eh=default'
+    ]
+)
+
 strip_debug =       find_program(build_resources/'strip_debug.sh')
 generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
@@ -173,22 +182,6 @@ kernel_build_args = [
     '-Wno-unused-parameter',
 ]
 
-# Bunch of ugly implementation details...
-
-if get_option('debug_stl_assert')
-  kernel_build_args += '-DDEBUG'
-endif
-
-add_project_arguments(
-    kernel_build_args,
-    language: 'cpp'
-)
-    
-add_project_arguments(
-   kernel_build_args, 
-    language: 'c'
-)
-
 # options configuration
 if get_option('slab_min_order') >= get_option('slab_max_order')
     error('config: slab_min_order cannot >= slab_max_order')
@@ -278,8 +271,14 @@ kernel = executable('kernel.elf',
         '-fsanitize=undefined',
         '-fno-sanitize=function',
         '-fsanitize-undefined-strip-path-components=1',
+        kernel_build_args
     ],
-    c_args: ['-m64', '-march=x86-64', '-mcmodel=kernel'],
+    c_args: [
+        '-m64', 
+        '-march=x86-64', 
+        '-mcmodel=kernel',
+        kernel_build_args
+    ],
     include_directories : configuration_inc
 )
 

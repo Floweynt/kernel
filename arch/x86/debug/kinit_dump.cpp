@@ -69,9 +69,9 @@ namespace debug
             std::printf("cpu features: ");
             for (std::size_t i = 0; i < config::get_val<"cpuid-feature-size"> * 32; i++)
             {
-                if (cpuid_info::test_feature(i) && (cpuid_info::FEATURE_STRINGS[i] != nullptr))
+                if (cpuid_info::test_feature(i) && (cpuid_info::FEATURE_STRINGS.at(i) != nullptr))
                 {
-                    std::printf("%s ", cpuid_info::FEATURE_STRINGS[i]);
+                    std::printf("%s ", cpuid_info::FEATURE_STRINGS.at(i));
                 }
             }
 
@@ -91,10 +91,9 @@ namespace debug
 
             boot_resource::instance().iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
                 auto signature = mm::make_virtual<acpi::acpi_sdt_header>(as_uptr(entry))->signature;
-                const char* signature_ptr = cast_ptr(&signature);
+                std::span<const char> signature_ptr(cast_ptr<const char>(&signature), 4);
 
-                std::printf("  entry: (sig=0x%08x '%c%c%c%c')\n", signature, signature_ptr[0], signature_ptr[1],
-                            signature_ptr[2], signature_ptr[3]);
+                std::printf("  entry: (sig=0x%08x '%c%c%c%c')\n", signature, signature_ptr[0], signature_ptr[1], signature_ptr[2], signature_ptr[3]);
             });
         }
     }

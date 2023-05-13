@@ -1,6 +1,5 @@
 #include "scheduler.h"
 #include "klog/klog.h"
-#include <cast.h>
 #include <cstddef>
 #include <process/process.h>
 #include <smp/smp.h>

@@ -1,6 +1,5 @@
 #include "bits/mathhelper.h"
 #include <asm/asm_cpp.h>
-#include <cast.h>
 #include <config.h>
 #include <cstddef>
 #include <cstdint>

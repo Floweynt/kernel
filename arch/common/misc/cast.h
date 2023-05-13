@@ -1,4 +1,5 @@
 #pragma once
+#include <common/terminal/limine_term_ccompat.h>
 #include <cstdint>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -51,4 +52,17 @@ inline auto cast_ptr(auto* ptr)
 {
     return detail::_castable_to_any_pointer(as_vptr(ptr));
 }
+
+template<typename T, size_t N>
+inline auto decay_arr(T (&arr)[N])
+{
+    return (T*)arr;
+}
+
+template<typename T>
+inline auto decay_arr(T (&arr)[])
+{
+    return (T*)arr;
+}
+
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cast.h>
+#include <arch/common/misc/cast.h>
 #include <cstdint>
 
 namespace gdt

@@ -1,3 +1,4 @@
+// vim: set ft=cpp:
 #pragma once
 
 #include <array>
@@ -62,7 +63,7 @@ namespace std
             }
         }
 
-        template <class It, class End>
+        template <class It, class End> requires requires(It first, End last) { last - first; }
         explicit(extent != dynamic_extent) constexpr span(It first, End last) : span(first, last - first)
         {
         }
@@ -143,4 +144,13 @@ namespace std
             return span<element_type>(data() + size() - Count, Count);
         }
     };
+
+    template <class T, std::size_t N>
+    span(T (&)[N]) -> span<T, N>;
+    
+    template <class T, std::size_t N>
+    span(std::array<T, N>&) -> span<T, N>;
+
+    template <class T, std::size_t N>
+    span(const std::array<T, N>&) -> span<const T, N>;
 } // namespace std

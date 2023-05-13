@@ -1,7 +1,6 @@
 #include "process.h"
 #include "paging/paging.h"
 #include "process/context.h"
-#include <cast.h>
 #include <cstdint>
 #include <gsl/pointer>
 #include <klog/klog.h>

@@ -24,4 +24,5 @@ namespace debug
     auto sym_for(std::uint64_t address) -> symbol;
 }
 
-#define mark_stack(type) asm volatile("movq %0, (%%rbp)" : : "r"((std::uint64_t)type));
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+#define mark_stack(type) asm volatile("movq %0, (%%rbp)" : : "r"((std::uint64_t)(type)));  
