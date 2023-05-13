@@ -12,7 +12,7 @@ jobs:
       - checkout
       - run:
           name: "Download deps"
-          command: "pacman -Syu fmt meson clang"
+          command: "pacman -Syu fmt meson clang -y"
       - run:
           name: "Meson configure"
           command: "CC=clang CXX=clang++ meson setup build --buildtype debug -Ddebug_log_mmap=false"
