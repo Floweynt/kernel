@@ -9,6 +9,8 @@ namespace detail
     {
         void* ptr;
 
+        constexpr _castable_to_any_pointer(void* ptr) : ptr(ptr) {}
+
         template <typename T>
         operator T*()
         {
