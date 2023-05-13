@@ -16,12 +16,9 @@ jobs:
       - run:
           name: "Meson configure"
           command: "CC=clang CXX=clang++ meson setup build --buildtype debug -Ddebug_log_mmap=false"
-      - run: 
-          name: "Change directory"
-          command: "cd build"
       - run:
           name: "Build kernel"
-          command: "ninja kernel.img -j$(nproc)"
+          command: "ninja -C build kernel.img -j$(nproc)"
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
