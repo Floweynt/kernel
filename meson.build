@@ -29,57 +29,64 @@ git_version_info =  find_program(build_resources/'git_version_info.sh')
 mcopy =             find_program('mcopy')
 parted =            find_program('parted')
 
-kernel_source = [
-    'arch/common/terminal/limine_term_ccompat.cpp',
-    'arch/x86/idt/idt.cpp',
-    'arch/x86/idt/handlers/handle_ud.cpp',
-    'arch/x86/idt/handlers/handle_np.cpp',
-    'arch/x86/idt/handlers/handle_page_fault.cpp',
-    'arch/x86/idt/handlers/handle_gp.cpp',
-    'arch/x86/idt/handlers/handle_overflow.cpp',
-    'arch/x86/idt/handlers/handle_db.cpp',
-    'arch/x86/idt/handlers/handle_div_by_zero.cpp',
-    'arch/x86/idt/handlers/handle_stack.cpp',
-    'arch/x86/idt/handlers/handle_double_fault.cpp',
-    'arch/x86/idt/handlers/handle_bad_tss.cpp',
-    'arch/x86/idt/handlers/handle_bounds.cpp',
-    'arch/x86/idt/handlers/handle_breakpoint.cpp',
-    'arch/x86/idt/handlers/handle_timer.cpp',
-    'arch/x86/idt/handlers/handle_nm.cpp',
-    'arch/x86/idt/idt.S',
-    'arch/x86/debug/kinit_dump.cpp',
-    'arch/x86/debug/panic.cpp',
-    'arch/x86/debug/symbols.cpp',
-    'arch/x86/asm/return_to_context.S',
-    'arch/x86/asm/return_to_context.cpp',
-    'arch/x86/syscall/syscall_entry.S',
-    'arch/x86/pci/pci_scan.cpp',
-    'arch/x86/sync/spinlock.cpp',
-    'arch/x86/san/ubsan.cpp',
-    'arch/x86/apic/apic.cpp',
-    'arch/x86/kinit/kinit.cpp',
-    'arch/x86/process/process.cpp',
-    'arch/x86/process/save_ctx_for_reschedule.S',
-    'arch/x86/process/scheduler/scheduler.cpp',
-    'arch/x86/klog/klog.cpp',
-    'arch/x86/tty/tty.cpp',
-    'arch/x86/mm/pmm.cpp',
-    'arch/x86/mm/malloc.cpp',
-    #    'arch/x86/mm/slab.cpp',
-    'arch/x86/mm/mm.cpp',
-    #'arch/x86/mm/vmm.cpp',
-    'arch/x86/cpuid/cpuid.cpp',
-    'arch/x86/gdt/gdt.cpp',
-    'arch/x86/paging/paging.cpp',
-    'arch/x86/paging/pgfault.cpp',
-    'arch/x86/smp/smp.cpp',
+kernel_src = [
+    'kernel/src/arch/x86/idt/idt.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_ud.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_np.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_page_fault.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_gp.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_overflow.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_db.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_div_by_zero.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_stack.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_double_fault.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_bad_tss.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_bounds.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_breakpoint.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_timer.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_nm.cpp',
+    'kernel/src/arch/x86/debug/kinit_dump.cpp',
+    'kernel/src/arch/x86/debug/panic.cpp',
+    'kernel/src/arch/x86/debug/symbols.cpp',
+    'kernel/src/arch/x86/asm/return_to_context.cpp',
+    'kernel/src/arch/x86/pci/pci_scan.cpp',
+    'kernel/src/arch/x86/sync/spinlock.cpp',
+    'kernel/src/arch/x86/san/ubsan.cpp',
+    'kernel/src/arch/x86/apic/apic.cpp',
+    'kernel/src/arch/x86/kinit/kinit.cpp',
+    'kernel/src/arch/x86/process/process.cpp',
+    'kernel/src/arch/x86/process/scheduler/scheduler.cpp',
+    'kernel/src/arch/x86/process/elf/loader.cpp',
+    'kernel/src/arch/x86/klog/klog.cpp',
+    'kernel/src/arch/x86/tty/tty.cpp',
+    'kernel/src/arch/x86/mm/pmm.cpp',
+    'kernel/src/arch/x86/mm/malloc.cpp',
+    #    'kernel/src/arch/x86/mm/slab.cpp',
+    'kernel/src/arch/x86/mm/mm.cpp',
+    #    'kernel/src/arch/x86/mm/vmm.cpp',
+    'kernel/src/arch/x86/cpuid/cpuid.cpp',
+    'kernel/src/arch/x86/gdt/gdt.cpp',
+    'kernel/src/arch/x86/paging/paging.cpp',
+    'kernel/src/arch/x86/paging/pgfault.cpp',
+    'kernel/src/arch/x86/smp/smp.cpp',
+    './kernel/src/arch/x86/idt/idt.S',
+    './kernel/src/arch/x86/asm/return_to_context.S',
+    './kernel/src/arch/x86/syscall/syscall_entry.S',
+    './kernel/src/arch/x86/process/save_ctx_for_reschedule.S'
+]
+
+lib_src = [
     'lib/src/cstring.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
     'libimpl/cxxabi.cpp',
-    'libimpl/implement.cpp',
-    'arch/common/terminal/backends/framebuffer.c',
-    'arch/common/terminal/term.c'
+    'libimpl/implement.cpp'
+]
+
+common_src = [
+    'kernel/external/terminal/backends/framebuffer.c',
+    'kernel/external/terminal/term.c',
+    'kernel/external/terminal/limine_term_ccompat.cpp',
 ]
 
 opt_to_config = {
@@ -236,11 +243,12 @@ configure_file(input : 'config.h.in',
                configuration : conf)
 
 configuration_inc = include_directories(
-    './',
-    './arch/x86/',
-    './arch/',
-    './lib/',
-    './lib/include/',
+    '.',
+    'kernel/include/arch/x86',
+    'kernel/include/arch',
+    'lib',
+    'lib/include',
+    'kernel/external',
     is_system: true
 )
 
@@ -254,10 +262,10 @@ config_output = custom_target('config_output',
     ],
 )
 
-lds = meson.source_root()/'arch'/'x86'/'kernel.lds'
+lds = meson.source_root()/'kernel/src/arch/x86/kernel.lds'
 kernel = executable('kernel.elf',
     config_output,
-    kernel_source,
+    [kernel_src, lib_src, common_src],
     link_depends: lds,
     link_args: [
         '-T' + lds,
