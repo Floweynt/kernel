@@ -2,6 +2,7 @@
 #pragma once
 
 #include <apic/apic.h>
+#include <gsl/pointer>
 #include <process/context.h>
 #include <cstddef>
 #include <gdt/gdt.h>
@@ -14,13 +15,13 @@ namespace smp
 {
     class core_local
     {
-        inline static core_local** entries = nullptr;
+        inline static gsl::owner<core_local**> entries = nullptr;
 
     public:
         // the following 3 members of this struct MUST never be moved without first changing idt.S
-        proc::context* ctxbuffer;
-        std::uintptr_t* idt_handler_entries;
-        idt::idt_entry* idt_entries;
+        gsl::owner<proc::context*> ctxbuffer;
+        gsl::owner<std::uintptr_t*> idt_handler_entries;
+        gsl::owner<idt::idt_entry*> idt_entries;
 
         // a unique value from [0, smp_count) representing this core
         std::size_t core_id;

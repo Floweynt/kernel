@@ -1,6 +1,5 @@
 #include "spinlock.h"
 #include <smp/smp.h>
-
 namespace lock
 {
     void spinlock::lock()

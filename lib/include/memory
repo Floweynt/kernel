@@ -3,8 +3,10 @@
 #define __NOSTDLIB_MEMORY_H__
 #include "../bits/unique_ptr.h"
 #include "../bits/user_implement.h"
+#include "../bits/utils.h"
 #include "concepts"
 #include "new"
+#include <type_traits>
 
 namespace std
 {
@@ -47,14 +49,13 @@ namespace std
     };
 
     template <typename T, typename V>
-    concept allocator_like = requires(T t, V* v, typename T::size_type s)
-    {
+    concept allocator_like = requires(T t, V* v, typename T::size_type s) {
         {
             t.allocate(s)
-            } -> same_as<V*>;
+        } -> same_as<V*>;
         {
             t.deallocate(v)
-            } -> same_as<void>;
+        } -> same_as<void>;
         typename T::size_type;
         typename T::difference_type;
         typename T::propagate_on_container_move_assignment;
@@ -67,28 +68,25 @@ namespace std
     }
 
     template <typename T>
-    concept refcountable = requires(T& a)
-    {
-        a.unbind_ref_to();
-        a.bind_ref_to();
-        { a.get_ref_count() } -> integral;
-    };
-
-    template<typename T>
-    class deleter 
+    class deleter
     {
     public:
-        void operator()(const T* t)
-        {
-            delete t;
-        }
+        void operator()(const T* t) { delete t; }
     };
 
-    // TODO: respect allocator rules
+    template <typename T>
+    concept refcountable = requires(T& a) {
+        a.unbind_ref_to();
+        a.bind_ref_to();
+        {
+            a.get_ref_count()
+        } -> integral;
+    };
+
     template <refcountable T, typename Deleter = deleter<T>>
     class refcounted
     {
-        pair<T*, Deleter> data;
+        compressed_pair<T*, Deleter> data;
 
         constexpr void __set(T* ptr)
         {
@@ -128,10 +126,10 @@ namespace std
 
         void reset() noexcept
         {
-            if(data.first)
+            if (data.first)
             {
                 data.unbind_ref_to();
-                if(data.get_ref_count() == 0)
+                if (data.get_ref_count() == 0)
                 {
                     data.second(data.first);
                     data.first = nullptr;
@@ -141,6 +139,41 @@ namespace std
 
         constexpr ~refcounted() noexcept { reset(); }
     };
+
+    template <integral T>
+    class simple_refcountable
+    {
+        mutable T refcount;
+
+    public:
+        constexpr void unbind_ref_to() const { refcount--; }
+        constexpr void bind_ref_to() const { refcount++; }
+        constexpr auto get_ref_count() const { return refcount; }
+    };
+
+    template <typename T>
+    class nonnull_ptr
+    {
+        T* ptr;
+
+    public:
+        nonnull_ptr() = delete;
+
+        template <typename Pt>
+            requires(std::same_as<T*, Pt>)
+        nonnull_ptr(Pt ptr) : ptr(ptr)
+        {
+            __nostdlib_assert(ptr != nullptr && "nullptr assigned to nonnull");
+        }
+
+        operator T*() const { return ptr; }
+
+        auto operator*() const -> std::add_lvalue_reference_t<T> { return *ptr; }
+        auto operator->() const -> T* { return ptr; }
+    };
+
+    template <typename T>
+    nonnull_ptr(T*) -> nonnull_ptr<T>;
 } // namespace std
 
 #endif

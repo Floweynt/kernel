@@ -17,7 +17,7 @@
 #include <process/context.h>
 #include <sync_wrappers.h>
 #include <utility>
-
+#include <vfs/vfs.h>
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -161,7 +161,7 @@ namespace smp
                 }
             }
 
-            idt::register_idt(idt::idt_builder(+[](std::uint64_t idt, std::uint64_t err) {
+            idt::register_idt(idt::idt_builder(+[](std::uint64_t  /*idt*/, std::uint64_t  /*err*/) {
                                   klog::log("Hello world from user space! (actually this is kernel space, this is a syscall)\n");
                               })
                                   .dpl(0x3)
@@ -223,10 +223,10 @@ namespace smp
             // remember that stack grows down
 
             smp->cpus[i]->extra_argument =
-                (std::uintptr_t)(smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate()) | core_id;
+                as_uptr(smp::core_local::get(core_id).pagemap = (paging::page_table_entry*)mm::pmm_allocate()) | core_id;
 
             paging::sync_page_tables(core_id, 0);
-            stdext::direct_atomic_store((std::uint64_t*)&smp->cpus[i]->goto_address, (std::uintptr_t)smp::main_wrapper, std::memory_order_seq_cst);
+            stdext::direct_atomic_store(as_ptr<uint64_t>(&smp->cpus[i]->goto_address), as_uptr(smp::main_wrapper), std::memory_order_seq_cst);
         }
 
         // initialize myself too!

@@ -1,4 +1,4 @@
-Checks: bugprone*,cert*,cppcore*,misc*,modernize*,performance*,portability*,readability*,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-cppcoreguidelines-avoid-const-or-ref-data-members,-cert-dcl58-cpp,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-pointer-arithmetic
+Checks: bugprone*,cert*,cppcore*,misc*,modernize*,performance*,portability*,readability*,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-cppcoreguidelines-avoid-const-or-ref-data-members,-cert-dcl58-cpp,-misc-non-private-member-variables-in-classes,-cert-dcl21-cpp
 FormatStyle: file
 CheckOptions:
   - key: readability-implicit-bool-conversion.AllowIntegerConditions

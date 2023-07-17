@@ -1,6 +1,8 @@
 #pragma once
 
+#include <fd/fdhandler.h>
 #include <cstdint>
+#include <memory>
 
 enum vtype
 {
@@ -17,83 +19,50 @@ enum vtype
 
 class vfs;
 class vnode;
-class vfs_functions;
-class vnode_functions;
+class vfs_operations;
+class vnode_operations;
 
+class vfs_fd : public fd_data
+{
+};
 
-class vfs_functions
+class vfs_operations : public std::simple_refcountable<std::uint32_t>
 {
 public:
-    virtual ~vfs_functions() = default;
-    virtual auto vfs_mount(vfs& instance, const char* path, void* data) -> int = 0;
-    virtual auto vfs_unmount(vfs& instance) -> int = 0;
-    virtual auto vfs_root(vfs& instance, vnode& node) -> int = 0;
-    virtual auto vfs_statfs(vfs& instance /*, type parameter */) -> int = 0;
-    virtual auto vfs_sync(vfs& instance) -> int = 0;
-    virtual auto vfs_vget(vfs& instance, vnode& node /* fid_t * */) -> int = 0;
-    virtual auto vfs_mountroot(vfs& instance, vnode& node /* nm */) -> int = 0;
+    virtual ~vfs_operations() = default;
+    virtual auto mount_on(vfs& instance, vnode& node, const char* path) -> int = 0;
     // virtual auto vfs_swapvp(vfs& instance) -> int = 0;
 };
 
-class vnode_functions
+class vnode_operations : public std::simple_refcountable<std::uint32_t>
 {
 public:
-    int open();
-    int close();
-    int rdwr();
-    int ioctl();
-    int select();
-    int getattr();
-    int setattr();
-    int access();
-    int lookup();
-    int create();
-    int remove();
-    int link();
-    int rename();
-    int mkdir();
-    int rmdir();
-    int readdir();
-    int symlink();
-    int readlink();
-    int fsync();
-    int inactive();
-    int lockctl();
-
-    int fid();
-    int getpage();
-    int putpage();
-    int map();
-    int dump();
-    int cmd();
-    int realvp();
-    int cntl();
+    auto open(vnode& instance, int flags) -> std::refcounted<vfs_fd>; // TODO: dont ignore authentication!!!
+    auto close(vnode& instance, std::refcounted<vfs_fd> target_fd) -> int;
+    auto rdwr(vnode& instance) -> int;
+    auto ioctl(vnode& instance) -> int;
 };
 
-class vnode;
-
-class vfs
+class vfs : public std::simple_refcountable<std::uint32_t>
 {
-    vfs* vfs_next;           /* next vfs in vfs list */
-    vfs_functions* vfs_op;   /* operations on vfs */
+    vfs* next;           /* next vfs in vfs list */
+    vfs_operations* operations;   /* operations on vfs */
     vnode* vfs_vnodecovered; /* vnode we mounted on */
-    int vfs_flag;            /* flags */
-    int vfs_bsize;           /* native block size */
-    fsid_t vfs_fsid;         /* file system id */
+    std::uint32_t vfs_flag;  /* flags */
+    std::uint32_t vfs_bsize; /* native block size */
+    std::uint32_t vfs_fsid;  /* file system id */
     void* vfs_stats;         /* filesystem statistics */
-    void* vfs_data;          /* private data */
-
 public:
 };
 
-class vnode
+class vnode : public std::simple_refcountable<std::uint32_t>
 {
-    uint16_t v_flag;       /* vnode flags (see below) */
-    uint16_t v_count;      /* reference count */
-    uint16_t v_shlockc;    /* count of shared locks */
-    uint16_t v_exlockc;    /* count of exclusive locks */
-    vfs* v_vfsmountedhere; /* ptr to vfs mounted here */
-    vnode_functions* v_op; /* vnode operations */
+    std::uint16_t v_flag;    /* vnode flags (see below) */
+    std::uint16_t v_count;   /* reference count */
+    std::uint16_t v_shlockc; /* count of shared locks */
+    std::uint16_t v_exlockc; /* count of exclusive locks */
+    vfs* v_vfsmountedhere;   /* ptr to vfs mounted here */
+    vnode_operations* v_op;   /* vnode operations */
     union {
         struct socket* v_Socket; /* unix ipc */
         struct stdata* v_Stream; /* stream */
@@ -101,7 +70,7 @@ class vnode
     } v_s;
     vfs* v_vfsp;     /* ptr to vfs we are in */
     vtype v_type;    /* vnode type */
-    dev_t v_rdev;    /* device (VCHR, VBLK) */
+    vtype v_rdev;    /* device (VCHR, VBLK) */
     long* v_filocks; /* File/Record locks ... */
     void* v_data;    /* private data for fs */
 };

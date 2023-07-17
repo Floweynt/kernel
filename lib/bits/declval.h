@@ -5,7 +5,7 @@
 namespace std
 {
     template <typename T>
-    std::add_lvalue_reference_t<T> declval() noexcept { __builtin_unreachable(); }
+    auto declval() noexcept -> std::add_lvalue_reference_t<T> { __builtin_unreachable(); }
 } // namespace std
 
 #endif
