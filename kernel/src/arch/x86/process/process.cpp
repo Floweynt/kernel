@@ -1,11 +1,12 @@
-#include <process/process.h>
-#include "paging/paging.h"
+#include "misc/kassert.h"
+#include "mm/paging/paging.h"
 #include "process/context.h"
 #include <cstdint>
 #include <gsl/pointer>
 #include <klog/klog.h>
-#include <mm/pmm.h>
-#include <paging/paging_entries.h>
+#include <mm/mm.h>
+#include <process/process.h>
+#include <slot_vector.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 
@@ -13,37 +14,43 @@ extern "C" auto __save_ctx_for_reschedule() -> std::uint64_t;
 
 namespace proc
 {
-    static process processes[2];
+    namespace
+    {
+        auto get_processes() -> std::slot_vector<process>&
+        {
+            static std::slot_vector<process> processes;
+            return processes;
+        }
+    } // namespace
 
     auto process::make_thread(const context& inital_context, std::size_t core) -> std::uint32_t
     {
         SPINLOCK_SYNC_BLOCK;
 
-        std::size_t tid = thread_allocator.allocate();
+        std::size_t tid = threads.allocate(task_id{static_cast<std::uint32_t>(-1), pid});
         if (tid == -1UL)
         {
             return -1U;
         }
 
         std::uint32_t id32 = tid;
+        auto& th = threads[tid];
+        th.id = task_id{id32, pid};
+        th.ctx = inital_context;
+        th.state = proc::thread_state::RUNNING;
 
-        gsl::owner<thread*> th = new thread({id32, pid});
-        threads[tid] = th;
-        th->ctx = inital_context;
-        th->state = proc::thread_state::RUNNING;
-
-        smp::core_local::get(core).scheduler.add_task(th);
+        smp::core_local::get(core).scheduler.add_task(&th);
         return tid;
     }
 
     auto get_process(std::uint32_t pid) -> process&
     {
-        processes[pid].pid = pid;
-        return processes[pid];
+        get_processes()[pid].pid = pid;
+        return get_processes()[pid];
     }
 
     // TODO: allocate process
-    auto make_process() -> std::uint32_t { return 1U; }
+    auto make_process() -> std::uint32_t { return get_processes().allocate(); }
 
     void suspend_self()
     {
@@ -52,8 +59,8 @@ namespace proc
 
     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t
     {
-        auto* stack = mm::pmm_allocate();
-        auto* pages = mm::pmm_allocate();
+        auto* stack = mm::pmm_allocate_clean();
+        auto* pages = mm::pmm_allocate_clean();
 
         if (stack == nullptr || pages == nullptr)
         {

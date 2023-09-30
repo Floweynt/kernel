@@ -59,7 +59,7 @@ public:
     template <typename T>
     void iterate_xsdt(T callback)
     {
-        auto* table = (acpi::xsdt*)(root_table->xsdt_address + 0xffff800000000000ul);
+        auto* table = as_ptr<acpi::xsdt>(root_table->xsdt_address + 0xffff800000000000ul);
         std::size_t len = (table->h.length - sizeof(acpi::acpi_sdt_header)) / 8;
         for (std::size_t i = 0; i < len; i++)
         {
@@ -74,4 +74,7 @@ public:
     [[nodiscard]] constexpr auto warn_init() const -> std::uint32_t { return flags; }
 
     [[nodiscard]] constexpr auto modules() const -> const modules& { return mods; }
+
+    [[nodiscard]] constexpr auto memmap() const -> const auto& { return mmap_entries; }
+    [[nodiscard]] constexpr auto memmap_length() const -> const auto& { return mmap_length; }
 };

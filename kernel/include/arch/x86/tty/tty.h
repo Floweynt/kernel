@@ -1,10 +1,13 @@
 #pragma once
 
+#include <cstdint>
 #include <kinit/limine.h>
 
 namespace tty
 {
     void init();    
+
+    void preinit_plot(std::uint32_t color);
 }
 
 // useful formatting macros

@@ -1,8 +1,8 @@
 // cSpell:ignore ubsan
 #include "sync/spinlock.h"
-#include <common/misc/cast.h>
 #include <cstdint>
 #include <klog/klog.h>
+#include <misc/cast.h>
 #include <tty/tty.h>
 
 #if defined(COMPILER_CLANG)
@@ -108,19 +108,19 @@ struct ubsan_source_location
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define UBSAN_LOG_POS(name, loc) klog::log(RED("ubsan") ": " name " @ %s:%d:%d\n", (loc).filename, (loc).line, (loc).column);
+#define UBSAN_LOG_POS(name, loc) klog::log(RED("ubsan") ": " name " @ %s:%d:%d", (loc).filename, (loc).line, (loc).column);
 
 #define TYPENAME data->type->get_type_name()
 
 // debugging
 void ubsan_hook_start()
 {
-    // NOTE: because sanitization failures cannot be nested, and is always fatal, the lock will always be held
-    SPINLOCK_SYNC_BLOCK;
-
-    klog::log("====================== " RED("ubsan") " ======================\n");
-    klog::log("a runtime kernel error has occurred that cannot be recovered from due to undefined behaviour\n");
-    klog::log("now why did I mess up?\n");
+    static lock::spinlock lock;
+    lock.lock();
+    klog::log("====================== " RED("ubsan") " ======================");
+    klog::log("a runtime kernel error has occurred that cannot be recovered from due to undefined behaviour");
+    klog::log("now why did I mess up?");
+    // dont release since UBSAN is always fatal and should hang the system
 }
 
 // overflow
@@ -141,12 +141,12 @@ namespace ubsan
 
         if (data->type->is_unsigned_integer())
         {
-            klog::log(RED("ubsan") ": unsigned integer overflow when calculating %lu %c %lu\n", lhs_typed.get_unsigned(), oper,
+            klog::log(RED("ubsan") ": unsigned integer overflow when calculating %lu %c %lu", lhs_typed.get_unsigned(), oper,
                       rhs_typed.get_unsigned());
         }
         else
         {
-            klog::log(RED("ubsan") ": signed integer overflow when calculating %ld %c %ld\n", lhs_typed.get_signed(), oper, rhs_typed.get_signed());
+            klog::log(RED("ubsan") ": signed integer overflow when calculating %ld %c %ld", lhs_typed.get_signed(), oper, rhs_typed.get_signed());
         }
 
         klog::log(RED("ubsan") " (note): type: %s", TYPENAME);
@@ -183,12 +183,12 @@ namespace ubsan
 
         if (data->type->is_signed_integer() && rhs_typed.get_signed() == -1)
         {
-            klog::log(RED("ubsan") ": division of %ld by -1 cannot be represented\n", lhs_typed.get_signed());
-            klog::log(RED("ubsan") " (note): type %s\n", TYPENAME);
+            klog::log(RED("ubsan") ": division of %ld by -1 cannot be represented", lhs_typed.get_signed());
+            klog::log(RED("ubsan") " (note): type %s", TYPENAME);
         }
         else if (data->type->is_integer())
         {
-            klog::log(RED("ubsan") ": division by zero\n");
+            klog::log(RED("ubsan") ": division by zero");
         }
 
         klog::panic("__ubsan_handle_divrem_overflow");
@@ -204,15 +204,15 @@ namespace ubsan
 
         if (data->type->is_signed_integer())
         {
-            klog::log(RED("ubsan") ": negation of %ld cannot be represented\n", val_typed.get_signed());
-            klog::log(RED("ubsan") " (note): cast to an unsigned type to negate this value to itself\n");
+            klog::log(RED("ubsan") ": negation of %ld cannot be represented", val_typed.get_signed());
+            klog::log(RED("ubsan") " (note): cast to an unsigned type to negate this value to itself");
         }
         else
         {
-            klog::log(RED("ubsan") ": negation of %lu cannot be represented\n", val_typed.get_unsigned());
+            klog::log(RED("ubsan") ": negation of %lu cannot be represented", val_typed.get_unsigned());
         }
 
-        klog::log(RED("ubsan") " (note): type %s\n", TYPENAME);
+        klog::log(RED("ubsan") " (note): type %s", TYPENAME);
 
         klog::panic("__ubsan_handle_negate_overflow");
     }
@@ -225,30 +225,30 @@ namespace ubsan
 
         if (base == 0 && result == 0)
         {
-            klog::log(RED("ubsan") ": applying zero offset to null pointer (why would you do that?)\n");
+            klog::log(RED("ubsan") ": applying zero offset to null pointer (why would you do that?)");
         }
         else if (base == 0 && result != 0)
         {
-            klog::log(RED("ubsan") ": applying non-zero offset %lu to null pointer\n", result);
+            klog::log(RED("ubsan") ": applying non-zero offset %lu to null pointer", result);
         }
         else if (base != 0 && result == 0)
         {
-            klog::log(RED("ubsan") ": applying non-zero offset to non-null pointer %016lx produced null pointer\n", base);
+            klog::log(RED("ubsan") ": applying non-zero offset to non-null pointer %016lx produced null pointer", base);
         }
         else if ((std::intptr_t(base) >= 0) == (std::intptr_t(result) >= 0))
         {
             if (base > result)
             {
-                klog::log(RED("ubsan") ": addition of unsigned offset to 0x%016lx overflowed to 0x%016lx\n", base, result);
+                klog::log(RED("ubsan") ": addition of unsigned offset to 0x%016lx overflowed to 0x%016lx", base, result);
             }
             else
             {
-                klog::log(RED("ubsan") ": subtraction of unsigned offset from 0x%016lx overflowed to 0x%016lx\n", base, result);
+                klog::log(RED("ubsan") ": subtraction of unsigned offset from 0x%016lx overflowed to 0x%016lx", base, result);
             }
         }
         else
         {
-            klog::log(RED("ubsan") ": pointer index expression with base 0x%016lx overflowed to 0x%016lx\n", base, result);
+            klog::log(RED("ubsan") ": pointer index expression with base 0x%016lx overflowed to 0x%016lx", base, result);
         }
 
         klog::panic("__ubsan_handle_pointer_overflow");
@@ -278,11 +278,11 @@ namespace ubsan
         {
             if (data->rhs_type->is_signed_integer() && rhs_value.get_signed() < 0)
             {
-                klog::log(RED("ubsan") ": shift exponent %ld is negative\n", rhs_value.get_signed());
+                klog::log(RED("ubsan") ": shift exponent %ld is negative", rhs_value.get_signed());
             }
             else
             {
-                klog::log(RED("ubsan") ": shift exponent %lu is too large for %u-bit type\n", rhs_value.get_unsigned(),
+                klog::log(RED("ubsan") ": shift exponent %lu is too large for %u-bit type", rhs_value.get_unsigned(),
                           data->lhs_type->get_integer_bit_width());
             }
         }
@@ -290,15 +290,15 @@ namespace ubsan
         {
             if (data->lhs_type->is_signed_integer() && lhs_value.get_signed() < 0)
             {
-                klog::log(RED("ubsan") ": left shift of negative value %ld\n", lhs_value.get_signed());
+                klog::log(RED("ubsan") ": left shift of negative value %ld", lhs_value.get_signed());
             }
             else
             {
-                klog::log(RED("ubsan") ": left shift of %ld by %lu places cannot be represented\n", lhs_value.get_signed(), rhs_value.get_unsigned());
+                klog::log(RED("ubsan") ": left shift of %ld by %lu places cannot be represented", lhs_value.get_signed(), rhs_value.get_unsigned());
             }
         }
 
-        klog::log(RED("ubsan") " (note): type %s\n", data->lhs_type->get_type_name());
+        klog::log(RED("ubsan") " (note): type %s", data->lhs_type->get_type_name());
         klog::panic("__ubsan_handle_shift_out_of_bounds");
     }
 } // namespace ubsan
@@ -317,7 +317,7 @@ namespace ubsan
         ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_load_invalid_value", data->loc);
 
-        klog::log(RED("ubsan") ": load of value (pointer-or-integer) 0x%016lx, which is not a valid value for type %s\n", val,
+        klog::log(RED("ubsan") ": load of value (pointer-or-integer) 0x%016lx, which is not a valid value for type %s", val,
                   data->type->get_type_name());
 
         klog::panic("__ubsan_handle_load_invalid_value");
@@ -340,7 +340,7 @@ namespace ubsan
         ubsan_typed_value index(*data->index, val);
         UBSAN_LOG_POS("__ubsan_handle_out_of_bounds", data->loc);
 
-        klog::log(RED("ubsan") ": index %lu out of bounds for type %s\n", index.get_unsigned(), data->index->get_type_name());
+        klog::log(RED("ubsan") ": index %lu out of bounds for type %s", index.get_unsigned(), data->index->get_type_name());
 
         klog::panic("__ubsan_handle_out_of_bounds");
     }
@@ -375,22 +375,22 @@ namespace ubsan
         }
         else
         {
-            klog::log("__ubsan_handle_type_mismatch_v1 @ undeduced source location\n");
+            klog::log("__ubsan_handle_type_mismatch_v1 @ undeduced source location");
         }
 
         if (!ptr)
         {
-            klog::log(RED("ubsan") ": %s null pointer of type %s\n", type_check_kinds.at(data->type_check_kind), data->type->get_type_name());
+            klog::log(RED("ubsan") ": %s null pointer of type %s", type_check_kinds.at(data->type_check_kind), data->type->get_type_name());
         }
         else if (ptr & (alignment - 1))
         {
-            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s\n", type_check_kinds.at(data->type_check_kind), ptr,
+            klog::log(RED("ubsan") ": %s misaligned address 0x%016lx for type %s", type_check_kinds.at(data->type_check_kind), ptr,
                       data->type->get_type_name());
-            klog::log(RED("ubsan") " (note): requires 0x%lx byte alignment\n", alignment);
+            klog::log(RED("ubsan") " (note): requires 0x%lx byte alignment", alignment);
         }
         else
         {
-            klog::log(RED("ubsan") ": %s address 0x%016lx with insufficient space for an object of type %s\n",
+            klog::log(RED("ubsan") ": %s address 0x%016lx with insufficient space for an object of type %s",
                       type_check_kinds.at(data->type_check_kind), ptr, data->type->get_type_name());
         }
 
@@ -415,11 +415,11 @@ namespace ubsan
 
         if (data->type->is_signed_integer())
         {
-            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %ld\n", value.get_signed());
+            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %ld", value.get_signed());
         }
         else
         {
-            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %lu\n", value.get_unsigned());
+            klog::log(RED("ubsan") ": variable length array bound evaluates to non-positive value %lu", value.get_unsigned());
         }
         klog::panic("__ubsan_handle_nonnull_return_v1");
     }
@@ -440,11 +440,11 @@ namespace ubsan
         ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_nonnull_return_v1", data->loc);
 
-        klog::log(RED("ubsan") ": null pointer passed as argument %u, which is declared to never be null\n", data->arg_index);
+        klog::log(RED("ubsan") ": null pointer passed as argument %u, which is declared to never be null", data->arg_index);
 
         if (data->attr_loc.filename == nullptr)
         {
-            klog::log(RED("ubsan") " (note): nonnull attribute specified here %s:%d,%d\n", data->attr_loc.filename, data->attr_loc.line,
+            klog::log(RED("ubsan") " (note): nonnull attribute specified here %s:%d,%d", data->attr_loc.filename, data->attr_loc.line,
                       data->attr_loc.column);
         }
 
@@ -465,7 +465,7 @@ namespace ubsan
     {
         ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_builtin_unreachable", data->loc);
-        klog::log(RED("ubsan") ": reached code marked as unreachable\n");
+        klog::log(RED("ubsan") ": reached code marked as unreachable");
         klog::panic("__ubsan_handle_builtin_unreachable");
     }
 
@@ -474,7 +474,7 @@ namespace ubsan
     {
         ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_missing_return", data->loc);
-        klog::log(RED("ubsan") ": reached end-of-function without return\n");
+        klog::log(RED("ubsan") ": reached end-of-function without return");
         klog::panic("__ubsan_handle_missing_return");
     }
 } // namespace ubsan
@@ -498,7 +498,7 @@ namespace ubsan
     {
         ubsan_hook_start();
         UBSAN_LOG_POS("__ubsan_handle_invalid_builtin", data->loc);
-        klog::log(RED("ubsan") ": passing zero to %s, which is not a valid argument\n", (data->kind == 0) ? "ctz()" : "clz()");
+        klog::log(RED("ubsan") ": passing zero to %s, which is not a valid argument", (data->kind == 0) ? "ctz()" : "clz()");
         klog::panic("__ubsan_handle_invalid_builtin");
     }
 } // namespace ubsan
@@ -527,21 +527,21 @@ namespace ubsan
 
         if (!off)
         {
-            klog::log(RED("ubsan") ": assumption of 0x%lx byte alignment for pointer of type %s failed\n", align, data->type->get_type_name());
+            klog::log(RED("ubsan") ": assumption of 0x%lx byte alignment for pointer of type %s failed", align, data->type->get_type_name());
         }
         else
         {
-            klog::log("assumption of 0x%lx byte alignment (with offset of 0x%lx byte) for pointer of type %s failed\n", align, off,
+            klog::log("assumption of 0x%lx byte alignment (with offset of 0x%lx byte) for pointer of type %s failed", align, off,
                       data->type->get_type_name());
         }
 
         if (data->assume_loc.filename != nullptr)
         {
-            klog::log(RED("ubsan") " (note): alignment assumption specified here %s:%d:%d\n", data->assume_loc.filename, data->assume_loc.line,
+            klog::log(RED("ubsan") " (note): alignment assumption specified here %s:%d:%d", data->assume_loc.filename, data->assume_loc.line,
                       data->assume_loc.column);
         }
 
-        klog::log("%saddress is 0x%016lx aligned, misalignment offset is 0x%lx bytes\n", (off ? "offset " : ""), real_align, misalign_off);
+        klog::log("%saddress is 0x%016lx aligned, misalignment offset is 0x%lx bytes", (off ? "offset " : ""), real_align, misalign_off);
 
         klog::panic("__ubsan_handle_alignment_assumption");
     }

@@ -65,12 +65,12 @@ idt_common:
 
     // setup stack frame
     andq $~0x7, %rsp
+
     movq %rsp, %rbp
 
     call _handle_irq_common
-
     // this should be unreachable
-
+    ud2
 .align 0x10
 idt_entry_start:
 

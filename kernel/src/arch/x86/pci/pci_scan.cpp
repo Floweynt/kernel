@@ -11,7 +11,7 @@ namespace pci
         {
             if ((dev.class_code(function) == 0x6) && (dev.subclass(function) == 0x4))
             {
-                std::uint8_t secondary_bus = dev.read_config(function, 0x18) >> 8;
+                std::uint8_t secondary_bus = dev.read_config_long(function, 0x18) >> 8;
                 if constexpr (config::get_val<"debug.log.pci">)
                 {
                     std::printf("[PCI]%*c%02hhx:%02hhx.%hhx: bridge dev=%02hx:%02hhx-r%02hhx\n bus=%02hhx", level, ' ', dev.bus(), dev.slot(),

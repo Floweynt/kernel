@@ -5,3 +5,6 @@
 	path = libimpl/memory-allocator
 	url = git@github.com:FloweyTheFlower420/memory-allocator.git
 
+[submodule "kernel/external/lai"]
+	path = kernel/external/lai
+	url = https://github.com/managarm/lai

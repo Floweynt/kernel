@@ -12,7 +12,7 @@ namespace debug
 {
     void print_kinfo()
     {
-        std::printf("kernel v%s (%s)\n", config::get_str<"version.full-version">, config::get_str<"arch">);
+        std::printf("kernel v%s (%s)\n", config::get_str<"version.full-version">, config::get_str<"arch.name">);
         std::printf("built with cc: %s-%s cxx: %s-%s\n", config::get_str<"version.cc.id">, config::get_str<"version.cc.ver">,
                     config::get_str<"version.cxx.id">, config::get_str<"version.cxx.ver">);
     }

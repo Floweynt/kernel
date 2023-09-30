@@ -1,17 +1,21 @@
 // cSpell:ignore stivale, alignas, rsdp, lapic, efer, wrmsr, kpages, rdmsr, cpuid, kinit, xsdt
-#include <kinit/limine.h>
 #include <acpi/acpi.h>
 #include <asm/asm_cpp.h>
 #include <config.h>
 #include <cpuid/cpuid.h>
+#include <cstddef>
 #include <cstdint>
+#include <debug/debug.h>
 #include <debug/kinit_dump.h>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
+#include <kinit/limine.h>
+#include <misc/cast.h>
 #include <mm/malloc.h>
-#include <mm/pmm.h>
+#include <mm/mm.h>
+#include <mm/paging/paging.h>
+#include <mm/paging/paging_entries.h>
 #include <new>
-#include <paging/paging.h>
 #include <pci/pci.h>
 #include <printf.h>
 #include <smp/smp.h>
@@ -123,12 +127,11 @@ extern "C"
     {
         void init_array()
         {
-            using init_array_t = void (*)();
             for (std::uintptr_t* i = as_ptr(&__start_init_array); i < as_ptr(&__end_init_array); i++)
             {
                 if (*i != 0 && *i != -1UL)
                 {
-                    ((init_array_t)*i)();
+                    as_ptr<void()> (*i)();
                 }
             }
         }
@@ -136,15 +139,14 @@ extern "C"
 
     [[noreturn]] void _start()
     {
+        // really early init functions...
         init_array();
-        new (buf) boot_resource();
+        new (decay_arr(buf)) boot_resource();
         boot_resource& instance = boot_resource::instance();
         wrmsr(msr::IA32_GS_BASE, as_uptr(&cpu0_ptr));
-
+        
+        // okay, set up core functionality to hopefully get useful information out of the kernel 
         mm::init();
-        paging::init();
-        alloc::init(as_vptr(config::get_val<"mmap.start.heap">), paging::PAGE_SMALL_SIZE * config::get_val<"preallocate-pages">);
-
         tty::init();
 
         std::printf("kinit: _start() started tty\n");
@@ -155,7 +157,7 @@ extern "C"
         debug::dump_cpuid_info();
 
         instance.iterate_xsdt([](const acpi::acpi_sdt_header* entry) {
-            paging::map_hhdm_phys(paging::MEDIUM, as_uptr(entry));
+            paging::map_hhdm_page(paging::MEDIUM, as_uptr(entry));
             entry = mm::make_virtual<acpi::acpi_sdt_header>(as_uptr(entry));
             invlpg((void*)entry);
         });

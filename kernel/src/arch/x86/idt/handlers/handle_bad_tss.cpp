@@ -7,8 +7,8 @@ namespace handlers
 {
     void handle_bad_tss(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#TS") " ======================\n");
-        klog::log("kernel task state segment corrupted\n");
+        klog::log("====================== " RED("#TS") " ======================");
+        klog::log("kernel task state segment corrupted");
         debug::log_register(smp::core_local::get().ctxbuffer);
         klog::panic("#TS");
     }

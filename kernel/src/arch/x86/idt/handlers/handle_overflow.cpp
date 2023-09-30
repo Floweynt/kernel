@@ -7,7 +7,7 @@ namespace handlers
 {
     void handle_overflow(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#OF") " ======================\n");
+        klog::log("====================== " RED("#OF") " ======================");
         debug::log_register(smp::core_local::get().ctxbuffer);
         klog::panic("#OF");
     }

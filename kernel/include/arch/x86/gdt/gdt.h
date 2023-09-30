@@ -1,7 +1,8 @@
 #pragma once
 
-#include <common/misc/cast.h>
+#include <misc/cast.h>
 #include <cstdint>
+#include <bitbuilder.h>
 
 namespace gdt
 {
@@ -29,6 +30,8 @@ namespace gdt
         std::uint16_t reserved3;
         std::uint16_t io_bp;
     };
+
+    //static_assert(0x00af9b000000ffff == std::build_pattern<"#l16 #b16 #b8 ardesxxp llll 0m">());
 
     struct [[gnu::packed]] gdt_entries
     {

@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <debug/debug.h>
 #include <gsl/pointer>
-#include <mm/pmm.h>
+#include <mm/mm.h>
 #include <new>
-#include <paging/paging.h>
+#include <mm/paging/paging.h>
 
 namespace alloc
 {
@@ -130,7 +130,7 @@ namespace alloc
 
     auto realloc(void* buf, std::size_t size) -> void*
     {
-        block_header* hdr = (block_header*)buf - 1;
+        block_header* hdr = as_ptr<block_header>(buf) - 1;
         if (hdr->size > size)
         {
             return buf;
@@ -164,7 +164,7 @@ namespace alloc
 
         if (*type & 2)
         {
-            hdr = (block_header*)(*type);
+            hdr = as_ptr(*type);
         }
 
         bool is_prev = hdr->back ? hdr->back->size & 1 : false;

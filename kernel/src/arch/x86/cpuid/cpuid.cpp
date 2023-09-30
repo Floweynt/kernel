@@ -1,7 +1,7 @@
 // cpuid support
 #include <array>
 #include <asm/asm_cpp.h>
-#include <common/misc/cast.h>
+#include <misc/cast.h>
 #include <config.h>
 #include <cpuid/cpuid.h>
 #include <cstddef>

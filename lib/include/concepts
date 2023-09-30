@@ -15,14 +15,10 @@ namespace std
     concept same_as = detail::same_as_helper<T, U> && detail::same_as_helper<U, T>;
 
     template <typename Derived, typename Base>
-    concept derived_from =
-        std::is_base_of_v<Base, Derived> && std::is_convertible_v<const volatile Derived*, const volatile Base*>;
+    concept derived_from = std::is_base_of_v<Base, Derived> && std::is_convertible_v<const volatile Derived*, const volatile Base*>;
 
     template <typename From, typename To>
-    concept convertible_to = is_convertible_v<From, To> && requires
-    {
-        static_cast<To>(std::declval<From>());
-    };
+    concept convertible_to = is_convertible_v<From, To> && requires { static_cast<To>(std::declval<From>()); };
 
     template <typename T>
     concept integral = is_integral_v<T>;
@@ -52,8 +48,7 @@ namespace std
     concept constructible_from = destructible<T> && is_constructible_v<T, Args...>;
 
     template <typename T>
-    concept default_initializable = constructible_from<T> && requires
-    {
+    concept default_initializable = constructible_from<T> && requires {
         T{};
         (void)::new T;
     };
@@ -67,23 +62,31 @@ namespace std
         concept boolean_testable_impl = convertible_to<T, bool>;
 
         template <typename T>
-        concept boolean_testable = boolean_testable_impl<T> && requires(T&& t)
-        {
-            { !static_cast<T&&>(t) } -> boolean_testable_impl;
+        concept boolean_testable = boolean_testable_impl<T> && requires(T&& t) {
+            {
+                !static_cast<T&&>(t)
+            } -> boolean_testable_impl;
         };
     } // namespace detail
 
     namespace detail
     {
         template <typename T, typename U>
-        concept weakly_eq_cmp_with = requires(cref<T> t, cref<U> u)
-        {
-            { t == u } -> boolean_testable;
-            { t != u } -> boolean_testable;
-            { u == t } -> boolean_testable;
-            { u != t } -> boolean_testable;
+        concept weakly_eq_cmp_with = requires(cref<T> t, cref<U> u) {
+            {
+                t == u
+            } -> boolean_testable;
+            {
+                t != u
+            } -> boolean_testable;
+            {
+                u == t
+            } -> boolean_testable;
+            {
+                u != t
+            } -> boolean_testable;
         };
-    } 
+    }
 
     template <typename T>
     concept equality_comparable = detail::weakly_eq_cmp_with<T, T>;
@@ -91,20 +94,50 @@ namespace std
     namespace detail
     {
         template <typename T, typename U>
-        concept partially_ordered_with = requires(const remove_reference_t<T>& t, const remove_reference_t<U>& u)
-        {
-            { t < u } -> boolean_testable;
-            { t > u } -> boolean_testable;
-            { t <= u } -> boolean_testable;
-            { t >= u } -> boolean_testable;
-            { u < t } -> boolean_testable;
-            { u > t } -> boolean_testable;
-            { u <= t } -> boolean_testable;
-            { u >= t } -> boolean_testable;
+        concept partially_ordered_with = requires(const remove_reference_t<T>& t, const remove_reference_t<U>& u) {
+            {
+                t < u
+            } -> boolean_testable;
+            {
+                t > u
+            } -> boolean_testable;
+            {
+                t <= u
+            } -> boolean_testable;
+            {
+                t >= u
+            } -> boolean_testable;
+            {
+                u < t
+            } -> boolean_testable;
+            {
+                u > t
+            } -> boolean_testable;
+            {
+                u <= t
+            } -> boolean_testable;
+            {
+                u >= t
+            } -> boolean_testable;
         };
     } // namespace detail
 
     template <typename T>
     concept totally_ordered = equality_comparable<T> && detail::partially_ordered_with<T, T>;
+
+    namespace detail
+    {
+        // Replace traditional SFINAE with concepts
+        template <typename T>
+        concept is_allocator = requires(T a) {
+            T::value_type;
+            a.allocate();
+        };
+
+        template <typename E, typename It>
+        concept is_suitable_range_initialization = requires(It a) {
+            requires std::is_constructible_v<E, decltype(*a++)>;
+        };
+    } // namespace detail
 } // namespace std
 

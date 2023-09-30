@@ -2,12 +2,13 @@
 #pragma once
 
 #include <apic/apic.h>
+#include <cstdint>
 #include <gsl/pointer>
 #include <process/context.h>
 #include <cstddef>
 #include <gdt/gdt.h>
 #include <idt/idt.h>
-#include <paging/paging.h>
+#include <mm/paging/paging.h>
 #include <process/scheduler/scheduler.h>
 #include <utils/id_allocator.h>
 
@@ -42,6 +43,9 @@ namespace smp
         // misc
         std::size_t timer_tick_count{};
 
+        gsl::owner<void**> emutls_data{};
+        std::size_t emutls_size{};
+
         inline static auto get() -> core_local&
         {
             core_local* addr = nullptr;
@@ -60,7 +64,7 @@ namespace smp
         static inline auto exists() -> bool { return entries != nullptr && get_pointer() != nullptr; }
         inline static auto get(std::size_t core) -> core_local& { return *entries[core]; }
 
-        inline static auto gs_of(std::size_t core) -> std::uint64_t { return (std::uint64_t)&entries[core]; }
+        inline static auto gs_of(std::size_t core) -> std::uintptr_t { return as_uptr(&entries[core]); }
 
         core_local() = default;
         core_local(const core_local&) = delete;

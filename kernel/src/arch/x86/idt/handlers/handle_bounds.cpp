@@ -7,7 +7,7 @@ namespace handlers
 {
     void handle_bounds(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#BR") " ======================\n");
+        klog::log("====================== " RED("#BR") " ======================");
         debug::log_register(smp::core_local::get().ctxbuffer);
         klog::panic("#BR");
     }

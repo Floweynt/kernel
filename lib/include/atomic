@@ -427,13 +427,55 @@ namespace std
     inline auto atomic_flagtest(volatile atomic_flag* flag) noexcept -> bool { return flag->test(); }
     inline auto atomic_flagtest_explicit(atomic_flag* flag, memory_order order) noexcept -> bool { return flag->test(order); }
     inline auto atomic_flagtest_explicit(volatile atomic_flag* flag, memory_order order) noexcept -> bool { return flag->test(order); }
-} // namespace std
 
-namespace stdext
-{
+    // direct atomics
     template <typename T>
-    void direct_atomic_store(T* target, T val, std::memory_order order)
+    auto direct_atomic_load_n(volatile T* ptr, std::memory_order order)
     {
-        __atomic_store(target, &val, (int)order);
+        return __atomic_load_n(ptr, (int)order);
     }
-} // namespace stdext
+
+    template <typename T>
+    void direct_atomic_load(volatile T* ptr, volatile T* ret, std::memory_order order)
+    {
+        __atomic_load(ptr, ret, (int)order);
+    }
+
+    template <typename T>
+    void direct_atomic_store_n(volatile T* ptr, T val, std::memory_order order)
+    {
+        __atomic_store_n(ptr, val, (int)order);
+    }
+
+    template <typename T>
+    void direct_atomic_store(volatile T* ptr, volatile T* val, std::memory_order order)
+    {
+        __atomic_store(ptr, val, (int)order);
+    }
+
+    template <typename T>
+    auto direct_atomic_exchange_n(volatile T* ptr, T val, std::memory_order order)
+    {
+        return __atomic_exchange_n(ptr, val, (int)order);
+    }
+
+    template <typename T>
+    auto direct_atomic_exchange(volatile T* ptr, volatile T* val, volatile T* ret, std::memory_order order)
+    {
+        return __atomic_exchange(ptr, val, ret, (int)order);
+    }
+
+    template <typename T>
+    auto direct_atomic_compare_exchange_n(volatile T* ptr, volatile T* expected, T desired, bool weak, std::memory_order success_memorder,
+                                          std::memory_order failure_memorder) -> bool
+    {
+        return __atomic_compare_exchange_n(ptr, expected, desired, weak, (int)success_memorder, (int)failure_memorder);
+    }
+
+    template <typename T>
+    auto direct_atomic_compare_exchange(volatile T* ptr, volatile T* expected, volatile T* desired, bool weak, std::memory_order success_memorder,
+                                          std::memory_order failure_memorder) -> bool
+    {
+        return __atomic_compare_exchange(ptr, expected, desired, weak, (int)success_memorder, (int)failure_memorder);
+    }
+} // namespace std

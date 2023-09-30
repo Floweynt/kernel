@@ -48,6 +48,14 @@ namespace std
 #endif
     };
 
+    template <class Alloc>
+    struct allocator_traits
+    {
+        using allocator_type = Alloc;
+        using value_type = Alloc::value_type;
+        using pointer = value_type*;
+    };
+
     template <typename T, typename V>
     concept allocator_like = requires(T t, V* v, typename T::size_type s) {
         {
@@ -68,6 +76,12 @@ namespace std
     }
 
     template <typename T>
+    constexpr void destroy_at(T* p)
+    {
+        p->~T();
+    }
+
+    template <typename T>
     class deleter
     {
     public:
@@ -75,15 +89,15 @@ namespace std
     };
 
     template <typename T>
-    concept refcountable = requires(T& a) {
-        a.unbind_ref_to();
-        a.bind_ref_to();
+    concept refcountable = requires(T* a) {
+        a->unbind_ref_to();
+        a->bind_ref_to();
         {
-            a.get_ref_count()
+            a->get_ref_count()
         } -> integral;
     };
 
-    template <refcountable T, typename Deleter = deleter<T>>
+    template <typename T, typename Deleter = deleter<T>>
     class refcounted
     {
         compressed_pair<T*, Deleter> data;
@@ -91,7 +105,9 @@ namespace std
         constexpr void __set(T* ptr)
         {
             if (ptr)
+            {
                 ptr->bind_ref_to();
+            }
             data.first = ptr;
         }
 
@@ -100,13 +116,18 @@ namespace std
         constexpr explicit refcounted(nullptr_t, Deleter a = {}) noexcept : data(nullptr, a) {}
         constexpr explicit refcounted(T* ptr, Deleter a = {}) noexcept : data(nullptr, a) { __set(ptr); }
 
-        refcounted& operator=(const refcounted& r) noexcept
+        auto operator=(const refcounted& r) noexcept -> refcounted&
         {
+            if (&r == this)
+            {
+                return *this;
+            }
+
             reset();
             __set(r.data.first);
         }
 
-        refcounted& operator=(refcounted&& r) noexcept
+        auto operator=(refcounted&& r) noexcept -> refcounted&
         {
             reset();
             data.first = r.data.first;
@@ -128,8 +149,8 @@ namespace std
         {
             if (data.first)
             {
-                data.unbind_ref_to();
-                if (data.get_ref_count() == 0)
+                data.first->unbind_ref_to();
+                if (data.first->get_ref_count() == 0)
                 {
                     data.second(data.first);
                     data.first = nullptr;

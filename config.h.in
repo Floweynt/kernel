@@ -10,17 +10,21 @@ using config = ctcfg::config_holder<
     ctcfg::string_entry<"version.cc.ver", "@COMPILER_C_VER@">,
     ctcfg::string_entry<"version.cxx.id", "@COMPILER_CXX_ID@">,
     ctcfg::string_entry<"version.cxx.ver", "@COMPILER_CXX_VER@">,
-    ctcfg::string_entry<"arch", "@ARCH@">,
-    ctcfg::string_entry<"arch-path", "@ARCH_PATH@">,
+    ctcfg::string_entry<"arch.name", "@ARCH_NAME@">,
+    ctcfg::string_entry<"arch.path", "@ARCH_PATH@">,
+    ctcfg::size_entry<"arch.page_size", @ARCH_PAGE_SIZE@>,
     ctcfg::size_entry<"pmm-count", @PMM_COUNT@>,
     ctcfg::size_entry<"preallocate-pages", @PRE_ALLOCATE_PAGES@>,
-    ctcfg::size_entry<"klog-pages", @KLOG_PAGES@>,
     ctcfg::size_entry<"cpuid-feature-size", @CPUID_FEATURE_SIZE@>,
+    ctcfg::size_entry<"klog-shift", @KLOG_SHIFT@>,
     ctcfg::size_entry<"vmm-size", @VMM_SIZE@>,
     ctcfg::address_entry<"mmap.start.hhdm", @HHDM_START@>,
+    ctcfg::address_entry<"mmap.start.pfn", @PFN_START@>,
     ctcfg::address_entry<"mmap.start.scrollback", @SCROLLBACK_START@>,
     ctcfg::address_entry<"mmap.start.heap", @HEAP_START@>,
+    ctcfg::size_entry<"mmap.size.heap", @HEAP_SIZE@>,
     ctcfg::address_entry<"mmap.start.slab", @SLAB_START@>,
+    ctcfg::address_entry<"mmap.start.klog", @KLOG_START@>,
     ctcfg::address_entry<"mmap.start.kernel", 0xffffffff80000000>,
     ctcfg::address_entry<"mmap.start.vmm", @VMM_START@>,
     ctcfg::bool_entry<"debug.log.mmap", @DEBUG_LOG_MMAP@>,
@@ -38,5 +42,11 @@ static_assert(config::get_val<"slab.max_order"> <= config::get_val<"slab.slab_si
 
 #mesondefine COMPILER_GCC
 #mesondefine COMPILER_CLANG
+
+#if defined(COMPILER_GCC)
+#define INLINE [[gnu::always_inline]] inline
+#elif defined(COMPILER_CLANG)
+#define INLINE [[clang::always_inline]] inline
+#endif
 
 #endif

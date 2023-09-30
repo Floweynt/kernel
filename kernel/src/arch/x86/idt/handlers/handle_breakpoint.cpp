@@ -7,8 +7,8 @@ namespace handlers
 {
     void handle_breakpoints(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#BP") " ======================\n");
-        klog::log("a kernel breakpoint has been hit\n");
+        klog::log("====================== " RED("#BP") " ======================");
+        klog::log("a kernel breakpoint has been hit");
         debug::log_register(smp::core_local::get().ctxbuffer);
         klog::panic("#BP");
     }

@@ -5,7 +5,6 @@
 #include <process/process.h>
 #include <sync/spinlock.h>
 #include <utility>
-#include <vector>
 
 namespace scheduler
 {

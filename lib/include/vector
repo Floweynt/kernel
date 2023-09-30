@@ -1,440 +1,231 @@
 // vim: ft=cpp
-#ifndef __NOSTDLIB_VECTOR_H__
-#define __NOSTDLIB_VECTOR_H__
-#include "../bits/iterator_utils.h"
-#include "../bits/user_implement.h"
-#include "memory"
-#include "cstddef"
-#include "initializer_list"
-#include "iterator"
-#include "new"
-#include "utility"
+// adapted from https://github.com/managarm/frigg/blob/master/include/frg/vector.hpp
+#pragma once
+
+#include <cstddef>
+#include <memory>
+#include <utility>
 
 namespace std
 {
-    namespace detail
-    {
-        template<typename It, typename T> concept iter_like = requires (It i) { i != i; (T)*i++; };
-    };
-    template <typename T, allocator_like<T> Alloc = std::allocator<T>>
+    template <typename T, typename Allocator = std::allocator<T>>
     class vector
     {
     public:
         using value_type = T;
-        using size_type = typename Alloc::size_type;
-        using difference_type = typename Alloc::difference_type;
-        using reference = T&;
-        using const_reference = const T&;
-        using pointer = T*;
-        using const_pointer = const T*;
-        using iterator = detail::iterator_wrapper<pointer, vector>;
-        using const_iterator = detail::iterator_wrapper<const_pointer, vector>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-    private:
-        T* buffer;
-        size_type s;
-        size_type cap;
-        Alloc alloc;
-        
-        inline constexpr size_type get_realloc_size(size_t n)
+        using reference = value_type&;
+
+        friend void swap(vector& a, vector& b)
         {
-            size_t new_cap = cap << 1;
-            return std::detail::max(new_cap, n);
-        }
-        
-        static void value_move(T* src, T* dest, size_type n)
-        {
-            for(size_type i = 0; i < n; i++)
-                dest[i] = std::move(src[i]);
+            using std::swap;
+            swap(a._allocator, b._allocator);
+            swap(a._elements, b._elements);
+            swap(a._size, b._size);
+            swap(a._capacity, b._capacity);
         }
 
-        static void value_copy(T* src, T* dest, size_type n)
+        vector(Allocator allocator = Allocator());
+
+        vector(const vector& other) : vector(other._allocator)
         {
-            for(size_type i = 0; i < n; i++)
-                dest[i] = std::move(src[i]);
+            auto other_size = other.size();
+            _ensure_capacity(other_size);
+            for (size_t i = 0; i < other_size; i++)
+                new (&_elements[i]) T(other[i]);
+            _size = other_size;
         }
 
-        template<typename Cb>
-        void resize_with_pred(size_type new_size, Cb copied)
+        vector(vector&& other) : vector(other._allocator) { swap(*this, other); }
+
+        ~vector();
+
+        vector& operator=(vector other)
         {
-            if(new_size > cap)
-            {
-                T* old = buffer;
-                buffer = alloc.allocate(cap = get_realloc_size(new_size));
-                if(old)
-                    copied(old, buffer);
-                alloc.deallocate(old);
-            }
-        }
-
-        template<typename Cb1, typename Cb2>
-        void resize_with_pred(size_type new_size, Cb1 copied, Cb2 not_taken)
-        {
-            if(new_size > cap)
-            {
-                T* old = buffer;
-                buffer = alloc.allocate(cap = get_realloc_size(new_size));
-                if(old)
-                    copied(old, buffer);
-                alloc.deallocate(old);
-            }
-
-            not_taken(buffer);
-        }
-
-        void deinit(T* buf, size_type n)
-        {
-            for(size_type i = 0; i < n; i++)
-                buf[n].~T();
-        }
-
-        void insert_utility(size_type count, size_type index)
-        {
-            resize_with_pred(s + count, [=, this](T* old, T* buffer) {
-                for (size_type i = 0; i < index; i++)
-                    buffer[i] = move(old[i]);
-                for (size_type i = index; i < s; i++)
-                    buffer[i + count] = move(old[i]);
-            }, [=, this](T* buffer) {
-                for (size_type i = s; i > index + count + 1; i--)
-                    buffer[i - 1 + count] = move(buffer[i - 1]);
-            });
-        }
-    public:
-
-        constexpr vector(Alloc alloc = Alloc()) : alloc(alloc), buffer(nullptr), s(0), cap(0) {}
-        constexpr vector(size_type count, const T& value, Alloc alloc = Alloc()) : alloc(alloc), s(count), cap(count)
-        {
-            buffer = alloc.allocate(count);
-            for(size_type i = 0; i < count; i++)
-                construct_at(buffer + i, value);
-            __nostdlib_assert(s <= cap);
-        }
-        explicit constexpr vector(size_type count, Alloc alloc = Alloc()) : alloc(alloc), s(count), cap(count) 
-        {
-            buffer = alloc.allocate(count);
-            for(size_type i = 0; i < count; i++)
-                construct_at(buffer + i);
-            __nostdlib_assert(s <= cap);
-        }
-
-        template <detail::iter_like<T> It>
-        vector(It first, It last, Alloc alloc = Alloc()) : vector(alloc)
-        {
-            while (first != last)
-                push_back(*first++);
-            __nostdlib_assert(s <= cap);
-        }
-
-        vector(const vector& other)
-        {
-            s = other.s;
-            cap = other.cap;
-            buffer = alloc.allocate(cap);
-            value_copy(other.buffer, buffer, s);
-            __nostdlib_assert(s <= cap);
-
-        }
-
-        constexpr vector(vector&& other) noexcept : buffer(other.buffer), s(other.s), cap(other.cap) {}
-
-        constexpr vector(initializer_list<T> init)
-        {
-            s = cap = init.size();
-            buffer = alloc.allocate(s);
-            size_type idx = 0;
-            for (const auto& i : init)
-                buffer[idx++] = i;
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        ~vector()
-        {
-            deinit(buffer, s);
-            alloc.deallocate(buffer);
-            buffer = nullptr;
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        constexpr vector& operator=(const vector& other)
-        {
-            deinit(buffer, s);
-
-            if(cap < other.cap)
-            {
-                alloc.deallocate(buffer);
-                cap = other.cap; 
-                buffer = alloc.allocate(cap);
-            }
-
-            s = other.size();
-            value_copy(other.buffer, buffer, s);
-
-            __nostdlib_assert(s <= cap);
+            swap(*this, other);
             return *this;
         }
 
-        constexpr vector& operator=(vector&& other)
-        {
-            deinit(buffer, s);
-            alloc.deallocate(buffer);
+        T& push(const T& element);
 
-            s = other.s;
-            cap = other.cap;
-            buffer = other.buffer;
-            
-            __nostdlib_assert(s <= cap);
-            return *this;
-        }
-        constexpr vector& operator=(initializer_list<T> init)
-        {
-            deinit(buffer, s);
-            if(cap < init.size())
-            {
-                alloc.deallocate(buffer);
-                cap = init.size(); 
-                buffer = alloc.allocate(cap);
-            }
+        T& push(T&& element);
 
-            s = init.size();
-            size_type idx = 0;
+        T& push_back(const T& element) { return push(element); }
 
-            for (const auto& i : init)
-                buffer[idx++] = i;
-
-            __nostdlib_assert(s <= cap);
-            return *this;
-        }
-
-        iterator begin() { return iterator(buffer); }
-        iterator end() { return iterator(buffer + s); }
-
-        const_iterator cbegin() const { return const_iterator(buffer); }
-        const_iterator cend() const { return const_iterator(buffer + s); }
-
-        reverse_iterator rbegin() { return reverse_iterator(end()); }
-        reverse_iterator rend() { return reverse_iterator(begin()); }
-
-        const_reverse_iterator crbegin() const { return const_reverse_iterator(cend()); }
-        const_reverse_iterator crend() const { return const_reverse_iterator(cbegin()); }
-
-        void assign(size_type count, const T& value)
-        {
-            clear();
-            resize(count);
-            for (size_type i = 0; i < count; i++)
-                buffer[i] = value;
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        template <detail::iter_like<T> It>
-        void assign(It first, It last)
-        {
-            clear();
-            while (first != last)
-                push_back(*first++);
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        void assign(initializer_list<T> init)
-        {
-            clear();
-            resize(init.size());
-            size_type idx = 0;
-            for (auto& i : init)
-                buffer[idx] = i;
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        reference at(size_type pos)
-        {
-            if (pos >= s)
-                detail::errors::__stdexcept_out_of_range();
-            return buffer[pos];
-        }
-
-        const_reference at(size_type pos) const
-        {
-            if (pos >= s)
-                detail::errors::__stdexcept_out_of_range();
-            return buffer[pos];
-        }
-
-        constexpr reference operator[](size_type pos) { return buffer[pos]; }
-        constexpr const_reference operator[](size_type pos) const { return buffer[pos]; }
-
-        constexpr reference front() { return *this[0]; }
-        constexpr const_reference front() const { return *this[0]; }
-        constexpr reference back() { return *this[s - 1]; }
-        constexpr const_reference back() const { return *this[s - 1]; }
-
-        constexpr pointer data() noexcept { return buffer; }
-        constexpr const_pointer data() const noexcept { return buffer; }
-
-        [[nodiscard]] constexpr bool empty() const noexcept { return s == 0; }
-        constexpr size_type size() const noexcept { return s; }
-        constexpr size_type max_size() const noexcept { return -1ULL; }
-        constexpr void reserve(size_type new_cap)
-        {
-            if (new_cap <= cap)
-                return;
-            resize_with_pred(new_cap, [=, this](T* old, T* buffer){
-                deinit(old, s);
-                value_copy(old, buffer, s);
-            });
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        constexpr size_type capacity() const noexcept { return cap; }
-
-        constexpr void shrink_to_fit() { }
-
-        constexpr void clear() noexcept 
-        { 
-            s = 0; 
-            deinit(buffer, s);
-            
-            __nostdlib_assert(s <= cap);
-        }
-
-        iterator insert(const_iterator pos, const T& value)
-        {
-            size_type index = pos - begin();
-            insert_utility(1, pos);
-            s++;
-            construct_at(&buffer[index], value);
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-        }
-
-        constexpr iterator insert(const_iterator pos, T&& value)
-        {
-            size_type index = pos - begin();
-            insert_utility(1, pos);
-            s++;
-            construct_at(&buffer[index], std::move(value));
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-        }
-
-        constexpr iterator insert(const_iterator pos, size_type count, const T& value)
-        {
-            size_type index = pos - begin();
-            insert_utility(count, pos);
-            s += count;
-            for (size_type i = index; i < index + count; i++)
-                construct_at(&buffer[i], value);
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-        }
-
-        template <detail::iter_like<T> It>
-        constexpr iterator insert(const_iterator pos, It first, It last)
-        {
-            auto count = distance(first, last);
-            size_type index = pos - begin();
-            
-            insert_utility(count, pos);
-            s += count;
-            for (size_type i = index; i < index + count; i++)
-                construct_at(&buffer[i],  *first++);
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-
-        }
-
-        constexpr iterator insert(const_iterator pos, initializer_list<T> il) 
-        { 
-            insert(pos, il.begin(), il.end()); 
-            __nostdlib_assert(s <= cap);
-        }
+        T& push_back(T&& element) { return push(std::move(element)); }
 
         template <typename... Args>
-        constexpr iterator emplace(const_iterator pos, Args&&... args)
+        T& emplace_back(Args&&... args);
+
+        T pop();
+
+        template <typename... Args>
+        void resize(size_t new_size, Args&&... args);
+
+        void reserve(size_t new_cap)
         {
-            size_type index = pos - begin();
-            s++;
-            construct_at(&buffer[index], args...);
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-        }
-
-        constexpr iterator erase(const_iterator pos)
-        {
-            size_type index = pos - begin();
-            buffer[index].~T();
-
-            for (size_type i = s; i > index; i--)
-                buffer[i - 2] = move(buffer[i - 1]);
-            s--;
-
-            __nostdlib_assert(s <= cap);
-            return begin() + index;
-        }
-
-        constexpr iterator erase(const_iterator first, const_iterator last)
-        {
-            auto dist = distance(first, last);
-            size_type index = first - begin();
-
-            for (size_type i = index; i < index + dist; i++)
-                buffer[i].~T();
-
-            for (size_type i = s; i > index; i--)
-                buffer[i - dist - 1] = move(buffer[i - 1]);
-
-            __nostdlib_assert(s <= cap);
-            return iterator(buffer + index);
-        }
-
-        constexpr void push_back(const T& value)
-        {
-            if (s == cap)
-                reserve(get_realloc_size(cap + 1));
-            construct_at(&buffer[s], value);
-            s++;
-
-            __nostdlib_assert(s <= cap);
-        }
-
-        constexpr void resize(size_type count)
-        {
-            if (count < s)
-            {
-                for (size_type i = count; i < s; i++)
-                    buffer[i].~T();
-
-                s = count;
+            if(new_cap < _capacity) {
                 return;
             }
 
-            if (count > cap)
-                reserve(get_realloc_size(s));
-            s = count;
+            auto old_ptr = _elements;
+            _capacity = new_cap;
+            _elements = _allocator.allocate(new_cap);
+        
+            for(size_t i = 0; i < size(); i++)
+            {
+                new (&_elements[i]) T(std::move(old_ptr[i]));
+            }
 
-            __nostdlib_assert(count == s);
-            __nostdlib_assert(s <= cap);
+            delete[] old_ptr;
         }
 
-        constexpr void resize(size_type count, const value_type& value)
+        void clear()
         {
-            // TODO: implement
-            __nostdlib_assert(count == s);
-            __nostdlib_assert(s <= cap);
+            for (size_t i = 0; i < _size; i++)
+                _elements[i].~T();
+            _size = 0;
         }
-    };
-} // namespace std
 
-#endif
+        void detach()
+        {
+            _size = 0;
+            _capacity = 0;
+            _elements = nullptr;
+        }
+
+        T* data() { return _elements; }
+
+        const T* data() const { return _elements; }
+
+        size_t size() const { return _size; }
+
+        bool empty() const { return size() == 0; }
+
+        T* begin() { return _elements; }
+
+        const T* begin() const { return _elements; }
+
+        T* end() { return _elements + _size; }
+
+        const T* end() const { return _elements + _size; }
+
+        T& front() { return _elements[0]; }
+        const T& front() const { return _elements[0]; }
+
+        T& back() { return _elements[_size - 1]; }
+        const T& back() const { return _elements[_size - 1]; }
+
+        const T& operator[](size_t index) const { return _elements[index]; }
+        T& operator[](size_t index) { return _elements[index]; }
+
+        bool operator==(const vector& other) const
+        {
+            if (other.size() != size())
+                return false;
+
+            for (size_t i = 0; i < size(); i++)
+                if (other[i] != _elements[i])
+                    return false;
+
+            return true;
+        }
+
+        bool operator!=(const vector& other) const { return !(other == *this); }
+
+    private:
+        void _ensure_capacity(size_t capacity);
+
+        Allocator _allocator;
+        T* _elements;
+        size_t _size;
+        size_t _capacity;
+    };
+
+    template <typename T, typename Allocator>
+    vector<T, Allocator>::vector(Allocator allocator) : _allocator{std::move(allocator)}, _elements{nullptr}, _size{0}, _capacity{0}
+    {
+    }
+
+    template <typename T, typename Allocator>
+    vector<T, Allocator>::~vector()
+    {
+        for (size_t i = 0; i < _size; i++)
+            _elements[i].~T();
+        _allocator.deallocate(_elements);
+    }
+
+    template <typename T, typename Allocator>
+    T& vector<T, Allocator>::push(const T& element)
+    {
+        _ensure_capacity(_size + 1);
+        T* pointer = new (&_elements[_size]) T(element);
+        _size++;
+        return *pointer;
+    }
+
+    template <typename T, typename Allocator>
+    T& vector<T, Allocator>::push(T&& element)
+    {
+        _ensure_capacity(_size + 1);
+        T* pointer = new (&_elements[_size]) T(std::move(element));
+        _size++;
+        return *pointer;
+    }
+
+    template <typename T, typename Allocator>
+    template <typename... Args>
+    T& vector<T, Allocator>::emplace_back(Args&&... args)
+    {
+        _ensure_capacity(_size + 1);
+        T* pointer = new (&_elements[_size]) T(std::forward<Args>(args)...);
+        _size++;
+        return *pointer;
+    }
+
+    template <typename T, typename Allocator>
+    template <typename... Args>
+    void vector<T, Allocator>::resize(size_t new_size, Args&&... args)
+    {
+        _ensure_capacity(new_size);
+        if (new_size < _size)
+        {
+            for (size_t i = new_size; i < _size; i++)
+                _elements[i].~T();
+        }
+        else
+        {
+            for (size_t i = _size; i < new_size; i++)
+                new (&_elements[i]) T(std::forward<Args>(args)...);
+        }
+        _size = new_size;
+    }
+
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::_ensure_capacity(size_t capacity)
+    {
+        if (capacity <= _capacity)
+            return;
+
+        size_t new_capacity = capacity * 2;
+        T* new_array = (T*)_allocator.allocate(sizeof(T) * new_capacity);
+        for (size_t i = 0; i < _capacity; i++)
+            new (&new_array[i]) T(std::move(_elements[i]));
+
+        for (size_t i = 0; i < _size; i++)
+            _elements[i].~T();
+        _allocator.deallocate(_elements);
+
+        _elements = new_array;
+        _capacity = new_capacity;
+    }
+
+    template <typename T, typename Allocator>
+    T vector<T, Allocator>::pop()
+    {
+        _size--;
+        T element = std::move(_elements[_size]);
+        _elements[_size].~T();
+        return element;
+    }
+
+} // namespace std

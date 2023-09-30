@@ -1,12 +1,15 @@
-#include <tty/romfont.h>
-#include <terminal/backends/framebuffer.h>
-#include <terminal/term.h>
+#include "misc/semantics.h"
 #include <cstdint>
 #include <cstring>
 #include <kinit/limine.h>
-#include <mm/pmm.h>
-#include <paging/paging.h>
-
+#include <misc/cast.h>
+#include <misc/kassert.h>
+#include <mm/mm.h>
+#include <mm/paging/paging.h>
+#include <terminal/backends/framebuffer.h>
+#include <terminal/term.h>
+#include <tty/romfont.h>
+#include <tty/tty.h>
 [[gnu::used]] volatile static limine_framebuffer_request framebuffer_request{
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0,
@@ -27,6 +30,11 @@ namespace tty
     static std::uint32_t default_fg = 0x00c5c8c9;
     static term_context* ctx;
 
+    void preinit_plot(std::uint32_t color)
+    {
+        mm::make_virtual<std::uint32_t>(as_uptr(framebuffer_request.response->framebuffers[0]->address))[0] = color;
+    }
+
     void init()
     {
         auto* fb = framebuffer_request.response->framebuffers[0];
@@ -39,14 +47,14 @@ namespace tty
 
                 for (std::size_t i = 0; i < pages; i++)
                 {
-                    auto* p = mm::pmm_allocate();
+                    auto* p = expect_nonnull(mm::pmm_allocate_clean());
                     paging::request_page(paging::page_type::SMALL, SCROLLBACK_START + i * paging::PAGE_SMALL_SIZE, mm::make_physical(p));
                 }
-                return (void*)SCROLLBACK_START;
+                return as_vptr(SCROLLBACK_START);
             },
 
-            mm::make_virtual<std::uint32_t>((std::uintptr_t)fb->address), fb->width, fb->height, fb->pitch, nullptr, ansi_colors, ansi_bright_colours,
-            &default_bg, &default_fg, (void*)font, 8, 8, 0, 1, 1, 0);
+            mm::make_virtual<std::uint32_t>(as_uptr(fb->address)), fb->width, fb->height, fb->pitch, nullptr, ansi_colors, ansi_bright_colours,
+            &default_bg, &default_fg, const_cast<void*>(as_vptr(decay_arr(font))), 8, 8, 0, 1, 1, 0);
         ctx->full_refresh(ctx);
     }
 } // namespace tty

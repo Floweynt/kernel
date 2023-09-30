@@ -35,6 +35,7 @@
 #include "../bits/type_traits/is_unbounded_array.h"
 #include "../bits/type_traits/is_union.h"
 #include "../bits/type_traits/is_unsigned.h"
+#include "../bits/type_traits/make_signed_unsigned.h"
 #include "../bits/type_traits/is_void.h"
 #include "../bits/type_traits/move_assignable.h"
 #include "../bits/type_traits/move_constructible.h"

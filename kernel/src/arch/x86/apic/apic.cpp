@@ -8,6 +8,8 @@
 
 namespace apic
 {
+    inline static constexpr auto PIC_DISABLE = 0xff; 
+
     auto local_apic::check_apic() -> bool
     {
         std::uint32_t eax = 0;
@@ -24,8 +26,8 @@ namespace apic
 
     void local_apic::enable()
     {
-        outb(ioports::PIC_SLAVE_DATA, 0xff);
-        outb(ioports::PIC_MASTER_DATA, 0xff);
+        outb(ioports::PIC_SLAVE_DATA, PIC_DISABLE);
+        outb(ioports::PIC_MASTER_DATA, PIC_DISABLE);
 
         set_apic_base(get_apic_base());
         reg_start->siv.write(reg_start->siv.read() | SIV_APIC_SOFTWARE_ENABLE);

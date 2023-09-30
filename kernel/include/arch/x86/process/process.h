@@ -5,10 +5,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <mm/mm.h>
-#include <mm/pmm.h>
-#include <paging/paging.h>
+#include <mm/paging/paging.h>
+#include <slot_vector.h>
 #include <sync/spinlock.h>
 #include <utils/id_allocator.h>
+#include <user/fd/fd.h>
 
 namespace proc
 {
@@ -41,7 +42,7 @@ namespace proc
         // scheduler information
         // std::size_t sched_index;
         // std::size_t latest_scheduled_tick;
-        const task_id id;
+        task_id id;
         thread_state state{};
         constexpr thread(task_id task_id) : id(task_id) {}
     };
@@ -49,18 +50,19 @@ namespace proc
     class process
     {
     public:
-        inline static constexpr std::size_t MAX_THREADS = 16;
+        inline static constexpr std::size_t MAX_THREADS = 32;
         inline static constexpr std::size_t MAX_PROCESS = 1;
         friend auto get_process(std::uint32_t pid) -> process&;
 
     private:
-        id_allocator<MAX_THREADS> thread_allocator;
-        thread* threads[MAX_THREADS];
+        std::slot_vector<thread> threads;
+        std::slot_vector<user::file_desc> file_desc;
+
         std::uint32_t pid = 0;
 
     public:
         auto make_thread(const context& inital_context, std::size_t core) -> std::uint32_t;
-        auto get_thread(std::uint32_t tid) -> thread* { return threads[tid]; }
+        auto get_thread(std::uint32_t tid) -> thread* { return &threads[tid]; }
     };
 
     auto get_process(std::uint32_t pid) -> process&;

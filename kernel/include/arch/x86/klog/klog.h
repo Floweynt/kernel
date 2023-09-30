@@ -1,43 +1,55 @@
 #pragma once
 
-#include <smp/smp.h>
-#include <printf.h>
-#include <cstddef>
 #include <config.h>
-#include <sync/spinlock.h>
+#include <cstddef>
 #include <debug/debug.h>
+#include <printf.h>
+#include <smp/smp.h>
+#include <sync/spinlock.h>
 
 namespace klog
 {
-    namespace 
+    namespace detail
     {
-        extern std::size_t start, end;
-        lock::spinlock lock;
+        auto get_klog_lock() -> lock::spinlock&;
+    };
+
+    template <typename... Args>
+    auto print(const char* fmt, Args... args) -> std::size_t
+    {
+        return std::printf(fmt, args...);
     }
 
-    template<typename... Args>
-    auto log(const char* fmt, Args... args) -> std::size_t
+    template <typename... Args>
+    void log(const char* fmt, Args... args)
     {
-        lock::spinlock_guard guard(lock);
-        std::size_t len1 = std::printf("[%lu] ", smp::core_local::get().core_id);
-        std::size_t len2 = std::printf(fmt, args...);
-        return len1 + len2;
+        lock::spinlock_guard guard(detail::get_klog_lock());
+
+        print("[%lu] ", smp::core_local::get().core_id);
+        print(fmt, args...);
+        print("\n");
+    }
+
+    void log_many(auto callback)
+    {
+        lock::spinlock_guard guard(detail::get_klog_lock());
+        callback();
     }
 
     //[[gnu::format(printf, 1, 2)]] std::size_t log(const char* fmt, ...);
 
     [[noreturn]] inline void panic(const char* msg)
     {
-        lock::spinlock_guard g(lock);
-        std::printf("[%lu] ", smp::core_local::get().core_id);
+        lock::spinlock_guard guard(detail::get_klog_lock());
+        print("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg);
         __builtin_unreachable();
     }
 
     inline void panic(const char* msg, bool crash)
     {
-        lock::spinlock_guard guard(lock);
-        std::printf("[%lu] ", smp::core_local::get().core_id);
+        lock::spinlock_guard guard(detail::get_klog_lock());
+        print("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg, crash);
     }
-}
+} // namespace klog

@@ -7,7 +7,7 @@ namespace handlers
 {
     void handle_stack(std::uint64_t /*unused*/, std::uint64_t /*unused*/)
     {
-        klog::log("====================== " RED("#SS") " ======================\n");
+        klog::log("====================== " RED("#SS") " ======================");
         debug::log_register(smp::core_local::get().ctxbuffer);
         klog::panic("#SS");
     }

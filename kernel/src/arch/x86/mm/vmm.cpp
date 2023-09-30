@@ -5,12 +5,13 @@
 #include <cstdint>
 #include <debug/debug.h>
 #include <klog/klog.h>
-#include <mm/pmm.h>
+#include <mm/mm.h>
 #include <new>
-#include <paging/paging.h>
+#include <mm/paging/paging.h>
 
 namespace vmm
 {
+    /*
     struct vmm_block_header
     {
         vmm_block_header* back;
@@ -87,7 +88,20 @@ namespace vmm
         klog::panic("virtual memory exhausted");
     }
 
-    void vfree(void* /*buffer*/) { klog::log("warning: vfree not implemented"); }
+    void vfree(void* buffer) { klog::log("warning: vfree not implemented"); }*/
 
+    static std::uintptr_t start = config::get_val<"mmap.start.vmm">;
+
+    auto vmm_allocate(std::size_t pages) -> void*
+    {
+        auto* ret = as_vptr(start);
+        start += pages * paging::PAGE_SMALL_SIZE;
+        return ret;
+    }
+
+    void vmm_free(void* pointer, std::size_t pages)
+    {
+        (void)pointer;
+        (void)pages;
+    }
 } // namespace vmm
-

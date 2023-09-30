@@ -2,6 +2,7 @@
 #include "concepts"
 #include "cstdint"
 #include "type_traits"
+#include "ctstring.h"
 
 namespace ctcfg
 {
@@ -12,34 +13,6 @@ namespace ctcfg
         {
             __builtin_unreachable();
         }
-
-        template <std::size_t N>
-        struct string_literal
-        {
-            constexpr string_literal(const char (&str)[N]) { std::copy_n(str, N, value); }
-
-            constexpr string_literal(const char (&str)[N - 1], char ch)
-            {
-                std::copy_n(str, N - 2, value);
-                value[N - 2] = ch;
-                value[N - 1] = 0;
-            }
-
-            char value[N];
-            inline static constexpr auto size = N;
-        };
-
-        template <typename T>
-        struct is_strlit : std::false_type
-        {
-        };
-        template <std::size_t N>
-        struct is_strlit<string_literal<N>> : std::true_type
-        {
-        };
-
-        template <typename T>
-        concept strlit = is_strlit<std::decay_t<T>>::value;
 
         struct error
         {
@@ -74,11 +47,11 @@ namespace ctcfg
         concept config_entry_concept = requires(T a) {
             {
                 T::name
-            } -> strlit<>;
+            } -> std::strlit<>;
             std::is_class_v<typename T::type>;
         };
 
-        template <string_literal v1, string_literal v2>
+        template <std::string_literal v1, std::string_literal v2>
         constexpr auto is_eq() -> bool
         {
             bool flag = decltype(v1)::size == decltype(v2)::size;
@@ -90,7 +63,7 @@ namespace ctcfg
             return flag;
         }
 
-        template <string_literal v, config_entry_concept Opt>
+        template <std::string_literal v, config_entry_concept Opt>
         using check = std::conditional_t<is_eq<v, Opt::name>(), type_list<Opt>, type_list<>>;
 
         template <typename T, typename... Ts>
@@ -99,14 +72,14 @@ namespace ctcfg
             using type = T;
         };
 
-        template <string_literal v, config_entry_concept... Opts>
+        template <std::string_literal v, config_entry_concept... Opts>
         using search_result_t = typename decltype((type_list<>{} + ... + check<v, Opts>{}))::first;
     } // namespace detail
 
     template <typename T, T v>
     using simple_data_holder = detail::comptime_value<T, v>;
 
-    template <detail::string_literal n, typename T>
+    template <std::string_literal n, typename T>
     struct config_entry
     {
         inline static constexpr auto name = n;
@@ -116,21 +89,21 @@ namespace ctcfg
     template <detail::config_entry_concept... Opts>
     struct config_holder
     {
-        template <detail::string_literal str>
+        template <std::string_literal str>
             requires(!std::is_same_v<detail::error, typename detail::search_result_t<str, Opts...>>)
         using get = typename detail::search_result_t<str, Opts...>::type;
 
-        template <detail::string_literal str>
+        template <std::string_literal str>
         inline static constexpr auto get_val = get<str>::value;
 
-        template <detail::string_literal str>
+        template <std::string_literal str>
         inline static constexpr const char* get_str = (const char*)get<str>::value;
 
-        template <detail::string_literal str>
+        template <std::string_literal str>
         inline static constexpr auto exists = !std::is_same_v<detail::error, typename detail::search_result_t<str, Opts...>>;
     };
 
-    template <detail::string_literal n, typename T, T v>
+    template <std::string_literal n, typename T, T v>
     using simple_entry = config_entry<n, simple_data_holder<T, v>>;
 
     template <std::size_t N>
@@ -143,7 +116,7 @@ namespace ctcfg
         char value[N];
     };
 #define __MAKE_ENTRY(_n, t)                                                                                                                          \
-    template <detail::string_literal n, t v>                                                                                                         \
+    template <std::string_literal n, t v>                                                                                                         \
     struct _n : simple_entry<n, decltype(v), v>                                                                                                      \
     {                                                                                                                                                \
     };

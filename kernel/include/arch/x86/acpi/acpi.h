@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/misc/cast.h>
+#include <misc/cast.h>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>

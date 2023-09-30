@@ -471,16 +471,21 @@ auto demangle(const std::string_view& str) -> std::string
     return result;
 }
 
-auto demangle_and_restrict_len(const std::string_view& str) -> std::string
+auto restrict_len(const std::string_view& str) -> std::string 
 {
-    std::string result = demangle(str.data());
+    std::string result(str.begin(), str.end());
     if (result.size() > SCREEN_LEN)
     {
         result.resize(SCREEN_LEN - 3);
         result += "...";
     }
 
-    return result;
+    return result; 
+}
+
+auto demangle_and_restrict_len(const std::string_view& str) -> std::string
+{
+    return restrict_len(demangle(str.data()));
 }
 
 struct symtab_entry
@@ -538,13 +543,18 @@ auto prog_main(int argc, char** argv) -> int
 
     for (const auto& sym : symbols.value())
     {
-        fmt::print("Sym: {:{}} size=0x{:016x} value=0x{:016x} flags={}\n", demangle_and_restrict_len(sym.name()), SCREEN_LEN, sym.size(), sym.value(),
-                   SYM_VIS[sym.other() & 3]);
 
+        fmt::print("Sym: {:{}} size=0x{:016x} value=0x{:016x} vis={}\n", demangle_and_restrict_len(sym.name()), SCREEN_LEN, sym.size(), sym.value(), SYM_VIS[sym.other()]);
         entries.push_back({sym.value(), sym.size(), demangle(sym.name())});
     }
 
     std::sort(entries.begin(), entries.end(), [](const symtab_entry& a, symtab_entry& b) { return a.start < b.start; });
+
+    std::cerr << "-- dump sorted:\n";
+    for (const auto& entry : entries)
+    {
+        fmt::print("Sym: {:{}} size=0x{:016x} value=0x{:016x}\n", restrict_len(entry.name), SCREEN_LEN, entry.size, entry.start);
+    }
 
     sym::writer w(argv[2]);
     for (const auto& i : entries)
@@ -603,7 +613,7 @@ auto main(int argc, char** argv) -> int
     }
     catch (std::exception& e)
     {
-        std::cout << e.what() << '\n';
+        std::cerr << e.what() << '\n';
         exit(-1);
     }
 }
