@@ -24,6 +24,7 @@ namespace klog
     void log(const char* fmt, Args... args)
     {
         lock::spinlock_guard guard(detail::get_klog_lock());
+        lock::interrupt_lock_guard int_guard;
 
         print("[%lu] ", smp::core_local::get().core_id);
         print(fmt, args...);
@@ -33,6 +34,8 @@ namespace klog
     void log_many(auto callback)
     {
         lock::spinlock_guard guard(detail::get_klog_lock());
+        lock::interrupt_lock_guard int_guard;
+
         callback();
     }
 
@@ -41,6 +44,8 @@ namespace klog
     [[noreturn]] inline void panic(const char* msg)
     {
         lock::spinlock_guard guard(detail::get_klog_lock());
+        lock::interrupt_lock_guard int_guard;
+
         print("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg);
         __builtin_unreachable();
@@ -49,6 +54,8 @@ namespace klog
     inline void panic(const char* msg, bool crash)
     {
         lock::spinlock_guard guard(detail::get_klog_lock());
+        lock::interrupt_lock_guard int_guard;
+
         print("[%lu] ", smp::core_local::get().core_id);
         debug::panic(msg, crash);
     }

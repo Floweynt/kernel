@@ -5,11 +5,13 @@
 #include <cstdint>
 #include <debug/debug.h>
 #include <klog/klog.h>
+#include <misc/kassert.h>
 #include <mm/mm.h>
-#include <new>
 #include <mm/paging/paging.h>
+#include <mm/paging/paging_entries.h>
+#include <new>
 
-namespace vmm
+namespace mm
 {
     /*
     struct vmm_block_header
@@ -90,12 +92,12 @@ namespace vmm
 
     void vfree(void* buffer) { klog::log("warning: vfree not implemented"); }*/
 
-    static std::uintptr_t start = config::get_val<"mmap.start.vmm">;
+    static std::uintptr_t start = config::get_val<"mmap.start.vmm"> + paging::PAGE_SMALL_SIZE;
 
     auto vmm_allocate(std::size_t pages) -> void*
     {
         auto* ret = as_vptr(start);
-        start += pages * paging::PAGE_SMALL_SIZE;
+        start += (pages + 1) * paging::PAGE_SMALL_SIZE;
         return ret;
     }
 
@@ -104,4 +106,24 @@ namespace vmm
         (void)pointer;
         (void)pages;
     }
-} // namespace vmm
+
+    auto vmm_allocate_mapped(std::size_t pages) -> void*
+    {
+        auto* ptr = vmm_allocate(pages);
+        for (std::size_t i = 0; i < pages; i++)
+        {
+            expect(paging::request_page(paging::SMALL, as_uptr(ptr) + i * paging::PAGE_SMALL_SIZE,
+                                        mm::make_physical(expect_nonnull(mm::pmm_allocate_clean())), {.rw = true}, false),
+                   "illegal state?");
+            invlpg(as_uptr(ptr) + i * paging::PAGE_SMALL_SIZE);
+        }
+
+        return ptr;
+    }
+
+    auto allocate_stack() -> void*
+    {
+        static constexpr auto STACK_SIZE = 256;
+        return as_vptr(as_uptr(vmm_allocate_mapped(STACK_SIZE)) + STACK_SIZE * paging::PAGE_SMALL_SIZE);
+    }
+} // namespace mm

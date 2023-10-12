@@ -67,7 +67,7 @@ namespace mm
         }
     }
 
-    void* slab_allocate(std::size_t n)
+    auto slab_allocate(std::size_t n) -> void*
     {
         std::size_t order = std::ceil_logbase2(n);
         if (order > MAX_ORDER)

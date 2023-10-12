@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <misc/cast.h>
 
 /// \brief `cpuid` instruction wrapper
 /// \param code The value passed in `%eax` for `cpuid`
@@ -82,6 +83,7 @@ WRITE_CR(4)
 /// \brief Wrapper for the `invlpg` instruction
 /// \param m The address passed into invlpg
 inline void invlpg(void* addr) { asm volatile("invlpg (%0)" : : "b"(addr) : "memory"); }
+inline void invlpg(std::uintptr_t addr) { invlpg(as_vptr(addr)); }
 
 /// \brief Wrapper for the `cli` instruction
 ///
@@ -99,6 +101,10 @@ namespace msr
     inline constexpr std::uint64_t IA32_GS_BASE = 0xc0000101;
     inline constexpr std::uint64_t IA32_KERNEL_GS_BASE = 0xc0000102;
     inline constexpr std::uint64_t IA32_PAT = 0x277;
+    inline constexpr std::uint64_t IA32_STAR = 0xc0000081;
+    inline constexpr std::uint64_t IA32_LSTAR = 0xc0000082;
+    inline constexpr std::uint64_t IA32_CSTAR = 0xc0000083;
+    inline constexpr std::uint64_t IA32_SFMASK = 0xc0000084;
 } // namespace msr
 namespace cpuflags
 {

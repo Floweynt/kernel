@@ -10,6 +10,7 @@
 #include <terminal/term.h>
 #include <tty/romfont.h>
 #include <tty/tty.h>
+
 [[gnu::used]] volatile static limine_framebuffer_request framebuffer_request{
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0,

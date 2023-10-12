@@ -13,7 +13,6 @@ using config = ctcfg::config_holder<
     ctcfg::string_entry<"arch.name", "@ARCH_NAME@">,
     ctcfg::string_entry<"arch.path", "@ARCH_PATH@">,
     ctcfg::size_entry<"arch.page_size", @ARCH_PAGE_SIZE@>,
-    ctcfg::size_entry<"pmm-count", @PMM_COUNT@>,
     ctcfg::size_entry<"preallocate-pages", @PRE_ALLOCATE_PAGES@>,
     ctcfg::size_entry<"cpuid-feature-size", @CPUID_FEATURE_SIZE@>,
     ctcfg::size_entry<"klog-shift", @KLOG_SHIFT@>,
@@ -34,7 +33,9 @@ using config = ctcfg::config_holder<
     ctcfg::bool_entry<"debug.lock.spinlock_dep", @DEBUG_SPINLOCK_DEP@>,
     ctcfg::size_entry<"slab.min_order", @SLAB_MIN_ORDER@>,
     ctcfg::size_entry<"slab.max_order", @SLAB_MAX_ORDER@>,
-    ctcfg::size_entry<"slab.slab_size_order", @SLAB_SIZE_ORDER@>
+    ctcfg::size_entry<"slab.slab_size_order", @SLAB_SIZE_ORDER@>,
+    ctcfg::bool_entry<"sanitize.address", @HAS_ASAN@>,
+    ctcfg::bool_entry<"sanitize.undefined", @HAS_UBSAN@>
 >;
 
 static_assert(config::get_val<"slab.min_order"> <= config::get_val<"slab.max_order">);
@@ -45,8 +46,12 @@ static_assert(config::get_val<"slab.max_order"> <= config::get_val<"slab.slab_si
 
 #if defined(COMPILER_GCC)
 #define INLINE [[gnu::always_inline]] inline
+#define NO_UBSAN [[gcc::no_sanitize("undefined")]]
+#define NO_ASAN [[gcc::no_sanitize("address")]]
 #elif defined(COMPILER_CLANG)
 #define INLINE [[clang::always_inline]] inline
+#define NO_UBSAN [[clang::no_sanitize("undefined")]]
+#define NO_ASAN [[clang::no_sanitize("address")]]
 #endif
 
 #endif

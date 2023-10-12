@@ -1,5 +1,3 @@
-#pragma once
-
 #include <bits/mathhelper.h>
 #include <config.h>
 #include <cstddef>
@@ -10,6 +8,7 @@
 #include <mm/mm.h>
 #include <mm/paging/paging.h>
 #include <mm/paging/paging_entries.h>
+
 namespace mm
 {
     namespace
@@ -22,8 +21,8 @@ namespace mm
     auto pmm_stupid_allocate() -> void*
     {
         allocations++;
-        auto& entries = boot_resource::instance().memmap();
-        auto& entry_count = boot_resource::instance().memmap_length();
+        const auto& entries = boot_resource::instance().memmap();
+        const auto& entry_count = boot_resource::instance().memmap_length();
 
         while (entries[stupid_pmm_current_index].type != LIMINE_MEMMAP_USABLE && stupid_pmm_current_index < entry_count)
         {
@@ -162,8 +161,8 @@ namespace mm
 
                 for (; start_index < e.length / paging::PAGE_SMALL_SIZE; start_index++)
                 {
-                    new (&get_pfn(e.base + start_index * paging::PAGE_SMALL_SIZE)) page_info();
-                    pmm_get_free_list().add_front(&get_pfn(e.base + start_index * paging::PAGE_SMALL_SIZE));
+                    new (&page_to_pfn(e.base + start_index * paging::PAGE_SMALL_SIZE)) page_info();
+                    pmm_get_free_list().add_front(&page_to_pfn(e.base + start_index * paging::PAGE_SMALL_SIZE));
                 }
             }
 

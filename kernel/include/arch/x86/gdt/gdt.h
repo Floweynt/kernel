@@ -59,8 +59,8 @@ namespace gdt
         }
     };
 
-    inline static constexpr auto KERNEL_CS = 0x8;
-    inline static constexpr auto KERNEL_DS = 0x10;
-    inline static constexpr auto USER_CS = 0x18;
-    inline static constexpr auto USER_DS = 0x20;
+    inline static constexpr std::uint64_t KERNEL_CS = 0x8;
+    inline static constexpr std::uint64_t KERNEL_DS = 0x10;
+    inline static constexpr std::uint64_t USER_CS = 0x18;
+    inline static constexpr std::uint64_t USER_DS = 0x20;
 } // namespace gdt

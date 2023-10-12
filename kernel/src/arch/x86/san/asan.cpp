@@ -12,7 +12,7 @@ namespace san
     namespace
     {
         inline constexpr int KASAN_SHIFT = 3;
-        inline constexpr std::uintptr_t KASAN_SHADOW_DELTA = 0xdfffe00000000000;
+        inline constexpr std::uintptr_t KASAN_SHADOW_DELTA = 0xdfffe00000000000; // ffffd00000000000
         inline constexpr bool KASAN_IS_DEBUG = false;
 
         inline constexpr std::size_t KASAN_SCALE = std::size_t{1} << KASAN_SHIFT;

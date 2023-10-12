@@ -17,7 +17,7 @@ namespace mm
 {
     // address management routines
     void init();
-    
+
     constexpr auto make_physical(std::uintptr_t virt) -> std::uintptr_t { return virt & ~config::get_val<"mmap.start.hhdm">; }
 
     template <typename T>
@@ -94,22 +94,22 @@ namespace mm
     // pmm routines
     void pmm_add_region(std::uintptr_t, std::size_t);
     auto pmm_allocate() -> void*;
-    INLINE auto pmm_allocate_clean() -> void* 
+    INLINE auto pmm_allocate_clean() -> void*
     {
-    auto *ptr = pmm_allocate();;
+        auto* ptr = pmm_allocate();
         return ptr != nullptr ? std::memset(ptr, 0, paging::PAGE_SMALL_SIZE) : ptr;
     }
 
     auto pmm_free(void* addr);
     auto pmm_get_free_list() -> std::intrusive_list<page_info>&;
     auto pmm_stupid_allocate() -> void*;
-    
-    INLINE auto get_pfn(void* addr) -> page_info&
+
+    INLINE auto page_to_pfn(void* addr) -> page_info&
     {
         return as_ptr<page_info>(config::get_val<"mmap.start.pfn">)[make_physical(addr) / paging::PAGE_SMALL_SIZE];
     }
 
-    INLINE auto get_pfn(std::uintptr_t addr) -> page_info&
+    INLINE auto page_to_pfn(std::uintptr_t addr) -> page_info&
     {
         return as_ptr<page_info>(config::get_val<"mmap.start.pfn">)[make_physical(addr) / paging::PAGE_SMALL_SIZE];
     }
@@ -121,4 +121,6 @@ namespace mm
 
     auto vmm_allocate(std::size_t pages) -> void*;
     void vmm_free(void* pointer, std::size_t pages);
+    auto vmm_allocate_mapped(std::size_t pages) -> void*;
+    auto allocate_stack() -> void*;
 } // namespace mm

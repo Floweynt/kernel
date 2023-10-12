@@ -1,5 +1,5 @@
 .global
-syscall_entry:
+_syscall_entry:
     // all syscalls come from userspace!
     swapgs
 

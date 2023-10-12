@@ -54,8 +54,6 @@ kernel_src = [
     'kernel/src/arch/x86/asm/return_to_context.S',
     'kernel/src/arch/x86/pci/pci_scan.cpp',
     'kernel/src/arch/x86/sync/spinlock.cpp',
-    'kernel/src/arch/x86/san/ubsan.cpp',
-    #  'kernel/src/arch/x86/san/asan.cpp',
     'kernel/src/arch/x86/apic/apic.cpp',
     'kernel/src/arch/x86/kinit/kinit.cpp',
     'kernel/src/arch/x86/process/process.cpp',
@@ -68,7 +66,6 @@ kernel_src = [
     'kernel/src/arch/x86/mm/init.cpp',
     #    'kernel/src/arch/x86/mm/slab.cpp',
     'kernel/src/arch/x86/mm/paging/paging.cpp',
-    'kernel/src/arch/x86/mm/paging/pgfault.cpp',
     'kernel/src/arch/x86/mm/vmm.cpp',
     'kernel/src/arch/x86/cpuid/cpuid.cpp',
     'kernel/src/arch/x86/gdt/gdt.cpp',
@@ -97,7 +94,6 @@ common_src = [
 ]
 
 opt_to_config = {
-    'PMM_COUNT': 'max_physical_memory_allocators',
     'PRE_ALLOCATE_PAGES': 'preallocate_pages',
     'KLOG_PAGES': 'klog_size_pages',
     'CPUID_FEATURE_SIZE': 'cpuid_feature_buffer_size',
@@ -109,7 +105,9 @@ opt_to_config = {
     'SLAB_MIN_ORDER': 'slab_min_order',
     'SLAB_MAX_ORDER': 'slab_max_order',
     'SLAB_SIZE_ORDER': 'slab_size_order',
-    'VMM_SIZE': 'vmm_size'
+    'VMM_SIZE': 'vmm_size',
+    'HAS_ASAN': 'kernel_asan',
+    'HAS_UBSAN': 'kernel_ubsan'
 }
 
 qemu_base_flags = [
@@ -201,6 +199,26 @@ kernel_build_args = [
     '-Wno-unused-parameter',
 ]
 
+ubsan = get_option('kernel_ubsan')
+asan = get_option('kernel_asan')
+
+ubsan_extra = ['-fno-sanitize=function', '-fsanitize-undefined-strip-path-components=1']
+asan_extra = []
+
+ubsan_src = 'kernel/src/arch/x86/san/ubsan.cpp'
+asan_src = 'kernel/src/arch/x86/san/asan.cpp'
+
+if ubsan and asan 
+    kernel_build_args += ['-fsanitize=kernel-address,undefined'] + ubsan_extra + asan_extra
+    kernel_src += [ubsan_src, asan_src] 
+elif ubsan 
+    kernel_build_args += ['-fsanitize=undefined'] + ubsan_extra
+    kernel_src += [ubsan_src]
+elif asan 
+    kernel_build_args += ['-fsanitize=kernel-address'] + asan_extra
+    kernel_src += [asan_src]
+endif
+
 # options configuration
 if get_option('slab_min_order') >= get_option('slab_max_order')
     error('config: slab_min_order cannot >= slab_max_order')
@@ -234,7 +252,7 @@ conf.set('PFN_START',        '0xffff900000000000')
 conf.set('SCROLLBACK_START', '0xffff910000000000')
 conf.set('HEAP_START',       '0xffff920000000000')
 conf.set('SLAB_START',       '0xffff930000000000')
-conf.set('KLOG_START',       '0xffff94000000000')
+conf.set('KLOG_START',       '0xffff940000000000')
 conf.set('VMM_START',        '0xffffa00000000000')
 conf.set('HEAP_SIZE',        '0x10000000000')
 conf.set('KLOG_SHIFT',       '17')
@@ -286,14 +304,12 @@ kernel = executable('kernel.elf',
         '-static',
         '-nostdlib',
         '-m64',
+        '-femulated-tls'
     ],
     cpp_args: [
         '-m64', 
         '-march=x86-64', 
         '-mcmodel=kernel',
-        '-fsanitize=undefined',
-        '-fno-sanitize=function',
-        '-fsanitize-undefined-strip-path-components=1',
         kernel_build_args
     ],
     c_args: [

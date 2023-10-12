@@ -10,7 +10,7 @@ idt_common:
     pushq %rbx
 
     xorq %rbx, %rbx
-    cmp 0x48(%rsp), %rbx
+    cmp 0x40(%rsp), %rbx
 #    jne .L0
 #    swapgs
 #.L0:

@@ -24,7 +24,7 @@ namespace paging
                             bool overwrite) -> bool;
     auto request_page(page_type type, std::uint64_t vaddr, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool;
     auto request_page_early(page_type type, std::uint64_t vaddr, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool;
-     
+
     template <std::uint8_t t>
     constexpr auto get_page_entry(std::uint64_t virtual_addr) -> std::uint16_t
     {
@@ -36,12 +36,12 @@ namespace paging
         return std::get_bits(virtual_addr, (3 - type) * 9 + 12, (3 - type) * 9 + 20) >> ((3 - type) * 9 + 12);
     }
 
-    inline auto map_hhdm_page(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
+    INLINE auto map_hhdm_page(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
     {
         return request_page(pt, mm::make_virtual(paddr), paddr, prop, overwrite);
     }
 
-    inline auto map_hhdm_page_early(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
+    INLINE auto map_hhdm_page_early(page_type pt, std::uint64_t paddr, page_prop prop = {}, bool overwrite = false) -> bool
     {
         return request_page_early(pt, mm::make_virtual(paddr), paddr, prop, overwrite);
     }

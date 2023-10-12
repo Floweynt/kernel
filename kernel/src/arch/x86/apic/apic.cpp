@@ -8,7 +8,7 @@
 
 namespace apic
 {
-    inline static constexpr auto PIC_DISABLE = 0xff; 
+    inline static constexpr auto PIC_DISABLE = 0xff;
 
     auto local_apic::check_apic() -> bool
     {

@@ -59,10 +59,9 @@ namespace proc
 
     auto make_kthread_args(kthread_fn_args_t thread_fn, std::uint64_t extra, std::size_t core) -> std::uint32_t
     {
-        auto* stack = mm::pmm_allocate_clean();
         auto* pages = mm::pmm_allocate_clean();
 
-        if (stack == nullptr || pages == nullptr)
+        if (pages == nullptr)
         {
             klog::panic("failed to allocate buffers for kernel thread stack and page table");
         }
@@ -72,7 +71,7 @@ namespace proc
         return get_process(0).make_thread(context_builder(context_builder::KERNEL, as_uptr(thread_fn))
                                               .set_reg(context::RDI, extra)
                                               .set_flag(cpuflags::IF)
-                                              .set_stack(as_uptr(stack) + paging::PAGE_SMALL_SIZE)
+                                              .set_stack(as_uptr(mm::allocate_stack()))
                                               .set_cr3(as_uptr(pages))
                                               .build(),
                                           core);

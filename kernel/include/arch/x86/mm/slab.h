@@ -9,9 +9,9 @@ namespace mm
     auto slab_allocate(std::size_t size) -> void*;
     void slab_free(void* ptr);
 
-    template<typename T>
+    template <typename T>
     auto slab_allocate() -> T*
     {
         return new (slab_allocate(sizeof(T))) T;
     }
-}
+} // namespace mm

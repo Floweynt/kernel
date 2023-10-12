@@ -49,7 +49,11 @@ namespace paging
                 }
 
                 std::memset(mem, 0, PAGE_SMALL_SIZE);
-                entry = make_page_pointer(mm::make_physical(mem), prop);
+                entry = make_page_pointer(mm::make_physical(mem), {
+                                                                      .rw = true, // since x86 ands all permission bits, we want this to be true!
+                                                                      .us = true,
+                                                                      .x = true,
+                                                                  });
             }
 
             current_entry = mm::make_virtual<page_table_entry>(current_entry[index] & MASK_TABLE_POINTER);

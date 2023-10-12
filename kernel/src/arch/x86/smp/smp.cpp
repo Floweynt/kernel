@@ -13,16 +13,17 @@
 #include <klog/klog.h>
 #include <misc/cast.h>
 #include <misc/kassert.h>
+#include <misc/pointer.h>
 #include <mm/mm.h>
 #include <mm/paging/paging.h>
+#include <mm/paging/paging_entries.h>
 #include <process/context.h>
 #include <smp/smp.h>
 #include <sync/spinlock.h>
 #include <sync_wrappers.h>
 #include <user/elf_load.h>
-#include <utility>
 #include <user/syscall/sys_io.h>
-#include <misc/pointer.h>
+#include <utility>
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -37,14 +38,14 @@ namespace smp
 
     namespace
     {
-        void wait_sync_action(auto cb)
+        void wait_sync_action(auto callback)
         {
             static lock::spinlock lock;
             static bool flag = true;
             lock.lock();
             if (flag)
             {
-                cb();
+                callback();
                 flag = false;
             }
             lock.release();
@@ -114,14 +115,13 @@ namespace smp
             local.idt_handler_entries = new std::uintptr_t[256];
             local.idt_entries = new idt::idt_entry[256];
 
-            // TODO: check non-null IST
-            local.ist.ist1 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist2 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist3 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist4 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist5 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist6 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
-            local.ist.ist7 = as_uptr(mm::pmm_allocate_clean()) + paging::PAGE_SMALL_SIZE - 1;
+            local.ist.ist1 = as_uptr(mm::allocate_stack());
+            local.ist.ist2 = as_uptr(mm::allocate_stack());
+            local.ist.ist3 = as_uptr(mm::allocate_stack());
+            local.ist.ist4 = as_uptr(mm::allocate_stack());
+            local.ist.ist5 = as_uptr(mm::allocate_stack());
+            local.ist.ist6 = as_uptr(mm::allocate_stack());
+            local.ist.ist7 = as_uptr(mm::allocate_stack());
 
             local.gdt.set_ist(&local.ist);
             gdt::install_gdt();
@@ -162,7 +162,7 @@ namespace smp
                         }
                     }
                 },
-                local.core_id);
+                core_id);
 
             initialize_apic(smp::core_local::get());
 
@@ -177,7 +177,7 @@ namespace smp
     [[noreturn]] void init(limine_smp_response* smp)
     {
         boot_resource::instance().mark_smp_start();
-        std::printf("init_smp(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
+        std::printf("smp::init(): bootstrap_processor_id=%u\n", smp->bsp_lapic_id);
         std::printf("  cpus: %lu\n", smp->cpu_count);
 
         for (std::size_t i = 0; i < 256; i++)
@@ -186,7 +186,11 @@ namespace smp
 
             if (!entry)
             {
-                entry = as_uptr(expect_nonnull(mm::pmm_allocate_clean(), "pmm allocate failed"));
+                entry = paging::make_page_pointer(mm::make_physical(expect_nonnull(mm::pmm_allocate_clean(), "pmm allocate failed")), {
+                                                                                                                                          .rw = true,
+                                                                                                                                          .us = true,
+                                                                                                                                          .x = true,
+                                                                                                                                      });
             }
         }
 

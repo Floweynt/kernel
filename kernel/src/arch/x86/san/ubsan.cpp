@@ -5,12 +5,6 @@
 #include <misc/cast.h>
 #include <tty/tty.h>
 
-#if defined(COMPILER_CLANG)
-#define NO_UBSAN [[clang::no_sanitize("undefined")]]
-#elif defined(COMPILER_GCC)
-#define NO_UBSAN [[gcc::no_sanitize("undefined")]]
-#endif
-
 #define C extern "C"
 
 using value = std::uintptr_t;

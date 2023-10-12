@@ -144,8 +144,8 @@ extern "C"
         new (decay_arr(buf)) boot_resource();
         boot_resource& instance = boot_resource::instance();
         wrmsr(msr::IA32_GS_BASE, as_uptr(&cpu0_ptr));
-        
-        // okay, set up core functionality to hopefully get useful information out of the kernel 
+
+        // okay, set up core functionality to hopefully get useful information out of the kernel
         mm::init();
         tty::init();
 

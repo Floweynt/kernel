@@ -11,8 +11,6 @@
 
 namespace mm
 {
-    inline constexpr auto PMM_COUNT = config::get_val<"pmm-count">;
-
     static std::intrusive_list<page_info> free_list;
     static lock::spinlock pmm_alloc_lock;
 
@@ -36,7 +34,7 @@ namespace mm
 
     auto pmm_free(void* addr)
     {
-        auto& pfn = get_pfn(addr);
+        auto& pfn = page_to_pfn(addr);
         lock::spinlock_guard page_access_guard(pfn.get_lock());
         pfn.set_type(page_info::FREE);
         lock::spinlock_guard guard(pmm_alloc_lock);
