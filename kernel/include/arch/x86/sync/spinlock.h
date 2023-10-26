@@ -23,9 +23,17 @@ namespace lock
 
     class interrupt_lock_guard
     {
+        bool state;
+
     public:
-        interrupt_lock_guard() { disable_interrupt(); };
-        ~interrupt_lock_guard() { enable_interrupt(); }
+        interrupt_lock_guard() : state(get_flags() & cpuflags::IF) { disable_interrupt(); }
+        ~interrupt_lock_guard()
+        {
+            if (state)
+            {
+                enable_interrupt();
+            }
+        }
     };
 
     template <typename T>

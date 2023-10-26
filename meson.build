@@ -6,7 +6,7 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
     'cpp_eh=none',
 ])
 
-build_resources = meson.source_root()/'build-resources'
+build_resources = meson.source_root()/'resources'
 
 # required program for generating the kernel
 gdb = find_program('gdb')
@@ -76,6 +76,8 @@ kernel_src = [
     'kernel/src/arch/x86/smp/smp.cpp',
     'kernel/src/arch/x86/smp/tls.cpp',
     'kernel/external/terminal/limine_term_ccompat.cpp',
+    'kernel/src/arch/x86/fs/vfs.cpp',
+    'kernel/src/arch/x86/fs/impl/fpk.cpp'
 ]
 
 lib_src = [

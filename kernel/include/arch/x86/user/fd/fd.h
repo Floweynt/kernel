@@ -8,7 +8,7 @@ namespace user
 {
     class file_desc;
 
-    class fd_operations : public std::simple_refcountable<std::uint64_t>
+    class fd_operations : public std::simple_refcountable<std::uint64_t, fd_operations>
     {
     public:
         enum seek_type
@@ -26,7 +26,7 @@ namespace user
         virtual ~fd_operations() = default;
     };
 
-    class file_desc : public std::simple_refcountable<std::uint64_t>
+    class file_desc : public std::simple_refcountable<std::uint64_t, file_desc>
     {
         std::refcounted<const fd_operations> operations;
 

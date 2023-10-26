@@ -151,7 +151,7 @@ namespace std
     {
         for (size_t i = 0; i < _size; i++)
             _elements[i].~T();
-        _allocator.deallocate(_elements);
+        _allocator.deallocate(_elements, _size);
     }
 
     template <typename T, typename Allocator>
@@ -213,7 +213,7 @@ namespace std
 
         for (size_t i = 0; i < _size; i++)
             _elements[i].~T();
-        _allocator.deallocate(_elements);
+        _allocator.deallocate(_elements, _size);
 
         _elements = new_array;
         _capacity = new_capacity;

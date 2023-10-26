@@ -14,7 +14,7 @@
 static_assert(false, "bad compiler");
 #endif
 
-namespace std 
+namespace std
 {
     namespace detail
     {
@@ -30,23 +30,19 @@ namespace std
         };
 
         template <bool IsInput>
-        BITBUILDER_INLINE constexpr bool is_simple_token(char ch)
+        BITBUILDER_INLINE constexpr auto is_simple_token(char ch) -> bool
         {
             return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (IsInput ? ch == '*' : (ch == '1' || ch == '0'));
         }
 
-        BITBUILDER_INLINE constexpr bool is_ignored(char ch)
-        {
-            return ch == ' ';
-        }
+        BITBUILDER_INLINE constexpr auto is_ignored(char ch) -> bool { return ch == ' '; }
 
+        BITBUILDER_INLINE constexpr auto is_lower(char ch) -> bool { return 'a' <= ch && ch <= 'z'; }
+        BITBUILDER_INLINE constexpr auto is_upper(char ch) -> bool { return 'A' <= ch && ch <= 'Z'; }
 
-        BITBUILDER_INLINE constexpr char is_lower(char ch) { return 'a' <= ch && ch <= 'z'; }
-        BITBUILDER_INLINE constexpr char is_upper(char ch) { return 'A' <= ch && ch <= 'Z'; }
+        BITBUILDER_INLINE constexpr auto to_lower(char ch) -> char { return is_upper(ch) ? (ch - 'A' + 'a') : ch; }
 
-        BITBUILDER_INLINE constexpr char to_lower(char ch) { return is_upper(ch) ? (ch - 'A' + 'a') : ch; }
-
-        BITBUILDER_INLINE constexpr bool is_digit(char ch) { return '0' <= ch && ch <= '9'; }
+        BITBUILDER_INLINE constexpr auto is_digit(char ch) -> bool { return '0' <= ch && ch <= '9'; }
 
         template <string_literal Name, std::integral T, bool IsInput>
         BITBUILDER_INLINE constexpr error_codes validate_fmt_str()
@@ -55,8 +51,10 @@ namespace std
 
             for (size_t i = 0; i < Name.size; i++)
             {
-                if(is_ignored(Name[i]))
+                if (is_ignored(Name[i]))
+                {
                     continue;
+                }
 
                 if (is_simple_token<IsInput>(Name[i]))
                 {
@@ -115,8 +113,9 @@ namespace std
 
             for (size_t i = 0; i < Name.size; i++)
             {
-                if(is_ignored(Name[i]))
+                if (is_ignored(Name[i])) {
                     continue;
+}
 
                 if (is_simple_token<IsInput>(Name[i]))
                 {
@@ -150,7 +149,7 @@ namespace std
 
             for (size_t i = 0; i < Name.size; i++)
             {
-                if(is_ignored(Name[i]))
+                if (is_ignored(Name[i]))
                     continue;
 
                 if (is_simple_token<IsInput>(Name[i]))
@@ -355,7 +354,7 @@ namespace std
 
             if (status)
                 return false;
-            else if constexpr(sizeof...(Args) != 0)
+            else if constexpr (sizeof...(Args) != 0)
                 return !check_arg_order_consistency_args<Args...>(new_val);
             return true;
         }
@@ -419,7 +418,7 @@ namespace std
         {
             int64_t ch_i = -1;
 
-            if  ('A' <= ch && ch <= 'Z')
+            if ('A' <= ch && ch <= 'Z')
             {
                 for (int64_t i = Arg::name.size; i >= 0; i--)
                 {
@@ -484,9 +483,7 @@ namespace std
             // What in the actual fuck
             // ???
             [&]<size_t... Idx>(std::integer_sequence<size_t, Idx...>) {
-                (([&]<size_t Val>(std::integral_constant<size_t, Val>) {
-                     res[Val] = {get_at<Args>...};
-                 }(std::integral_constant<size_t, Idx>{})),
+                (([&]<size_t Val>(std::integral_constant<size_t, Val>) { res[Val] = {get_at<Args>...}; }(std::integral_constant<size_t, Idx>{})),
                  ...);
             }(std::make_integer_sequence<size_t, 26>{});
 
@@ -517,8 +514,8 @@ namespace std
 
         template <char C, typename T, size_t N, size_t I>
         BITBUILDER_INLINE constexpr void build_one(detail::uint_bvec<T>& out, std::array<size_t, 26>& index_tab,
-                                        const std::array<getter_t, 26>& f_tab, const std::array<size_t, 26>& o_tab,
-                                        const std::array<uint64_t, N>& v_tab)
+                                                   const std::array<getter_t, 26>& f_tab, const std::array<size_t, 26>& o_tab,
+                                                   const std::array<uint64_t, N>& v_tab)
         {
             if constexpr (C == '0')
             {
@@ -542,8 +539,8 @@ namespace std
 
         template <string_literal Pattern, typename T, size_t N, size_t I = 0>
         BITBUILDER_INLINE constexpr void build_all(detail::uint_bvec<T>& out, std::array<size_t, 26>& index_tab,
-                                        const std::array<getter_t, 26>& f_tab, const std::array<size_t, 26>& o_tab,
-                                        const std::array<uint64_t, N>& v_tab)
+                                                   const std::array<getter_t, 26>& f_tab, const std::array<size_t, 26>& o_tab,
+                                                   const std::array<uint64_t, N>& v_tab)
         {
             if constexpr (I == Pattern.size)
             {
@@ -581,4 +578,4 @@ namespace std
         detail::build_all<real_pat>(out, index_tab, f_tab, o_tab, v_tab);
         return out.get();
     }
-} // namespace bitbuilder
+} // namespace std

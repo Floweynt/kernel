@@ -1,6 +1,6 @@
-#include <pci/pci.h>
 #include <config.h>
 #include <cstdint>
+#include <pci/pci.h>
 #include <printf.h>
 namespace pci
 {

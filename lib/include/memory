@@ -35,7 +35,7 @@ namespace std
             return (T*)::operator new(n * sizeof(T), (std::align_val_t)alignof(T));
 #endif
         };
-        constexpr void deallocate(T* n)
+        constexpr void deallocate(T* ptr, size_t n)
         {
 #ifdef std
 #undef std
@@ -43,9 +43,15 @@ namespace std
         };
 #define std nostd
 #else
-            return ::operator delete((void*)n, (std::align_val_t)alignof(T));
+            return ::operator delete((void*)ptr, (std::align_val_t)alignof(T));
         };
 #endif
+
+        template <typename U>
+        struct rebind
+        {
+            using other = allocator<U>;
+        };
     };
 
     template <class Alloc>
@@ -82,10 +88,15 @@ namespace std
     }
 
     template <typename T>
-    class deleter
+    class default_deleter
     {
     public:
-        void operator()(const T* t) { delete t; }
+        template <typename U>
+        constexpr default_deleter(default_deleter<U> /*unused*/)
+        {
+        }
+        constexpr default_deleter() = default;
+        void operator()(const auto* t) { delete t; }
     };
 
     template <typename T>
@@ -97,7 +108,7 @@ namespace std
         } -> integral;
     };
 
-    template <typename T, typename Deleter = deleter<T>>
+    template <typename T, typename Deleter = default_deleter<T>>
     class refcounted
     {
         compressed_pair<T*, Deleter> data;
@@ -115,28 +126,42 @@ namespace std
         constexpr explicit refcounted(Deleter a = {}) noexcept : data(nullptr, a) {}
         constexpr explicit refcounted(nullptr_t, Deleter a = {}) noexcept : data(nullptr, a) {}
         constexpr explicit refcounted(T* ptr, Deleter a = {}) noexcept : data(nullptr, a) { __set(ptr); }
+        constexpr explicit refcounted(T& ptr, Deleter a = {}) noexcept : data(nullptr, a) { __set(&ptr); }
 
-        auto operator=(const refcounted& r) noexcept -> refcounted&
+        constexpr refcounted(const refcounted& rhs) { __set(rhs.data.first); }
+        constexpr refcounted(refcounted&& rhs) noexcept
         {
-            if (&r == this)
+            data.first = rhs.data.first;
+            rhs.data.first = nullptr;
+        }
+
+        auto operator=(const refcounted& rhs) noexcept -> refcounted&
+        {
+            if (&rhs == this)
             {
                 return *this;
             }
 
             reset();
-            __set(r.data.first);
+            __set(rhs.data.first);
+            return *this;
         }
 
-        auto operator=(refcounted&& r) noexcept -> refcounted&
+        auto operator=(refcounted&& rhs) noexcept -> refcounted&
         {
+            if (&rhs == this)
+            {
+                return *this;
+            }
             reset();
-            data.first = r.data.first;
-            r.data.first = nullptr;
+            data.first = rhs.data.first;
+            rhs.data.first = nullptr;
+            return *this;
         }
 
         void swap(refcounted& r) noexcept { std::swap(data.first, r.data.first); }
 
-        T* get() const noexcept { return data.first; }
+        auto get() const noexcept -> T* { return data.first; }
 
         T& operator*() const noexcept { return *data.first; }
         T* operator->() const noexcept { return data.first; }
@@ -158,10 +183,22 @@ namespace std
             }
         }
 
+        template <typename U, typename NewDel = default_deleter<U>>
+        constexpr auto as() const -> refcounted<U, NewDel>
+        {
+            return refcounted<U, NewDel>((U*)data.first, NewDel(data.second));
+        }
+
+        template <typename U, typename NewDel = default_deleter<U>>
+        constexpr operator refcounted<U, NewDel>() const
+        {
+            return refcounted<U, NewDel>((U*)data.first, NewDel(data.second));
+        }
+
         constexpr ~refcounted() noexcept { reset(); }
     };
 
-    template <integral T>
+    template <integral T, typename S>
     class simple_refcountable
     {
         mutable T refcount;
@@ -170,7 +207,19 @@ namespace std
         constexpr void unbind_ref_to() const { refcount--; }
         constexpr void bind_ref_to() const { refcount++; }
         constexpr auto get_ref_count() const { return refcount; }
+
+        template <typename U = refcounted<S>>
+        auto ref_this() -> U
+        {
+            return U(static_cast<S*>(this));
+        }
     };
+
+    template <typename T, typename... Args>
+    auto make_refcounted(Args&&... args) -> refcounted<T>
+    {
+        return refcounted<T>(new T(std::forward<Args>(args)...));
+    }
 
     template <typename T>
     class nonnull_ptr
@@ -195,6 +244,36 @@ namespace std
 
     template <typename T>
     nonnull_ptr(T*) -> nonnull_ptr<T>;
+
+    namespace detail
+    {
+        template <typename T, typename Alloc>
+        auto allocate_with(Alloc& alloc, size_t n) -> T*
+        {
+            using rebind = Alloc::template rebind<T>::other;
+            return rebind(alloc).allocate(n);
+        }
+
+        template <typename T, typename Alloc, typename... Args>
+        auto new_with_alloc(Alloc& alloc, Args&&... args) -> T*
+        {
+            return std::construct_at(allocate_with<T>(alloc, 1), std::forward<Args>(args)...);
+        }
+
+        template <typename T, typename Alloc>
+        auto deallocate_with(Alloc& alloc, T* ptr, size_t n)
+        {
+            using rebind = Alloc::template rebind<T>::other;
+            return rebind(alloc).deallocate(ptr, n);
+        }
+
+        template <typename Alloc, typename T>
+        auto delete_with_alloc(Alloc& alloc, T* ptr)
+        {
+            ptr->~T();
+            deallocate_with(alloc, ptr, 1);
+        }
+    } // namespace detail
 } // namespace std
 
 #endif

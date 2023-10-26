@@ -1,9 +1,8 @@
 // vim: set ft=cpp:
 #pragma once
-#include "functional"
-#include "initializer_list"
-#include "iterator"
 #include "utility"
+#include "initializer_list"  // IWYU pragma: keep 
+#include "iterator"  // IWYU pragma: keep 
 
 namespace std
 {

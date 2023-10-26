@@ -6,6 +6,8 @@
 #include <bitbuilder.h>
 #include <cstddef>
 #include <cstdint>
+#include <fs/impl/fpk.h>
+#include <fs/vfs.h>
 #include <gdt/gdt.h>
 #include <idt/handlers/handlers.h>
 #include <idt/idt.h>
@@ -24,6 +26,7 @@
 #include <user/elf_load.h>
 #include <user/syscall/sys_io.h>
 #include <utility>
+
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -67,12 +70,22 @@ namespace smp
             std::halt();
         }
 
+        void test_vfs()
+        {
+            // testing!
+            auto initramfs = load(initramfs_fpk, initramfs_fpk_len);
+            vfs::mount_on(vfs::get_root(), initramfs->get_root());
+            auto vnode = vfs::lookup(vfs::get_root(), "bin/init");
+        }
+
         void run_init()
         {
             if (smp::core_local::get().core_id != 0)
             {
                 return;
             }
+
+            test_vfs();
 
             auto init_pid = proc::make_process();
             klog::log("init process pid: %u", init_pid);
@@ -105,6 +118,7 @@ namespace smp
             // TODO: figure out why this doesn't work in a KVM env
             // wrmsr(msr::IA32_PAT, 0x706050403020100);
 
+            // enable no-execute bit
             wrmsr(msr::IA32_EFER, rdmsr(msr::IA32_EFER) | (1 << 11));
 
             smp::core_local& local = smp::core_local::get();

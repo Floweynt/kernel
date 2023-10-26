@@ -5,9 +5,10 @@
 #include <cstdint>
 #include <debug/debug.h>
 #include <gsl/pointer>
+#include <klog/klog.h>
 #include <mm/mm.h>
-#include <new>
 #include <mm/paging/paging.h>
+#include <new>
 
 namespace alloc
 {
@@ -25,7 +26,7 @@ namespace alloc
     } // namespace
     inline constexpr auto ALIGN = 16;
 
-    inline static block_header* next_of(block_header* header) { return as_ptr(as_uptr(header) + sizeof(block_header) + (header->size & ~1)); }
+    inline static auto next_of(block_header* header) -> block_header* { return as_ptr(as_uptr(header) + sizeof(block_header) + (header->size & ~1)); }
 
     inline static auto extend(void* buf, std::size_t size) -> std::size_t
     {
@@ -70,7 +71,7 @@ namespace alloc
                 if (bsize - size > sizeof(block_header))
                 {
                     hdr->size = size;
-                    gsl::owner<block_header*> next_block = new (next_of(hdr)) block_header{(bsize - size - sizeof(block_header)) | 1, hdr};
+                    auto *next_block = new (next_of(hdr)) block_header{(bsize - size - sizeof(block_header)) | 1, hdr};
 
                     if (hdr == last)
                     {
@@ -97,16 +98,14 @@ namespace alloc
             last = l;
             return (void*)++u;
         }
-        else
-        {
-            std::size_t bsize = ((last->size & ~1) + new_size) - sizeof(block_header) - size;
-            last->size = size;
-            auto* l = new (next_of(last)) block_header{bsize | 1, last};
-            last->size = size;
-            auto* u = last;
-            last = l;
-            return (void*)++u;
-        }
+
+        std::size_t bsize = ((last->size & ~1) + new_size) - sizeof(block_header) - size;
+        last->size = size;
+        auto* l = new (next_of(last)) block_header{bsize | 1, last};
+        last->size = size;
+        auto* u = last;
+        last = l;
+        return (void*)++u;
     }
 
     auto aligned_malloc(std::size_t size, std::size_t align) -> void*
@@ -115,6 +114,8 @@ namespace alloc
         {
             return malloc(size);
         }
+
+        klog::panic("bad");
 
         auto ptr = as_uptr(malloc(align + size));
         std::uintptr_t aligned_ptr = std::div_roundup(ptr, align);
@@ -152,10 +153,11 @@ namespace alloc
             return;
         }
 
+        /*
         if (as_ptr<std::uintptr_t>(buffer)[-1])
         {
             buffer = as_vptr(as_ptr<std::uintptr_t>(buffer)[-1] & ~1);
-        }
+        }*/
 
         auto* type = as_ptr<std::size_t>(buffer) - 1;
         auto* hdr = as_ptr<block_header>(buffer) - 1;
@@ -226,4 +228,3 @@ namespace alloc
         }
     }
 } // namespace alloc
-

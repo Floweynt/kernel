@@ -1,8 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
-#include <fd/fdhandler.h>
+#include <functional>
 #include <memory>
+#include <string_view>
+#include <user/fd/fd.h>
 
 namespace vfs
 {
@@ -13,10 +16,10 @@ namespace vfs
 
     struct io_op
     {
-        // page-aligned buffer to write 
+        // page-aligned buffer to write
         void* buffer;
-        // length, in pages?
         std::size_t length;
+        std::size_t offset;
 
         enum
         {
@@ -26,24 +29,26 @@ namespace vfs
         } status;
     };
 
-    class vfs_operations : public std::simple_refcountable<std::uint64_t>
+    // operations
+    class vfs_operations : public std::simple_refcountable<std::uint64_t, vnode_operations>
     {
     public:
         virtual ~vfs_operations() = default;
-
-        virtual auto mount_on(vfs& instance, vnode& node) -> int = 0;
     };
 
-    class vnode_operations : public std::simple_refcountable<std::uint64_t>
+    class vnode_operations : public std::simple_refcountable<std::uint64_t, vnode_operations>
     {
     public:
         virtual ~vnode_operations() = default;
 
         // TODO: make this function take a IO queue, in order to optimize DMA enqueue
-        auto rdwr(vnode& instance, io_op& io_operations) -> int;
+        virtual auto rdwr(const std::refcounted<vnode>& instance, io_op& io_operations) -> int = 0;
+        virtual auto query(const std::refcounted<vnode>& instance, const std::string_view& name) -> vnode* = 0;
+        virtual auto mount_on(const std::refcounted<vnode>& instance, const std::refcounted<vnode>& node) -> int = 0;
     };
 
-    class vfs : public std::simple_refcountable<std::uint64_t>
+    // actual data structures
+    class vfs : public std::simple_refcountable<std::uint64_t, vnode>
     {
     public:
         enum vfs_flags
@@ -51,25 +56,31 @@ namespace vfs
             READONLY = 1 << 0,
         };
 
-    private:
-        std::refcounted<vfs> next;
+    protected:
+        // std::refcounted<vfs> next;
         std::refcounted<vfs_operations> operations;
-        std::refcounted<vnode> mounted_node;
+        std::refcounted<vnode> root;
         std::uint32_t flags;
         std::uint32_t block_size;
         std::uint64_t fs_id;
 
+        vfs(std::refcounted<vfs_operations> ops, std::uint32_t flags, std::uint32_t block_size, std::uint64_t fs_id)
+            : simple_refcountable(), operations(std::move(ops)), flags(flags), block_size(block_size), fs_id(fs_id)
+        {
+        }
+
     public:
         // invokers
-        auto mount_on(vnode& node) { return operations->mount_on(*this, node); }
-
         [[nodiscard]] constexpr auto get_block_size() const { return block_size; }
         [[nodiscard]] constexpr auto get_id() const { return fs_id; }
+        [[nodiscard]] constexpr auto get_root() const -> const auto& { return root; }
 
         [[nodiscard]] constexpr auto is_readonly() const -> bool { return (flags & READONLY) != 0; }
+
+        virtual ~vfs();
     };
 
-    class vnode : public std::simple_refcountable<std::uint64_t>
+    class vnode : public std::simple_refcountable<std::uint64_t, vnode>
     {
     public:
         enum vnode_flags
@@ -91,21 +102,31 @@ namespace vfs
             PIPE
         };
 
-    private:
-        std::uint32_t shared_locks;
-        std::uint32_t exclusive_locks;
+    protected:
+        std::uint32_t shared_locks{};
+        std::uint32_t exclusive_locks{};
         vnode_type type;
-        std::uint8_t __unused_pad_0;
-        std::uint16_t flags;
-        std::uint32_t capabilities;
+        std::uint8_t __unused_pad_0{};
+        std::uint16_t flags{};
+        std::uint32_t capabilities{};
 
         // important pointers
-        std::refcounted<vfs> vfs_mounted_here;
         std::refcounted<vnode_operations> operations;
-        std::refcounted<vfs> my_vfs;
+        vfs* my_vfs; // weak ref
+
+        // TODO: use forward_list
+        struct mount_entry
+        {
+            mount_entry* next;
+            std::refcounted<vnode> mount;
+        };
+
+        mount_entry* mounts{};
+
+        vnode(std::refcounted<vnode_operations> ops, vfs* my_vfs) : simple_refcountable(), operations(std::move(ops)), my_vfs(my_vfs) {}
 
     public:
-        // getters
+        // getter
         [[nodiscard]] constexpr auto get_type() const { return type; }
         [[nodiscard]] constexpr auto get_shared_locks() const { return shared_locks; }
         [[nodiscard]] constexpr auto get_exclusive_locks() const { return exclusive_locks; }
@@ -113,7 +134,22 @@ namespace vfs
         [[nodiscard]] constexpr auto is_local_fs_root() const -> bool { return (flags & LOCAL_FS_ROOT) != 0; }
 
         // invokers
-        auto rdwr(io_op& op) { return operations->rdwr(*this, op); }
+        inline auto rdwr(io_op& op) { return operations->rdwr(ref_this(), op); }
+        inline auto query(const std::string_view& path) { return operations->query(ref_this(), path); }
+        auto mount_on(const std::refcounted<vnode>& node) { return operations->mount_on(ref_this(), node); }
+
+        void add_mount(const std::refcounted<vnode>& fs);
+        auto get_actual_node() -> std::refcounted<vnode>;
+
+        virtual ~vnode();
     };
 } // namespace vfs
 
+// abstract vfs operations
+namespace vfs
+{
+    auto get_root() -> const std::refcounted<vnode>&;
+    void read(const std::refcounted<vnode>& vnode, void* buffer, std::size_t offset, std::size_t size);
+    void mount_on(const std::refcounted<vnode>& node, const std::refcounted<vnode>& root);
+    auto lookup(const std::refcounted<vnode>& parent, const std::string_view& path) -> std::refcounted<vnode>;
+} // namespace vfs

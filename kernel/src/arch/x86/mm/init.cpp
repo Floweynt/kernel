@@ -83,6 +83,7 @@ namespace mm
             case LIMINE_MEMMAP_BAD_MEMORY:
             case LIMINE_MEMMAP_ACPI_NVS:
                 flags.rw = false;
+                break;
             default:
                 return;
             }

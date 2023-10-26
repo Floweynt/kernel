@@ -143,12 +143,15 @@ extern "C"
         init_array();
         new (decay_arr(buf)) boot_resource();
         boot_resource& instance = boot_resource::instance();
+
+        // set up gs base for code-local access
         wrmsr(msr::IA32_GS_BASE, as_uptr(&cpu0_ptr));
 
         // okay, set up core functionality to hopefully get useful information out of the kernel
         mm::init();
         tty::init();
 
+        // debugging information, not important for booting
         std::printf("kinit: _start() started tty\n");
         std::printf("booted from: %s-v%s\n", btl_info_request.response->name, btl_info_request.response->version);
         debug::print_kinfo();
@@ -163,9 +166,6 @@ extern "C"
         });
 
         debug::dump_acpi_info();
-
-        // PCI time!
-        // Note: this should be moved to post-smp init
         pci::scan();
 
         smp::core_local::create(cpu0_ptr);

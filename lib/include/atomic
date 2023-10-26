@@ -1,7 +1,5 @@
 // vim: set ft=cpp:
 #pragma once
-#include "cstdint"
-#include "type_traits"
 
 namespace std
 {

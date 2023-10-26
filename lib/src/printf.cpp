@@ -109,10 +109,13 @@ namespace std
                 case 'c':
                     print(va_arg(fmtargs, int));
                     break;
-                case 's':
-                    while (*str)
+                case 's': {
+                    for (unsigned i = 0; (i < cmd.precision || cmd.precision == 0) && *str; i++)
+                    {
                         print(*str++);
+                    }
                     break;
+                }
                 case 'p': {
                     uint64_t v = (uint64_t)va_arg(fmtargs, void*);
                     size_t index = 0;
