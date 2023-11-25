@@ -177,7 +177,171 @@ namespace smp
                     }
                 },
                 core_id);
+            proc::make_kthread_args(
+                +[](std::uint64_t arg) {
+                    klog::log("I got an argument and I don't know what it's for but here it is: %lu", arg);
+                    auto prev_msg = 0;
+                    while (true)
+                    {
+                        auto encoded_keypress = inb(0x60);
+                        if (encoded_keypress == prev_msg)
+                            continue;
+                        else
+                            prev_msg = encoded_keypress;
+                        // klog::log("Encoded Keypress: %02X, %02X", encoded_keypress, prev_msg);
+                        char us_qwerty_translation[] = {0,
+                                                        0x1B,
+                                                        '1',
+                                                        '2',
+                                                        '3',
+                                                        '4',
+                                                        '5',
+                                                        '6',
+                                                        '7',
+                                                        '8',
+                                                        '9',
+                                                        '0',
+                                                        '-',
+                                                        '=',
+                                                        0x08,
+                                                        0x09,
+                                                        'Q',
+                                                        'W',
+                                                        'E',
+                                                        'R',
+                                                        'T',
+                                                        'Y',
+                                                        'U',
+                                                        'I',
+                                                        'O',
+                                                        'P',
+                                                        '[',
+                                                        ']',
+                                                        0x0D,
+                                                        0x11,
+                                                        'A',
+                                                        'S',
+                                                        'D',
+                                                        'F',
+                                                        'G',
+                                                        'H',
+                                                        'J',
+                                                        'K',
+                                                        'L',
+                                                        ';',
+                                                        '\'',
+                                                        '`',
+                                                        0x0E,
+                                                        '\\',
+                                                        'Z',
+                                                        'X',
+                                                        'C',
+                                                        'V',
+                                                        'B',
+                                                        'N',
+                                                        'M',
+                                                        ',',
+                                                        '.',
+                                                        '/',
+                                                        0x0F,
+                                                        '*',
+                                                        0x13,
+                                                        ' ',
+                                                        0x02,
+                                                        /* function keys (F1-F10) here */ 0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        /*Numlock and Scroll Lock:*/ 0,
+                                                        0,
+                                                        '7',
+                                                        '8',
+                                                        '9',
+                                                        '-',
+                                                        '4',
+                                                        '5',
+                                                        '6',
+                                                        '+',
+                                                        '1',
+                                                        '2',
+                                                        '3',
+                                                        '0',
+                                                        '.',
+                                                        /* three gaps */ 0,
+                                                        0,
+                                                        0,
+                                                        /* F11, F12 */ 0,
+                                                        0};
+                        // 0x1B = ESCAPE; 0x08 = BACKSPACE; 0x09 = HORIZONAL TAB, used to represent TAB
+                        // 0x0D = CARRIAGE RETURN, used to represent ENTER
+                        // 0x11 = DEVICE CONTROL 1, used to represent LEFT CONTROL; 0x0E = SHIFT OUT, used to represent LEFT SHIFT
+                        // 0x0F = SHIFT IN, used to represent RIGHT SHIFT; 0x13 = DEVICE CONTROL 3, used to represent LEFT ALT
+                        // 0x02 = START OF TEXT, used to represent CAPS LOCK
+                        // TODO: Handle F1-F12, Numlock and Scroll Lock, multimedia keys
+                        // also Home, Page Up, etc
+                        // TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
+                        char decoded_keypress = 0;
+                        bool is_pressed = true; // false means released
 
+                        if (encoded_keypress < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
+                        {
+                            decoded_keypress = us_qwerty_translation[encoded_keypress];
+                            is_pressed = true;
+                        }
+                        else if (encoded_keypress - 0x80 >= 0 &&
+                                 encoded_keypress - 0x80 < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
+                        {
+                            decoded_keypress = us_qwerty_translation[encoded_keypress - 0x80];
+                            is_pressed = false;
+                        }
+                        if (decoded_keypress != 0)
+                        {
+                            // THIS IS A TEMPORARY SWITCH CASE FOR DEBUGGING, TODO: DELETE IT AND ACTUALLY HANDLE STUFF
+                            char output_str[15] = "";
+                            switch (decoded_keypress)
+                            {
+                            case 0x1B:
+                                std::strcpy(output_str, "ESCAPE");
+                                break;
+                            case 0x08:
+                                std::strcpy(output_str, "BACKSPACE");
+                                break;
+                            case 0x09:
+                                std::strcpy(output_str, "TAB");
+                                break;
+                            case 0x0D:
+                                std::strcpy(output_str, "ENTER");
+                                break;
+                            case 0x11:
+                                std::strcpy(output_str, "CTRL");
+                                break;
+                            case 0x0E:
+                                std::strcpy(output_str, "LEFT SHIFT");
+                                break;
+                            case 0x0F:
+                                std::strcpy(output_str, "RIGHT SHIFT");
+                                break;
+                            case 0x13:
+                                std::strcpy(output_str, "ALT");
+                                break;
+                            case 0x02:
+                                std::strcpy(output_str, "CAPS LOCK");
+                                break;
+                            default:
+                                std::strcpy(output_str, (char[2]){decoded_keypress, '\0'});
+                                break;
+                            }
+                            klog::log("Detected Keyboard Input: %s %s", output_str, is_pressed ? "pressed" : "released");
+                        }
+                    }
+                },
+                0);
             initialize_apic(smp::core_local::get());
 
             run_init();
