@@ -177,19 +177,20 @@ namespace smp
                     }
                 },
                 core_id);
-            proc::make_kthread_args(
+            if(core_id==0)
+            {proc::make_kthread_args(
                 +[](std::uint64_t arg) {
                     klog::log("I got an argument and I don't know what it's for but here it is: %lu", arg);
                     auto prev_msg = 0;
                     while (true)
                     {
-                        auto encoded_keypress = inb(0x60);
+                        auto encoded_keypress = inb(ioports::KEYBOARD);
                         if (encoded_keypress == prev_msg)
                             continue;
                         else
                             prev_msg = encoded_keypress;
                         // klog::log("Encoded Keypress: %02X, %02X", encoded_keypress, prev_msg);
-                        statis constexpr uint8_t us_qwerty_translation[] = {0,
+                        static constexpr uint8_t us_qwerty_translation[] = {0,
                                                         0x1B,
                                                         '1',
                                                         '2',
@@ -342,7 +343,7 @@ namespace smp
                         }
                     }
                 },
-                0);
+                0);}
             initialize_apic(smp::core_local::get());
 
             run_init();
