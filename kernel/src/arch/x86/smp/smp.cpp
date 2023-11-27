@@ -189,7 +189,7 @@ namespace smp
                         else
                             prev_msg = encoded_keypress;
                         // klog::log("Encoded Keypress: %02X, %02X", encoded_keypress, prev_msg);
-                        char us_qwerty_translation[] = {0,
+                        statis constexpr uint8_t us_qwerty_translation[] = {0,
                                                         0x1B,
                                                         '1',
                                                         '2',
@@ -286,7 +286,8 @@ namespace smp
                         // TODO: Handle F1-F12, Numlock and Scroll Lock, multimedia keys
                         // also Home, Page Up, etc
                         // TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
-                        char decoded_keypress = 0;
+                        uint8_t decoded_keypress = 0;
+                        static constexpr auto FLAG_RELEASED = 0x80;
                         bool is_pressed = true; // false means released
 
                         if (encoded_keypress < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
@@ -294,10 +295,10 @@ namespace smp
                             decoded_keypress = us_qwerty_translation[encoded_keypress];
                             is_pressed = true;
                         }
-                        else if (encoded_keypress - 0x80 >= 0 &&
-                                 encoded_keypress - 0x80 < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
+                        else if (encoded_keypress - FLAG_RELEASED >= 0 &&
+                                 encoded_keypress - FLAG_RELEASED < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
                         {
-                            decoded_keypress = us_qwerty_translation[encoded_keypress - 0x80];
+                            decoded_keypress = us_qwerty_translation[encoded_keypress - FLAG_RELEASED];
                             is_pressed = false;
                         }
                         if (decoded_keypress != 0)
