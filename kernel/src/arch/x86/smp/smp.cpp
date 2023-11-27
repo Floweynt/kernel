@@ -26,7 +26,7 @@
 #include <user/elf_load.h>
 #include <user/syscall/sys_io.h>
 #include <utility>
-
+#include <drivers/keyboard/ps2.h>
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -279,29 +279,19 @@ namespace smp
                                                         0,
                                                         /* F11, F12 */ 0,
                                                         0};
-                        // 0x1B = ESCAPE; 0x08 = BACKSPACE; 0x09 = HORIZONAL TAB, used to represent TAB
-                        // 0x0D = CARRIAGE RETURN, used to represent ENTER
-                        // 0x11 = DEVICE CONTROL 1, used to represent LEFT CONTROL; 0x0E = SHIFT OUT, used to represent LEFT SHIFT
-                        // 0x0F = SHIFT IN, used to represent RIGHT SHIFT; 0x13 = DEVICE CONTROL 3, used to represent LEFT ALT
-                        // 0x02 = START OF TEXT, used to represent CAPS LOCK
-                        // TODO: Handle F1-F12, Numlock and Scroll Lock, multimedia keys
+                        /* 0x1B = ESCAPE; 0x08 = BACKSPACE; 0x09 = HORIZONAL TAB, used to represent TAB
+                        * 0x0D = CARRIAGE RETURN, used to represent ENTER
+                        * 0x11 = DEVICE CONTROL 1, used to represent LEFT CONTROL; 0x0E = SHIFT OUT, used to represent LEFT SHIFT
+                        * 0x0F = SHIFT IN, used to represent RIGHT SHIFT; 0x13 = DEVICE CONTROL 3, used to represent LEFT ALT
+                        * 0x02 = START OF TEXT, used to represent CAPS LOCK
+                        * TODO: Handle F1-F12, Numlock and Scroll Lock, multimedia keys
                         // also Home, Page Up, etc
-                        // TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
-                        uint8_t decoded_keypress = 0;
-                        static constexpr auto FLAG_RELEASED = 0x80;
-                        bool is_pressed = true; // false means released
-
-                        if (encoded_keypress < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
-                        {
-                            decoded_keypress = us_qwerty_translation[encoded_keypress];
-                            is_pressed = true;
-                        }
-                        else if (encoded_keypress - FLAG_RELEASED >= 0 &&
-                                 encoded_keypress - FLAG_RELEASED < (sizeof(us_qwerty_translation) / sizeof(us_qwerty_translation[0])))
-                        {
-                            decoded_keypress = us_qwerty_translation[encoded_keypress - FLAG_RELEASED];
-                            is_pressed = false;
-                        }
+                        * TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
+                      */
+                        uint8_t decoded_keypress;
+                      bool is_pressed;
+                      static constexpr auto FLAG_RELEASED= 0x80;
+                        std::tie (decoded_keypress, is_pressed} = decode_keyboard_scancode(encoded_keypress, us_qwerty_translation, FLAG_RELEASED)
                         if (decoded_keypress != 0)
                         {
                             // THIS IS A TEMPORARY SWITCH CASE FOR DEBUGGING, TODO: DELETE IT AND ACTUALLY HANDLE STUFF
