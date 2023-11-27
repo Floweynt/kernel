@@ -185,13 +185,13 @@ namespace smp
                         auto prev_msg = 0;
                         while (true)
                         {
-                            auto encoded_keypress = inb(ioports::KEYBOARD);
-                            if (encoded_keypress == prev_msg)
+                            auto scancode = inb(ioports::KEYBOARD);
+                            if (scancode == prev_msg)
                                 continue;
                             else
-                                prev_msg = encoded_keypress;
-                            // klog::log("Encoded Keypress: %02X, %02X", encoded_keypress, prev_msg);
-                            static constexpr std::uint8_t us_qwerty_translation[] = {
+                                prev_msg = scancode;
+                            // klog::log("Encoded Keypress: %02X, %02X", scancode, prev_msg);
+                            static constexpr std::uint8_t us_qwerty_translation[128] = {
                                 0, 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0x09, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U',
                                 'I', 'O', 'P', '[', ']', 0x0D, 0x11, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 0x0E, '\\', 'Z',
                                 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0x0F, '*', 0x13, ' ', 0x02,
@@ -213,11 +213,10 @@ namespace smp
                              * TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
                              */
                             std::uint8_t decoded_keypress;
-                            bool is_pressed;
                             static constexpr std::uint8_t FLAG_RELEASED = 0x80;
-                            auto decoded_pair = decode_keyboard_scancode(encoded_keypress, us_qwerty_translation, sizeof(us_qwerty_translation)/sizeof(us_qwerty_translation[0]), FLAG_RELEASED);
-                            decoded_keypress = decoded_pair.first;
-                            is_pressed = decoded_pair.second;
+                            bool is_pressed = !(scancode & FLAG_RELEASED);
+                            
+                            decoded_keypress = decode_keyboard_scancode(scancode, us_qwerty_translation, us_qwerty_translation+sizeof(us_qwerty_translation)/sizeof(us_qwerty_translation[0]), FLAG_RELEASED);
                             if (decoded_keypress != 0)
                             {
                                 // THIS IS A TEMPORARY SWITCH CASE FOR DEBUGGING, TODO: DELETE IT AND ACTUALLY HANDLE STUFF
