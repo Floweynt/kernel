@@ -7,22 +7,29 @@
 namespace std::detail
 {
     static lock::spinlock malloc_lock;
-    void* malloc(size_t size)
+
+    auto malloc(size_t size) -> void*
     {
-        lock::spinlock_guard g(malloc_lock);
+        lock::spinlock_guard guard(malloc_lock);
         return ::alloc::malloc(size);
     }
 
-    void* aligned_malloc(size_t size, size_t align)
+    auto aligned_malloc(size_t size, size_t align) -> void*
     {
-        lock::spinlock_guard g(malloc_lock);
+        lock::spinlock_guard guard(malloc_lock);
         return ::alloc::aligned_malloc(size, align);
     }
 
-    void free(void* ptr)
+    auto realloc(void* pointer, size_t size) -> void*
     {
-        lock::spinlock_guard g(malloc_lock);
-        return ::alloc::free(ptr);
+        lock::spinlock_guard guard(malloc_lock);
+        return ::alloc::realloc(pointer, size);
+    }
+
+    void free(void* pointer)
+    {
+        lock::spinlock_guard guard(malloc_lock);
+        return ::alloc::free(pointer);
     }
 
     namespace errors
@@ -33,20 +40,20 @@ namespace std::detail
             __builtin_unreachable();
         }
 
-        [[noreturn]] void __stdexcept_bad_alloc() 
-        { 
+        [[noreturn]] void __stdexcept_bad_alloc()
+        {
             debug::panic("stdexcept bad alloc");
             __builtin_unreachable();
         }
 
-        [[noreturn]] void __stdexcept_bad_variant_access() 
+        [[noreturn]] void __stdexcept_bad_variant_access()
         {
-            debug::panic("stdexcept bad variant access"); 
+            debug::panic("stdexcept bad variant access");
             __builtin_unreachable();
         }
 
-        [[noreturn]] void __printf_argument_notfound() 
-        { 
+        [[noreturn]] void __printf_argument_notfound()
+        {
             debug::panic("__printf_argument_notfound");
             __builtin_unreachable();
         }

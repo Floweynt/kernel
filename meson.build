@@ -6,7 +6,7 @@ project('kernel', 'c', 'cpp', version: '0.0.1', default_options: [
     'cpp_eh=none',
 ])
 
-build_resources = meson.source_root()/'build-resources'
+build_resources = meson.source_root()/'resources'
 
 # required program for generating the kernel
 gdb = find_program('gdb')
@@ -26,62 +26,76 @@ gen_dbg = executable('gen-dbg',
 strip_debug =       find_program(build_resources/'strip_debug.sh')
 generate_image =    find_program(build_resources/'generate_image.sh')
 git_version_info =  find_program(build_resources/'git_version_info.sh')
+mcopy =             find_program('mcopy')
+parted =            find_program('parted')
 
-kernel_source = [
-    'arch/common/terminal/limine_term_ccompat.cpp',
-    'arch/x86/idt/idt.cpp',
-    'arch/x86/idt/handlers/handle_ud.cpp',
-    'arch/x86/idt/handlers/handle_np.cpp',
-    'arch/x86/idt/handlers/handle_page_fault.cpp',
-    'arch/x86/idt/handlers/handle_gp.cpp',
-    'arch/x86/idt/handlers/handle_overflow.cpp',
-    'arch/x86/idt/handlers/handle_db.cpp',
-    'arch/x86/idt/handlers/handle_div_by_zero.cpp',
-    'arch/x86/idt/handlers/handle_stack.cpp',
-    'arch/x86/idt/handlers/handle_double_fault.cpp',
-    'arch/x86/idt/handlers/handle_bad_tss.cpp',
-    'arch/x86/idt/handlers/handle_bounds.cpp',
-    'arch/x86/idt/handlers/handle_breakpoint.cpp',
-    'arch/x86/idt/handlers/handle_timer.cpp',
-    'arch/x86/idt/handlers/handle_nm.cpp',
-    'arch/x86/idt/idt.S',
-    'arch/x86/debug/kinit_dump.cpp',
-    'arch/x86/debug/panic.cpp',
-    'arch/x86/debug/symbols.cpp',
-    'arch/x86/asm/return_to_context.S',
-    'arch/x86/asm/return_to_context.cpp',
-    'arch/x86/syscall/syscall_entry.S',
-    'arch/x86/pci/pci_scan.cpp',
-    'arch/x86/sync/spinlock.cpp',
-    'arch/x86/san/ubsan.cpp',
-    'arch/x86/apic/apic.cpp',
-    'arch/x86/kinit/kinit.cpp',
-    'arch/x86/process/process.cpp',
-    'arch/x86/process/save_ctx_for_reschedule.S',
-    'arch/x86/process/scheduler/scheduler.cpp',
-    'arch/x86/klog/klog.cpp',
-    'arch/x86/tty/tty.cpp',
-    'arch/x86/mm/pmm.cpp',
-    'arch/x86/mm/malloc.cpp',
-    #    'arch/x86/mm/slab.cpp',
-    'arch/x86/mm/mm.cpp',
-    #'arch/x86/mm/vmm.cpp',
-    'arch/x86/cpuid/cpuid.cpp',
-    'arch/x86/gdt/gdt.cpp',
-    'arch/x86/paging/paging.cpp',
-    'arch/x86/paging/pgfault.cpp',
-    'arch/x86/smp/smp.cpp',
+kernel_src = [
+
+    'kernel/src/arch/x86/idt/idt.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_ud.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_np.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_page_fault.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_gp.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_overflow.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_db.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_div_by_zero.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_stack.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_double_fault.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_bad_tss.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_bounds.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_breakpoint.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_timer.cpp',
+    'kernel/src/arch/x86/idt/handlers/handle_nm.cpp',
+    'kernel/src/arch/x86/idt/idt.S',
+    'kernel/src/arch/x86/debug/kinit_dump.cpp',
+    'kernel/src/arch/x86/debug/panic.cpp',
+    'kernel/src/arch/x86/debug/symbols.cpp',
+    'kernel/src/arch/x86/asm/return_to_context.cpp',
+    'kernel/src/arch/x86/asm/return_to_context.S',
+    'kernel/src/arch/x86/pci/pci_scan.cpp',
+    'kernel/src/arch/x86/sync/spinlock.cpp',
+    'kernel/src/arch/x86/apic/apic.cpp',
+    'kernel/src/arch/x86/kinit/kinit.cpp',
+    'kernel/src/arch/x86/process/process.cpp',
+    'kernel/src/arch/x86/process/save_ctx_for_reschedule.S',
+    'kernel/src/arch/x86/process/scheduler/scheduler.cpp',
+    'kernel/src/arch/x86/klog/klog.cpp',
+    'kernel/src/arch/x86/tty/tty.cpp',
+    'kernel/src/arch/x86/mm/pmm.cpp',
+    'kernel/src/arch/x86/mm/malloc.cpp',
+    'kernel/src/arch/x86/mm/init.cpp',
+    #    'kernel/src/arch/x86/mm/slab.cpp',
+    'kernel/src/arch/x86/mm/paging/paging.cpp',
+    'kernel/src/arch/x86/mm/vmm.cpp',
+    'kernel/src/arch/x86/cpuid/cpuid.cpp',
+    'kernel/src/arch/x86/gdt/gdt.cpp',
+    #  'kernel/src/arch/x86/acpi/lai.cpp',
+    'kernel/src/arch/x86/user/fd/console.cpp',
+    'kernel/src/arch/x86/user/syscall/syscall_entry.S',
+    'kernel/src/arch/x86/user/elf_load.cpp',
+    'kernel/src/arch/x86/smp/smp.cpp',
+    'kernel/src/arch/x86/smp/tls.cpp',
+    'kernel/external/terminal/limine_term_ccompat.cpp',
+    'kernel/src/arch/x86/fs/vfs.cpp',
+    'kernel/src/arch/x86/fs/impl/fpk.cpp'
+]
+
+lib_src = [
     'lib/src/cstring.cpp',
     'lib/src/new.cpp',
     'lib/src/backtrace.cpp',
+    'lib/src/printf.cpp',
     'libimpl/cxxabi.cpp',
     'libimpl/implement.cpp',
-    'arch/common/terminal/backends/framebuffer.c',
-    'arch/common/terminal/term.c'
+]
+
+common_src = [
+    'kernel/external/terminal/backends/framebuffer.c',
+    'kernel/external/terminal/term.c',
+    'kernel/external/terminal/limine_term_ccompat.cpp',
 ]
 
 opt_to_config = {
-    'PMM_COUNT': 'max_physical_memory_allocators',
     'PRE_ALLOCATE_PAGES': 'preallocate_pages',
     'KLOG_PAGES': 'klog_size_pages',
     'CPUID_FEATURE_SIZE': 'cpuid_feature_buffer_size',
@@ -93,7 +107,9 @@ opt_to_config = {
     'SLAB_MIN_ORDER': 'slab_min_order',
     'SLAB_MAX_ORDER': 'slab_max_order',
     'SLAB_SIZE_ORDER': 'slab_size_order',
-    'VMM_SIZE': 'vmm_size'
+    'VMM_SIZE': 'vmm_size',
+    'HAS_ASAN': 'kernel_asan',
+    'HAS_UBSAN': 'kernel_ubsan'
 }
 
 qemu_base_flags = [
@@ -112,8 +128,9 @@ qemu_base_flags = [
 execution_targets = {
     'emu': {
         'exec': {
-            'smp':    ['-smp', '2'],
-            'nosmp':  ['-smp', '1'],
+            'smp':      ['-smp', '2', '-m', '8G'],
+            'very-smp': ['-smp', '8', '-m', '8G'],
+            'nosmp':    ['-smp', '1', '-m', '8G'],
         },
         'debugger': {
             'gef': [
@@ -130,8 +147,9 @@ execution_targets = {
     },
     'kvm': {
         'exec': {
-            'smp':    ['-enable-kvm', '-cpu', 'host', '-smp', '2'],
-            'nosmp':  ['-enable-kvm', '-cpu', 'host', '-smp', '1']
+            'smp':      ['-enable-kvm', '-cpu', 'host', '-smp', '2', '-m', '8G'],
+            'very-smp': ['-enable-kvm', '-cpu', 'host', '-smp', '8', '-m', '8G'],
+            'nosmp':    ['-enable-kvm', '-cpu', 'host', '-smp', '1', '-m', '8G']
         },
         'debugger': {
             'gef': [
@@ -170,6 +188,7 @@ kernel_build_args = [
     '-fno-omit-frame-pointer',
     '-fno-strict-aliasing',
     '-fcf-protection=none',
+    '-femulated-tls',
     '-fno-stack-protector',
     '-fno-threadsafe-statics',
     '-mno-red-zone',
@@ -181,6 +200,26 @@ kernel_build_args = [
     '-mno-80387',
     '-Wno-unused-parameter',
 ]
+
+ubsan = get_option('kernel_ubsan')
+asan = get_option('kernel_asan')
+
+ubsan_extra = ['-fno-sanitize=function', '-fsanitize-undefined-strip-path-components=1']
+asan_extra = []
+
+ubsan_src = 'kernel/src/arch/x86/san/ubsan.cpp'
+asan_src = 'kernel/src/arch/x86/san/asan.cpp'
+
+if ubsan and asan 
+    kernel_build_args += ['-fsanitize=kernel-address,undefined'] + ubsan_extra + asan_extra
+    kernel_src += [ubsan_src, asan_src] 
+elif ubsan 
+    kernel_build_args += ['-fsanitize=undefined'] + ubsan_extra
+    kernel_src += [ubsan_src]
+elif asan 
+    kernel_build_args += ['-fsanitize=kernel-address'] + asan_extra
+    kernel_src += [asan_src]
+endif
 
 # options configuration
 if get_option('slab_min_order') >= get_option('slab_max_order')
@@ -198,9 +237,9 @@ endif
 # config
 conf = configuration_data()
 conf.set('VERSION', meson.project_version())
-conf.set('ARCH', 'x86_64')
+conf.set('ARCH_NAME', 'x86_64')
 conf.set('ARCH_PATH', 'x86')
-
+conf.set('ARCH_PAGE_SIZE', '4096')
 conf.set('COMPILER_C_ID', meson.get_compiler('c').get_id())
 conf.set('COMPILER_C_VER', meson.get_compiler('c').version())
 conf.set('COMPILER_CXX_ID', meson.get_compiler('cpp').get_id())
@@ -210,12 +249,15 @@ foreach key, opt : opt_to_config
     conf.set(key, get_option(opt).to_string())
 endforeach
 
-conf.set('HHDM_START', '0xffff800000000000')
-conf.set('SCROLLBACK_START', '0xffff900000000000')
-conf.set('HEAP_START', '0xffff900080000000')
-conf.set('SLAB_START', '0xffff980000000000')
-conf.set('KLOG_BUFFER', '0xffffa00000000000')
-conf.set('VMM_START', '0xffffb00000000000')
+conf.set('HHDM_START',       '0xffff800000000000')
+conf.set('PFN_START',        '0xffff900000000000')
+conf.set('SCROLLBACK_START', '0xffff910000000000')
+conf.set('HEAP_START',       '0xffff920000000000')
+conf.set('SLAB_START',       '0xffff930000000000')
+conf.set('KLOG_START',       '0xffff940000000000')
+conf.set('VMM_START',        '0xffffa00000000000')
+conf.set('HEAP_SIZE',        '0x10000000000')
+conf.set('KLOG_SHIFT',       '17')
 
 comp_id = meson.get_compiler('cpp').get_id()
 
@@ -234,11 +276,13 @@ configure_file(input : 'config.h.in',
                configuration : conf)
 
 configuration_inc = include_directories(
-    './',
-    './arch/x86/',
-    './arch/',
-    './lib/',
-    './lib/include/',
+    '.',
+    'kernel/include/arch/x86',
+    'kernel/include',
+    'kernel/external',
+    'kernel/external/lai',
+    'lib',
+    'lib/include',
     is_system: true
 )
 
@@ -252,25 +296,22 @@ config_output = custom_target('config_output',
     ],
 )
 
-lds = meson.source_root()/'arch'/'x86'/'kernel.lds'
+lds = meson.source_root()/'kernel/src/arch/x86/kernel.lds'
 kernel = executable('kernel.elf',
     config_output,
-    kernel_source,
+    [kernel_src, lib_src, common_src],
     link_depends: lds,
     link_args: [
         '-T' + lds,
         '-static',
         '-nostdlib',
-        '-lgcc',
         '-m64',
+        '-femulated-tls'
     ],
     cpp_args: [
         '-m64', 
         '-march=x86-64', 
         '-mcmodel=kernel',
-        '-fsanitize=undefined',
-        '-fno-sanitize=function',
-        '-fsanitize-undefined-strip-path-components=1',
         kernel_build_args
     ],
     c_args: [

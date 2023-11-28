@@ -1,4 +1,22 @@
-Checks: bugprone*,cert*,cppcore*,misc*,modernize*,performance*,portability*,readability*,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-cppcoreguidelines-avoid-const-or-ref-data-members,-cert-dcl58-cpp,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-pointer-arithmetic
+Checks: >
+  bugprone*,
+  cert*,
+  cppcore*,
+  misc*,
+  modernize*,
+  performance*,
+  portability*,
+  readability*,
+  -modernize-avoid-c-arrays,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cert-dcl58-cpp,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cert-dcl21-cpp,
+  -cert-dcl51-cpp,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cert-dcl37-c,
+  -bugprone-reserved-identifier
 FormatStyle: file
 CheckOptions:
   - key: readability-implicit-bool-conversion.AllowIntegerConditions
@@ -8,4 +26,6 @@ CheckOptions:
   - key: readability-identifier-length.IgnoredParameterNames
     value: ch 
   - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: true
+  - key: readability-magic-numbers.IgnorePowersOf2IntegerValues
     value: true

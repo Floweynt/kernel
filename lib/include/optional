@@ -1,37 +1,263 @@
 // vim: set ft=cpp:
+// from https://github.com/managarm/frigg/blob/master/include/frg/optional.hpp
 #include "type_traits"
+#include <new>
+#include <utility>
+
 namespace std
 {
     struct nullopt_t
     {
-        explicit constexpr nullopt_t(long long) {}
     };
 
-    inline constexpr auto nullopt = nullopt_t(0x4D4F4E4144494321);
+    inline static constexpr nullopt_t nullopt;
 
     template <typename T>
     class optional
     {
-        typename aligned_storage<sizeof(T), alignof(T)>::type buf;
-        bool holds;
-
     public:
-        constexpr optional() : holds(false) {}
-        constexpr optional(std::nullopt_t) : optional() {}
-        constexpr optional(const optional& other) : holds(other.holds)
+        using value_type = T;
+
+        optional() : _non_null{false} {}
+        optional(nullopt_t /*unused*/) : _non_null{false} {}
+        optional(const T& object) : _non_null{true} { new (_stor.buffer) T(object); }
+
+        optional(T&& object) : _non_null{true} { new (_stor.buffer) T(std::move(object)); }
+
+        template <typename U = value_type, typename = std::enable_if_t<std::is_constructible_v<T, U&&>>>
+        constexpr optional(U&& value) : _non_null{true}
         {
-            if(other.holds)
-                new (buf.data) T(other.get()); 
+            new (_stor.buffer) T(std::forward<U>(value));
         }
 
-        constexpr optional( optional&& other ) : holds(other.holds)
+        optional(const optional& other) : _non_null{other._non_null}
         {
-            if(other.holds)
-                new (buf.data) T(std::move(other.get())); 
+            if (_non_null)
+            {
+                new (_stor.buffer) T(*other._object());
+            }
         }
 
-        template < class U > 
-        constexpr optional( const optional<U>& other );
+        optional(optional&& other) noexcept : _non_null{other._non_null}
+        {
+            if (_non_null)
+            {
+                new (_stor.buffer) T(std::move(*other._object()));
+            }
+        }
 
+        ~optional()
+        {
+            if (_non_null)
+            {
+                _reset();
+            }
+        }
+
+        auto operator=(const optional& other) -> optional&
+        {
+            if (&other == this)
+            {
+                return *this;
+            }
+
+            if (other._non_null)
+            {
+                if (_non_null)
+                {
+                    *_object() = *other._object();
+                }
+                else
+                {
+                    new (_stor.buffer) T(*other._object());
+                    _non_null = true;
+                }
+            }
+            else
+            {
+                if (_non_null)
+                {
+                    _reset();
+                }
+            }
+            return *this;
+        }
+
+        auto operator=(optional&& other) noexcept -> optional&
+        {
+            if (other._non_null)
+            {
+                if (_non_null)
+                {
+                    *_object() = std::move(*other._object());
+                }
+                else
+                {
+                    new (_stor.buffer) T(std::move(*other._object()));
+                    _non_null = true;
+                }
+            }
+            else
+            {
+                if (_non_null)
+                {
+                    _reset();
+                }
+            }
+            return *this;
+        }
+
+        // Exactly the same as above but for more general types.
+        template <class U>
+        auto operator=(const optional<U>& other) -> optional&
+        {
+            if (other)
+            {
+                if (_non_null)
+                {
+                    *_object() = *other;
+                }
+                else
+                {
+                    new (_stor.buffer) T(*other);
+                    _non_null = true;
+                }
+            }
+            else
+            {
+                if (_non_null)
+                {
+                    _reset();
+                }
+            }
+            return *this;
+        }
+
+        // Exactly the same as above but for more general types.
+        template <class U>
+        auto operator=(optional<U>&& other) -> optional&
+        {
+            if (other)
+            {
+                if (_non_null)
+                {
+                    *_object() = std::move(*other);
+                }
+                else
+                {
+                    new (_stor.buffer) T(std::move(*other));
+                    _non_null = true;
+                }
+            }
+            else
+            {
+                if (_non_null)
+                {
+                    _reset();
+                }
+            }
+            return *this;
+        }
+
+        constexpr explicit operator bool() const { return _non_null; }
+
+        [[nodiscard]] constexpr auto has_value() const -> bool { return _non_null; }
+
+        constexpr auto operator*() const -> const T&
+        {
+            __nostdlib_assert(_non_null);
+            return *_object();
+        }
+        constexpr auto operator*() -> T&
+        {
+            __nostdlib_assert(_non_null);
+            return *_object();
+        }
+        auto operator->() -> T*
+        {
+            __nostdlib_assert(_non_null);
+            return _object();
+        }
+        auto value() & -> T&
+        {
+            __nostdlib_assert(_non_null);
+            return *_object();
+        }
+
+        auto value() const& -> const T&
+        {
+            __nostdlib_assert(_non_null);
+            return *_object();
+        }
+
+        auto value() && -> T&&
+        {
+            __nostdlib_assert(_non_null);
+            return std::move(*_object());
+        }
+
+        auto value() const&& -> const T&&
+        {
+            __nostdlib_assert(_non_null);
+            return std::move(*_object());
+        }
+
+        template <typename... Args>
+        void emplace(Args&&... args)
+        {
+            if (_non_null)
+            {
+                _reset();
+            }
+            new (_stor.buffer) T(std::forward<Args>(args)...);
+            _non_null = true;
+        }
+
+    private:
+        auto _object() const -> const T* { return std::launder(reinterpret_cast<const T*>(_stor.buffer)); }
+        auto _object() -> T* { return std::launder(reinterpret_cast<T*>(_stor.buffer)); }
+
+        void _reset()
+        {
+            _object()->~T();
+            _non_null = false;
+        }
+
+        aligned_storage<sizeof(T), alignof(T)> _stor{};
+        bool _non_null;
     };
+
+    template <class T, class U>
+    constexpr auto operator==(const optional<T>& opt, const U& value) -> bool
+    {
+        return opt ? (*opt == value) : false;
+    }
+    template <class T, class U>
+    constexpr auto operator==(const U& value, const optional<T>& opt) -> bool
+    {
+        return opt ? (value == *opt) : false;
+    }
+
+    template <class T, class U>
+    constexpr auto operator!=(const optional<T>& opt, const U& value) -> bool
+    {
+        return opt ? (*opt != value) : true;
+    }
+    template <class T, class U>
+    constexpr auto operator!=(const U& value, const optional<T>& opt) -> bool
+    {
+        return opt ? (value != *opt) : true;
+    }
+
+    template <class T, class U>
+    constexpr auto operator<(const optional<T>& opt, const U& value) -> bool
+    {
+        return opt ? (*opt < value) : true;
+    }
+    template <class T, class U>
+    constexpr auto operator<(const T& value, const optional<U>& opt) -> bool
+    {
+        return opt ? (value < *opt) : false;
+    }
+
 } // namespace std

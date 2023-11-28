@@ -1,0 +1,447 @@
+// vim: set ft=cpp:
+#pragma once
+#include "../bits/mathhelper.h"
+#include "bitmanip.h"
+#include "cstddef"
+
+namespace std
+{
+
+    template <size_t N>
+    class bitset
+    {
+        inline static constexpr auto buffer_size = div_roundup(N, 64);
+        uint64_t buffer[buffer_size]{};
+
+    public:
+        // bit reference
+        class reference
+        {
+            friend class bitset;
+            reference() noexcept;
+
+            size_t index;
+            bitset& s;
+
+            constexpr reference(size_t index, bitset& r) : index(index), s(r) {}
+
+        public:
+            reference(const reference&) = default;
+            ~reference() = default;
+
+            auto operator=(bool x) noexcept -> reference&
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            auto operator=(const reference& x) noexcept -> reference&
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            auto operator~() const noexcept -> bool { return !get_bit(s.buffer[index / 64], index % 64); }
+
+            operator bool() const noexcept { return get_bit(s.buffer[index / 64], index % 64); }
+
+            auto flip() noexcept -> reference&
+            {
+                s.flip(index);
+                return *this;
+            }
+        };
+
+        // constructors
+        constexpr bitset() noexcept = default;
+        constexpr bitset(unsigned long long val) noexcept { buffer[0] = val; }
+
+        // bitset operations
+        auto operator&=(const bitset& rhs) noexcept -> bitset&
+        {
+            for (size_t i = 0; i < buffer_size; i++)
+            {
+                buffer[i] &= rhs.buffer[i];
+            }
+            return *this;
+        }
+
+        auto operator|=(const bitset& rhs) noexcept -> bitset&
+        {
+            for (size_t i = 0; i < buffer_size; i++)
+            {
+                buffer[i] |= rhs.buffer[i];
+            }
+            return *this;
+        }
+
+        auto operator^=(const bitset& rhs) noexcept -> bitset&
+        {
+            for (size_t i = 0; i < buffer_size; i++)
+            {
+                buffer[i] ^= rhs.buffer[i];
+            }
+            return *this;
+        }
+        // bitset& operator<<=(size_t pos) noexcept;
+        // bitset& operator>>=(size_t pos) noexcept;
+        auto set() noexcept -> bitset&
+        {
+            for (auto& byte : buffer)
+            {
+                byte = ~0;
+            }
+            return *this;
+        }
+
+        auto set(size_t pos, bool val = true) -> bitset&
+        {
+            set_bit(buffer[pos / 64], val, pos % 64);
+            return *this;
+        }
+
+        auto reset() noexcept -> bitset&
+        {
+            for (auto& byte : buffer)
+            {
+                byte = 0;
+            }
+            return *this;
+        }
+
+        auto reset(size_t pos) -> bitset& { return set(pos, false); }
+
+        auto operator~() const noexcept -> bitset
+        {
+            auto copy = *this;
+            copy.flip();
+            return copy;
+        }
+
+        auto flip() noexcept -> bitset&
+        {
+            for (auto& byte : buffer)
+            {
+                byte = ~byte;
+            }
+            return *this;
+        }
+
+        auto flip(size_t pos) -> bitset& { return set(pos, !this->operator[](pos)); }
+
+        // element access
+        constexpr auto operator[](size_t pos) const -> bool { return get_bit(buffer[pos / 64], pos % 64); }
+
+        auto operator[](size_t pos) -> reference { return reference(pos, *this); }
+
+        [[nodiscard]] size_t count() const noexcept
+        {
+            size_t count = 0;
+            for (size_t i = 0; i < buffer_size - 1; i++)
+            {
+                count += __builtin_popcountll(buffer[i]);
+            }
+            return count + __builtin_popcountll(get_bits(buffer[buffer_size - 1], 0, N % 64));
+        }
+
+        [[nodiscard]] constexpr auto size() const noexcept -> size_t { return N; }
+        auto operator==(const bitset& rhs) const noexcept -> bool
+        {
+            for (size_t i = 0; i < buffer_size - 1; i++)
+            {
+                if (buffer[i] != rhs.buffer[i])
+                {
+                    return false;
+                }
+            }
+            return get_bits(buffer[buffer_size - 1], 0, N % 64) == get_bits(rhs.buffer[buffer_size - 1], 0, N % 64);
+        }
+
+        [[nodiscard]] auto test(size_t pos) const -> bool { return this->operator[](pos); }
+        // bool all() const noexcept;
+        // bool any() const noexcept;
+        // bool none() const noexcept;
+        //  bitset operator<<(size_t pos) const noexcept;
+        //  bitset operator>>(size_t pos) const noexcept;
+    };
+
+    class dynamic_bitset
+    {
+        uint64_t* buffer;
+        size_t s;
+
+    public:
+        // bit reference
+        class reference
+        {
+            friend class dynamic_bitset;
+
+            size_t index;
+            dynamic_bitset& s;
+
+            constexpr reference(size_t index, dynamic_bitset& r) : index(index), s(r) {}
+
+        public:
+            constexpr reference(const reference&) = default;
+            constexpr ~reference() = default;
+
+            constexpr auto operator=(bool x) noexcept -> reference&
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            constexpr auto operator=(const reference& x) noexcept -> reference&
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            constexpr auto operator~() const noexcept -> bool { return !get_bit(s.buffer[index / 64], index % 64); }
+
+            constexpr operator bool() const noexcept { return get_bit(s.buffer[index / 64], index % 64); }
+
+            constexpr auto flip() noexcept -> reference&
+            {
+                s.flip(index);
+                return *this;
+            }
+        };
+
+        // constructors
+        constexpr dynamic_bitset(std::size_t n) : buffer(new uint64_t[div_roundup(n, 64)]), s(n) {}
+        constexpr dynamic_bitset(std::size_t n, unsigned long long val) noexcept : dynamic_bitset(n) { buffer[0] = val; }
+        inline ~dynamic_bitset() { delete[] buffer; }
+
+        // bitset operations
+        constexpr auto operator&=(const dynamic_bitset& rhs) noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] &= rhs.buffer[i];
+            }
+            return *this;
+        }
+
+        constexpr auto operator|=(const dynamic_bitset& rhs) noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] |= rhs.buffer[i];
+            }
+            return *this;
+        }
+
+        constexpr auto operator^=(const dynamic_bitset& rhs) noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] ^= rhs.buffer[i];
+            }
+            return *this;
+        }
+        // bitset& operator<<=(size_t pos) noexcept;
+        // bitset& operator>>=(size_t pos) noexcept;
+        constexpr auto set() noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] = ~0;
+            }
+            return *this;
+        }
+
+        constexpr auto set(size_t pos, bool val = true) -> dynamic_bitset&
+        {
+            set_bit(buffer[pos / 64], val, pos % 64);
+            return *this;
+        }
+
+        constexpr auto reset() noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] = 0;
+            }
+            return *this;
+        }
+
+        constexpr auto reset(size_t pos) -> dynamic_bitset& { return set(pos, false); }
+
+        inline auto operator~() const noexcept -> dynamic_bitset
+        {
+            auto copy = *this;
+            copy.flip();
+            return copy;
+        }
+
+        constexpr auto flip() noexcept -> dynamic_bitset&
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+            {
+                buffer[i] = ~buffer[i];
+            }
+            return *this;
+        }
+
+        constexpr auto flip(size_t pos) -> dynamic_bitset& { return set(pos, !this->operator[](pos)); }
+
+        // element access
+        constexpr auto operator[](size_t pos) const -> bool { return get_bit(buffer[pos / 64], pos % 64); }
+
+        constexpr auto operator[](size_t pos) -> reference { return reference(pos, *this); }
+
+        // size_t count() const noexcept { return s; }
+        [[nodiscard]] constexpr auto size() const noexcept -> size_t { return s; }
+        // bool operator==(const dynamic_bitset& rhs) const noexcept;
+        [[nodiscard]] constexpr auto test(size_t pos) const -> bool { return this->operator[](pos); }
+        // bool all() const noexcept;
+        // bool any() const noexcept;
+        // bool none() const noexcept;
+        //  bitset operator<<(size_t pos) const noexcept;
+        //  bitset operator>>(size_t pos) const noexcept;
+    };
+
+    class unmanaged_dynamic_bitset
+    {
+        uint64_t* buffer;
+        size_t s;
+
+    public:
+        // bit reference
+        class reference
+        {
+            friend class unmanaged_dynamic_bitset;
+
+            size_t index;
+            unmanaged_dynamic_bitset& s;
+
+            constexpr reference(size_t index, unmanaged_dynamic_bitset& r) : index(index), s(r) {}
+
+        public:
+            constexpr reference(const reference&) = default;
+            constexpr ~reference() = default;
+
+            constexpr reference& operator=(bool x) noexcept
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            constexpr reference& operator=(const reference& x) noexcept
+            {
+                s.set(index, x);
+                return *this;
+            }
+
+            constexpr bool operator~() const noexcept { return !get_bit(s.buffer[index / 64], index % 64); }
+
+            constexpr operator bool() const noexcept { return get_bit(s.buffer[index / 64], index % 64); }
+
+            constexpr reference& flip() noexcept
+            {
+                s.flip(index);
+                return *this;
+            }
+        };
+
+        // constructors
+        constexpr unmanaged_dynamic_bitset(std::size_t n, void* buf) : buffer((uint64_t*)buf), s(n) {}
+        constexpr unmanaged_dynamic_bitset(std::size_t n, void* buf, unsigned long long val) noexcept : unmanaged_dynamic_bitset(n, buf)
+        {
+            buffer[0] = val;
+        }
+        constexpr ~unmanaged_dynamic_bitset() = default;
+
+        // bitset operations
+        constexpr unmanaged_dynamic_bitset& operator&=(const unmanaged_dynamic_bitset& rhs) noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] &= rhs.buffer[i];
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& operator|=(const unmanaged_dynamic_bitset& rhs) noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] |= rhs.buffer[i];
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& operator^=(const unmanaged_dynamic_bitset& rhs) noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] ^= rhs.buffer[i];
+            return *this;
+        }
+        // bitset& operator<<=(size_t pos) noexcept;
+        // bitset& operator>>=(size_t pos) noexcept;
+        constexpr unmanaged_dynamic_bitset& set() noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] = ~0;
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& set(size_t pos, bool val = true)
+        {
+            set_bit(buffer[pos / 64], val, pos % 64);
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& reset() noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] = 0;
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& reset(size_t pos) { return set(pos, false); }
+
+        inline unmanaged_dynamic_bitset operator~() const noexcept
+        {
+            auto copy = *this;
+            copy.flip();
+            return copy;
+        }
+
+        constexpr unmanaged_dynamic_bitset& flip() noexcept
+        {
+            for (size_t i = 0; i < div_roundup(s, 64); i++)
+                buffer[i] = ~buffer[i];
+            return *this;
+        }
+
+        constexpr unmanaged_dynamic_bitset& flip(size_t pos) { return set(pos, !this->operator[](pos)); }
+
+        // element access
+        constexpr bool operator[](size_t pos) const { return get_bit(buffer[pos / 64], pos % 64); }
+
+        constexpr reference operator[](size_t pos) { return reference(pos, *this); }
+
+        // size_t count() const noexcept { return s; }
+        constexpr size_t size() const noexcept { return s; }
+        // bool operator==(const dynamic_bitset& rhs) const noexcept;
+        constexpr bool test(size_t pos) const { return this->operator[](pos); }
+        // bool all() const noexcept;
+        // bool any() const noexcept;
+        // bool none() const noexcept;
+        //  bitset operator<<(size_t pos) const noexcept;
+        //  bitset operator>>(size_t pos) const noexcept;
+        constexpr void* data() { return buffer; }
+    };
+
+    // TODO: implement
+    template <typename T>
+    concept bitset_like = true;
+
+    template <bitset_like T>
+    size_t first_set_bit(const T& bit)
+    {
+        for (size_t i = 0; i < bit.size(); i++)
+            if (bit[i])
+                return i;
+
+        return -1ul;
+    }
+} // namespace std

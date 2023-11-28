@@ -2,7 +2,7 @@
 
 namespace std
 {
-    size_t backtrace(size_t skip, size_t count, void** buf, size_t* base_ptr)
+    auto backtrace(size_t skip, size_t count, void** buf, size_t* base_ptr) -> size_t
     {
         asm volatile("movq %%rbp, %0" : "=g"(base_ptr) : : "memory");
         size_t n = 0;

@@ -2,10 +2,10 @@
 #ifndef __NOSTDLIB_UTILITY_H__
 #define __NOSTDLIB_UTILITY_H__
 #include "../bits/declval.h"
-#include "../bits/pair.h"
-#include "../bits/utils.h"
 #include "../bits/mathhelper.h"
+#include "../bits/pair.h"
 #include "../bits/user_implement.h"
+#include "../bits/utils.h"
 #include "type_traits"
 
 namespace std
@@ -69,11 +69,10 @@ namespace std
     }
 
     template <typename T>
-    constexpr conditional_t<!is_nothrow_move_constructible<T>::value && is_copy_constructible<T>::value, const T&, T&&>
-    move_if_noexcept(T& x) noexcept
+    constexpr conditional_t<!is_nothrow_move_constructible<T>::value && is_copy_constructible<T>::value, const T&, T&&> move_if_noexcept(
+        T& x) noexcept
     {
-        return static_cast<
-            conditional_t<!is_nothrow_move_constructible<T>::value && is_copy_constructible<T>::value, const T&, T &&>>(x);
+        return static_cast<conditional_t<!is_nothrow_move_constructible<T>::value && is_copy_constructible<T>::value, const T&, T &&>>(x);
     };
 
     struct in_place_t
@@ -108,18 +107,31 @@ namespace std
         void FUN(T&&) = delete;
     } // namespace detail
 
-    template<typename T> 
-    void swap(T& a, T& b ) 
+    template <typename T>
+    void swap(T& a, T& b)
     {
         T tmp = std::move(a);
         a = std::move(b);
         b = std::move(tmp);
     }
 
-    [[noreturn]] inline void halt() 
+    [[noreturn]] inline void halt() { std::detail::errors::__halt(); }
+
+    template <typename T, T... Ints>
+    struct integer_sequence
     {
-        std::detail::errors::__halt();
-    }
+        using value_type = T;
+        static constexpr auto size() noexcept -> std::size_t { return sizeof...(Ints); }
+    };
+
+    template <std::size_t... Ints>
+    using index_sequence = std::integer_sequence<std::size_t, Ints...>;
+
+    template <class T, T N>
+    using make_integer_sequence = __make_integer_seq<integer_sequence, T, N>;
+
+    template <std::size_t N>
+    using make_index_sequence = std::make_integer_sequence<std::size_t, N>;
 } // namespace std
 
 #endif

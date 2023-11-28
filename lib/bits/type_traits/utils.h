@@ -57,6 +57,9 @@ namespace std
         using type = T;
     };
 
+    template <typename T>
+    using type_identity_t = type_identity<T>::type;
+
     template <bool B, typename T, typename F>
     struct conditional
     {
@@ -91,21 +94,21 @@ namespace std
 
 } // namespace std
 
-#define __nostd_type_traits_intrinsic_trait(trait)                                                                          \
-    template <typename T>                                                                                                   \
-    struct is_##trait : bool_constant<__is_##trait(T)>                                                                      \
-    {                                                                                                                       \
-    };                                                                                                                      \
-                                                                                                                            \
-    template <typename T>                                                                                                   \
+#define __nostd_type_traits_intrinsic_trait(trait)                                                                                                   \
+    template <typename T>                                                                                                                            \
+    struct is_##trait : bool_constant<__is_##trait(T)>                                                                                               \
+    {                                                                                                                                                \
+    };                                                                                                                                               \
+                                                                                                                                                     \
+    template <typename T>                                                                                                                            \
     inline constexpr bool is_##trait##_v = __is_##trait(T);
 
-#define __nostd_type_traits_intrinsic_trait2(trait)                                                                         \
-    template <typename T, typename U>                                                                                       \
-    struct is_##trait : bool_constant<__is_##trait(T, U)>                                                                   \
-    {                                                                                                                       \
-    };                                                                                                                      \
-                                                                                                                            \
-    template <typename T, typename U>                                                                                       \
+#define __nostd_type_traits_intrinsic_trait2(trait)                                                                                                  \
+    template <typename T, typename U>                                                                                                                \
+    struct is_##trait : bool_constant<__is_##trait(T, U)>                                                                                            \
+    {                                                                                                                                                \
+    };                                                                                                                                               \
+                                                                                                                                                     \
+    template <typename T, typename U>                                                                                                                \
     inline constexpr bool is_##trait##_v = __is_##trait(T, U);
 #endif

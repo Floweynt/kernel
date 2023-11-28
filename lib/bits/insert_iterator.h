@@ -17,27 +17,27 @@ namespace std
 
         explicit back_insert_iterator(C& c) : container(&c) {}
 
-        back_insert_iterator& operator=(const typename C::value_type& __value)
+        auto operator=(const typename C::value_type& value) -> back_insert_iterator&
         {
-            container->push_back(__value);
+            container->push_back(value);
             return *this;
         }
 
-        back_insert_iterator& operator=(typename C::value_type&& v)
+        auto operator=(typename C::value_type&& value) -> back_insert_iterator&
         {
-            container->push_back(std::move(v));
+            container->push_back(std::move(value));
             return *this;
         }
 
-        [[nodiscard]] back_insert_iterator& operator*() { return *this; }
-        back_insert_iterator& operator++() { return *this; }
-        back_insert_iterator operator++(int) { return *this; }
+        [[nodiscard]] auto operator*() -> back_insert_iterator& { return *this; }
+        auto operator++() -> back_insert_iterator& { return *this; }
+          auto operator++(int) -> back_insert_iterator { return *this; }
     };
 
     template <typename C>
-    [[nodiscard]] inline back_insert_iterator<C> back_inserter(C& c)
+    [[nodiscard]] inline auto back_inserter(C& container) -> back_insert_iterator<C>
     {
-        return back_insert_iterator<C>(c);
+        return back_insert_iterator<C>(container);
     }
 
     template <typename C>
@@ -47,30 +47,30 @@ namespace std
         C* container;
 
     public:
-        typedef C container_type;
+        using container_type = C;
         using difference_type = ptrdiff_t;
 
-        explicit front_insert_iterator(C& c) : container(&c) {}
+        explicit front_insert_iterator(C& container) : container(&container) {}
 
-        front_insert_iterator& operator=(const typename C::value_type& val)
+        auto operator=(const typename C::value_type& val) -> front_insert_iterator&
         {
             container->push_front(val);
             return *this;
         }
 
-        front_insert_iterator& operator=(typename C::value_type&& val)
+        auto operator=(typename C::value_type&& val) -> front_insert_iterator&
         {
             container->push_front(std::move(val));
             return *this;
         }
 
-        [[nodiscard]] front_insert_iterator& operator*() { return *this; }
-        front_insert_iterator& operator++() { return *this; }
-        front_insert_iterator operator++(int) { return *this; }
+        [[nodiscard]] auto operator*() -> front_insert_iterator& { return *this; }
+        auto operator++() -> front_insert_iterator& { return *this; }
+        auto operator++(int) -> front_insert_iterator { return *this; }
     };
 
     template <typename C>
-    [[nodiscard]] inline front_insert_iterator<C> front_inserter(C& c)
+    [[nodiscard]] inline auto front_inserter(C& c) -> front_insert_iterator<C>
     {
         return front_insert_iterator<C>(c);
     }
@@ -78,34 +78,34 @@ namespace std
     template <typename C>
     class insert_iterator : public iterator<output_iterator_tag, void, void, void, void>
     {
-        typedef typename C::iterator It;
+        using It = typename C::iterator;
 
     protected:
         C* container;
         It iter;
 
     public:
-        typedef C container_type;
+        using container_type = C;
 
-        insert_iterator(C& c, It i) : container(&i), iter(i) {}
+        insert_iterator(C& container, It iter) : container(&container), iter(iter) {}
 
-        insert_iterator& operator=(const typename C::value_type& val)
+        auto operator=(const typename C::value_type& val) -> insert_iterator&
         {
             iter = container->insert(iter, val);
             ++iter;
             return *this;
         }
 
-        insert_iterator& operator=(typename C::value_type&& val)
+        auto operator=(typename C::value_type&& val) -> insert_iterator&
         {
             iter = container->insert(iter, std::move(val));
             ++iter;
             return *this;
         }
 
-        [[nodiscard]] insert_iterator& operator*() { return *this; }
-        insert_iterator& operator++() { return *this; }
-        insert_iterator& operator++(int) { return *this; }
+        [[nodiscard]] auto operator*() -> insert_iterator& { return *this; }
+        auto operator++() -> insert_iterator& { return *this; }
+        auto operator++(int) -> insert_iterator& { return *this; }
     };
 } // namespace std
 

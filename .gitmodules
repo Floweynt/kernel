@@ -4,6 +4,7 @@
 [submodule "libimpl/memory-allocator"]
 	path = libimpl/memory-allocator
 	url = git@github.com:FloweyTheFlower420/memory-allocator.git
-[submodule "terminal"]
-	path = terminal
-	url = https://github.com/limine-bootloader/terminal.git
+
+[submodule "kernel/external/lai"]
+	path = kernel/external/lai
+	url = https://github.com/managarm/lai

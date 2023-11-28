@@ -1,0 +1,533 @@
+// vim: ft=cpp
+#pragma once
+#include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <iterator>
+#include <memory>
+
+namespace std 
+{
+    namespace detail 
+    {
+        template<typename T>
+        concept is_input_it_like = requires(T a )
+        {
+            *a++;
+        };
+    }
+
+    template <typename T, std::size_t N>
+    class fixed_vector
+    {
+    public:
+        using value_type = T;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using reference = T&;
+        using const_reference = const T&;
+        using pointer = T*;
+        using const_pointer = const T*;
+
+    private:
+        struct element_storage
+        {
+            union {
+                std::uint8_t buffer[sizeof(T)];
+                T value;
+            };
+
+            constexpr element_storage() noexcept : buffer(){};
+            constexpr ~element_storage() {}
+            constexpr auto get() -> T* { return &value; }
+            constexpr auto get() const -> const T* { return &value; }
+
+            template <typename... Args>
+            constexpr auto construct_at(Args&&... args) -> T*
+            {
+                return std::construct_at(get(), std::forward<Args>(args)...);
+            }
+
+            constexpr void destroy_at() { std::destroy_at(get()); }
+        };
+
+        template <typename ImplT, typename Ptr>
+        class normal_iterator
+        {
+            ImplT current;
+
+            using traits_type = std::iterator_traits<Ptr>;
+
+        public:
+            using iterator_type = Ptr;
+            using iterator_category = typename traits_type::iterator_category;
+            using value_type = typename traits_type::value_type;
+            using difference_type = typename traits_type::difference_type;
+            using reference = typename traits_type::reference;
+            using pointer = typename traits_type::pointer;
+
+            constexpr normal_iterator() noexcept : current() {}
+
+            explicit constexpr normal_iterator(ImplT iter) noexcept : current(iter) {}
+
+            constexpr normal_iterator(const auto& iter) noexcept : current(iter.base()) {}
+
+            constexpr auto operator*() const noexcept -> reference { return *current->get(); }
+            constexpr auto operator->() const noexcept -> pointer { return current->get(); }
+
+            constexpr auto operator++() noexcept -> normal_iterator&
+            {
+                ++current;
+                return *this;
+            }
+
+            constexpr auto operator++(int) noexcept -> normal_iterator { return normal_iterator(current++); }
+            constexpr auto operator--() noexcept -> normal_iterator&
+            {
+                --current;
+                return *this;
+            }
+
+            constexpr auto operator--(int) noexcept -> normal_iterator { return normal_iterator(current--); }
+            constexpr auto operator[](difference_type off) const noexcept -> reference { return *current[off].get(); }
+            constexpr auto operator+=(difference_type off) noexcept -> normal_iterator&
+            {
+                current += off;
+                return *this;
+            }
+
+            constexpr auto operator+(difference_type off) const noexcept -> normal_iterator { return normal_iterator(current + off); }
+            constexpr auto operator-=(difference_type off) noexcept -> normal_iterator&
+            {
+                current -= off;
+                return *this;
+            }
+
+            constexpr auto operator-(difference_type off) const noexcept -> normal_iterator { return normal_iterator(current - off); }
+            constexpr auto base() const noexcept -> const auto& { return current; }
+
+            template <typename ImplU, typename OtherPtr>
+            [[nodiscard]] constexpr auto operator==(const normal_iterator<ImplU, OtherPtr>& rhs) const noexcept(noexcept(this->base() == rhs.base()))
+                -> bool
+                requires requires {
+                    {
+                        this->base() == rhs.base()
+                    } -> std::convertible_to<bool>;
+                }
+            {
+                return this->base() == rhs.base();
+            }
+
+            template <typename ImplU, typename OtherPtr>
+            [[nodiscard]] constexpr auto operator<=>(const normal_iterator<ImplU, OtherPtr>& rhs) const
+                noexcept(noexcept(this->base() <=> rhs.base()))
+            {
+                return this->base() <=> rhs.base();
+            }
+
+            template <typename ImplU, typename OtherPtr>
+            [[nodiscard]] constexpr inline auto operator-(normal_iterator<ImplU, OtherPtr> rhs) const noexcept -> decltype(this->base() - rhs.base())
+            {
+                return this->base() - rhs.base();
+            }
+        };
+
+    public:
+        using iterator = normal_iterator<element_storage*, pointer>;
+        using const_iterator = normal_iterator<const element_storage*, const_pointer>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    private:
+        size_type sz{};
+        element_storage storage[N];
+
+        static_assert(sizeof(element_storage) == sizeof(T));
+
+        constexpr void check_resize(size_type count)
+        {
+            if (count > N)
+            {
+               detail::errors::__assert_fail("std::out_of_range: fixed_vector: new_count > N");
+            }
+        }
+
+        constexpr void check_bound(size_type index)
+        {
+            if (index >= sz)
+            {
+                detail::errors::__assert_fail("std::out_of_range: fixed_vector: index >= size()");
+            }
+        }
+
+        constexpr void move_away(size_type start, size_type off)
+        {
+            for (int64_t i = sz - 1; i >= int64_t(start); i--)
+            {
+                storage[i + off].construct_at(std::move(*storage[i].get()));
+                storage[i].destroy_at();
+            }
+        }
+
+    public:
+        // --- constructors
+
+        // default
+        constexpr fixed_vector() noexcept : storage() {}
+
+        // construct with length
+        constexpr fixed_vector(size_type count, const T& value) { assign(count, value); }
+        constexpr explicit fixed_vector(size_type count) : sz(count)
+        {
+            check_resize(count);
+            for (size_type i = 0; i < count; i++)
+            {
+                storage[i].construct_at();
+            }
+        }
+
+        // construct from iterators/init-list
+        template <detail::is_input_it_like InputIt>
+        constexpr fixed_vector(InputIt first, InputIt last)
+        {
+            assign(first, last);
+        }
+
+        constexpr fixed_vector(std::initializer_list<T> list) { assign(list); }
+
+        // copy/move constructors
+        constexpr fixed_vector(const fixed_vector& other) { assign(other.begin(), other.end()); }
+
+        constexpr fixed_vector(fixed_vector&& other) noexcept
+        {
+            assign(std::move_iterator(other.begin()), std::move_iterator(other.end()));
+            other.clear();
+        }
+
+        // size mismatch
+        template <size_type NewN>
+        constexpr fixed_vector(const fixed_vector<T, NewN>& other)
+        {
+            assign(other.begin(), other.end());
+        }
+
+        template <size_type NewN>
+        constexpr fixed_vector(fixed_vector<T, NewN>&& other) noexcept
+        {
+            assign(std::move_iterator(other.begin()), std::move_iterator(other.end()));
+            other.clear();
+        }
+
+        // destructor
+        constexpr ~fixed_vector() { clear(); }
+
+        // --- assignment operators
+        constexpr auto operator=(const fixed_vector& other) -> fixed_vector&
+        {
+            if (&other == this)
+            {
+                return *this;
+            }
+            assign(other.begin(), other.end());
+            return *this;
+        }
+
+        constexpr auto operator=(fixed_vector&& other) noexcept -> fixed_vector&
+        {
+            if (&other == this)
+            {
+                return *this;
+            }
+
+            assign(std::move_iterator(other.begin()), std::move_iterator(other.end()));
+            other.clear();
+            return *this;
+        }
+
+        template <size_type NewN>
+        constexpr auto operator=(const fixed_vector<T, NewN>& other) -> fixed_vector&
+        {
+            if (&other == this)
+            {
+                return *this;
+            }
+            assign(other.begin(), other.end());
+            return *this;
+        }
+
+        template <size_type NewN>
+        constexpr auto operator=(fixed_vector<T, NewN>&& other) noexcept -> fixed_vector&
+        {
+            if (&other == this)
+            {
+                return *this;
+            }
+
+            assign(std::move_iterator(other.begin()), std::move_iterator(other.end()));
+            other.clear();
+            return *this;
+        }
+
+        constexpr auto operator=(std::initializer_list<T> list) -> fixed_vector&
+        {
+            assign(list);
+            return *this;
+        }
+
+        // --- assign
+        constexpr void assign(size_type count, const T& value)
+        {
+            check_resize(count);
+            clear();
+
+            sz = count;
+            for (size_type i = 0; i < count; i++)
+            {
+                storage[i].construct_at(value);
+            }
+        }
+
+        template <detail::is_input_it_like InputIt>
+        constexpr void assign(InputIt first, InputIt last)
+        {
+            clear();
+
+            size_type index = 0;
+            while (first != last)
+            {
+                check_resize(sz + 1);
+                storage[index++].construct_at(*first++);
+                sz++;
+            }
+        }
+
+        constexpr void assign(std::initializer_list<T> list) { assign(list.begin(), list.end()); }
+
+        // --- element access
+        constexpr auto at(size_type pos) -> reference
+        {
+            check_bound(pos);
+            return (*this)[pos];
+        }
+        constexpr auto at(size_type pos) const -> const_reference
+        {
+            check_bound(pos);
+            return (*this)[pos];
+        }
+
+        constexpr auto operator[](size_type pos) -> reference { return *storage[pos].get(); }
+        constexpr auto operator[](size_type pos) const -> const_reference { return *storage[pos].get(); }
+
+        constexpr auto front() -> reference { return *begin(); }
+        constexpr auto front() const -> const_reference { return *begin(); }
+        constexpr auto back() -> const_reference { return *rbegin(); }
+        constexpr auto back() const -> const_reference { return *rbegin(); }
+        constexpr auto data() noexcept -> pointer { return storage[0].get(); }
+        constexpr auto data() const noexcept -> const_pointer { return storage[0].get(); }
+
+        constexpr auto begin() noexcept -> iterator { return iterator(storage); }
+        constexpr auto begin() const noexcept -> const_iterator { return const_iterator(storage); }
+        constexpr auto cbegin() const noexcept -> const_iterator { return begin(); }
+        constexpr auto end() noexcept -> iterator { return iterator(storage + sz); }
+        constexpr auto end() const noexcept -> const_iterator { return const_iterator(storage + sz); }
+        constexpr auto cend() const noexcept -> const_iterator { return end(); }
+
+        constexpr auto rbegin() noexcept -> reverse_iterator { return reverse_iterator(end()); }
+        constexpr auto rbegin() const noexcept -> const_reverse_iterator { return const_reverse_iterator(end()); }
+        constexpr auto crbegin() const noexcept -> const_reverse_iterator { return const_reverse_iterator(end()); }
+        constexpr auto rend() noexcept -> reverse_iterator { return reverse_iterator(begin()); }
+        constexpr auto rend() const noexcept -> const_reverse_iterator { return const_reverse_iterator(begin()); }
+        constexpr auto crend() const noexcept -> const_reverse_iterator { return const_reverse_iterator(begin()); }
+
+        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return sz == 0; }
+        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return sz; }
+        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type { return N; }
+        [[nodiscard]] constexpr auto capacity() const noexcept -> size_type { return N; }
+
+        constexpr void clear() noexcept
+        {
+            for (size_type i = 0; i < sz; i++)
+            {
+                storage[i].destroy_at();
+            }
+
+            sz = 0;
+        }
+
+        constexpr auto insert(const_iterator pos, const T& value) -> iterator
+        {
+            check_resize(sz + 1);
+
+            size_type index = pos - cbegin();
+            move_away(index, 1);
+
+            storage[index].construct_at(value);
+            sz++;
+            return begin() + index;
+        }
+
+        constexpr auto insert(const_iterator pos, T&& value) -> iterator
+        {
+            check_resize(sz + 1);
+
+            size_type index = pos - cbegin();
+            move_away(index, 1);
+
+            storage[index].construct_at(std::move(value));
+            sz++;
+            return begin() + index;
+        }
+
+        constexpr auto insert(const_iterator pos, size_type count, const T& value) -> iterator
+        {
+            check_resize(sz + count);
+
+            size_type index = pos - cbegin();
+            move_away(index, count);
+
+            for (size_type i = 0; i < count; i++)
+            {
+                storage[index + i].construct_at(std::move(value));
+            }
+
+            sz += count;
+            return begin() + index;
+        }
+
+        template <detail::is_input_it_like InputIt>
+        constexpr auto insert(const_iterator pos, InputIt first, InputIt last) -> iterator
+        {
+            size_type index = pos - cbegin();
+
+            if constexpr (requires() { last - first; })
+            {
+                size_type count = last - first;
+                check_resize(sz + count);
+
+                move_away(index, count);
+
+                for (size_type i = 0; i < count; i++)
+                {
+                    storage[index + i].construct_at(std::move(*first++));
+                }
+
+                sz += count;
+            }
+            else
+            {
+                while (first != last)
+                {
+                    check_resize(sz + 1);
+                    insert(pos++, *first++);
+                    sz++;
+                }
+            }
+
+            return begin() + index;
+        }
+
+        constexpr auto insert(const_iterator pos, std::initializer_list<T> list) -> iterator { return insert(pos, list.begin(), list.end()); }
+
+        template <typename... Args>
+        constexpr auto emplace(const_iterator pos, Args&&... args) -> iterator
+        {
+            check_resize(sz + 1);
+
+            size_type index = pos - cbegin();
+            if (sz != 0)
+            {
+                move_away(index, 1);
+            }
+
+            storage[index].construct_at(std::forward<Args>(args)...);
+
+            sz++;
+            return begin() + index;
+        }
+
+        constexpr void push_back(const T& value)
+        {
+            check_resize(sz + 1);
+            storage[sz].construct_at(value);
+            sz++;
+        }
+
+        template <typename... Args>
+        constexpr auto emplace_back(Args&&... args) -> reference
+        {
+            check_resize(sz + 1);
+            storage[sz].construct_at(std::forward<Args>(args)...);
+            return *(begin() + (sz++));
+        }
+
+        constexpr void push_back(T&& value)
+        {
+            check_resize(sz + 1);
+            storage[sz].construct_at(std::move(value));
+            sz++;
+        }
+
+        constexpr void pop_back()
+        {
+            sz--;
+            storage[sz].destroy_at();
+        }
+
+        constexpr void resize(size_type new_size)
+        {
+            check_resize(new_size);
+
+            for (size_type i = new_size; i < sz; i++)
+            {
+                storage[i].destroy_at();
+            }
+
+            for (size_type i = sz; i < new_size; i++)
+            {
+                storage[i].construct_at();
+            }
+
+            sz = new_size;
+        }
+
+        constexpr void resize(size_type new_size, const value_type& value)
+        {
+            check_resize(new_size);
+
+            for (size_type i = new_size; i < sz; i++)
+            {
+                storage[i].destroy_at();
+            }
+
+            for (size_type i = sz; i < new_size; i++)
+            {
+                storage[i].construct_at(value);
+            }
+
+            sz = new_size;
+        }
+
+        constexpr auto erase(const_iterator pos) -> iterator;
+        constexpr auto erase(const_iterator first, const_iterator last) -> iterator;
+    };
+
+    template <typename T, std::size_t N>
+    constexpr auto operator==(const fixed_vector<T, N>& lhs, const fixed_vector<T, N>& rhs) -> bool
+    {
+        if (lhs.size() != lhs.size())
+        {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < lhs.size(); i++)
+        {
+            if (lhs[i] != rhs[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+} // namespace jvm2ir
+

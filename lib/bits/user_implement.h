@@ -4,9 +4,11 @@
 
 namespace std::detail
 {
-    void* malloc(size_t size);
-    void* aligned_malloc(size_t size, size_t align);
-    void free(void*);
+    auto malloc(size_t size) -> void*;
+    auto aligned_malloc(size_t size, size_t align) -> void*;
+    auto realloc(void* pointer, size_t size) -> void*;
+    void free(void* pointer);
+
     void putc(char ch);
 
     namespace errors

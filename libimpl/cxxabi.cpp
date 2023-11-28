@@ -1,3 +1,4 @@
+#include <klog/klog.h>
 extern "C"
 {
 #define ATEXIT_FUNC_MAX 128
@@ -11,10 +12,7 @@ extern "C"
         void* dsoHandle;
     };
 
-    void __cxa_pure_virtual()
-    {
-        while (1) {}
-    }
+    void __cxa_pure_virtual() { klog::panic("invoked pure virtual function"); }
 
     atexit_fn_t __atexitFuncs[ATEXIT_FUNC_MAX];
     uarch_t __atexitFuncCount = 0;

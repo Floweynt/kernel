@@ -36,6 +36,7 @@
 #include "../bits/type_traits/is_union.h"
 #include "../bits/type_traits/is_unsigned.h"
 #include "../bits/type_traits/is_void.h"
+#include "../bits/type_traits/make_signed_unsigned.h"
 #include "../bits/type_traits/move_assignable.h"
 #include "../bits/type_traits/move_constructible.h"
 #include "../bits/type_traits/pointer.h"
@@ -44,4 +45,16 @@
 #include "../bits/type_traits/remove_extents.h"
 #include "../bits/type_traits/swappable.h"
 #include "../bits/type_traits/utils.h"
+
+namespace std
+{
+    template <std::size_t Size, std::size_t Align>
+    struct alignas(Align) aligned_storage
+    {
+        constexpr aligned_storage() : buffer{0} {}
+
+        char buffer[Size];
+    };
+} // namespace std
+
 #endif

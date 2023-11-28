@@ -1,0 +1,10 @@
+// vim: set ft=cpp:
+
+#include "../bits/user_implement.h"
+#include <cstddef>
+namespace std
+{
+    inline auto malloc(size_t size) -> void* { return detail::malloc(size); }
+    inline void free(void* pointer) { detail::free(pointer); } 
+    inline auto realloc(void* pointer, size_t size) -> void* { return detail::realloc(pointer, size); } 
+} // namespace std

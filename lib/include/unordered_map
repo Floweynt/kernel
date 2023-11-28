@@ -1,0 +1,368 @@
+#ifndef FRG_HASHMAP_HPP
+#define FRG_HASHMAP_HPP
+
+#include <functional>
+#include <initializer_list>
+#include <memory>
+#include <optional>
+
+namespace std
+{
+
+    template <typename Key, typename Value, typename Hash = hash<Key>, typename Allocator = allocator<pair<const Key, Value>>>
+    class unordered_map
+    {
+    public:
+        using entry_type = pair<const Key, Value>;
+
+    private:
+        struct chain
+        {
+            entry_type entry;
+            chain* next;
+
+            chain(const Key& new_key, const Value& new_value) : entry{new_key, new_value}, next{nullptr} {}
+
+            chain(const Key& new_key, Value&& new_value) : entry{new_key, move(new_value)}, next{nullptr} {}
+        };
+
+    public:
+        class iterator
+        {
+            friend class unordered_map;
+
+        public:
+            iterator& operator++()
+            {
+                __nostdlib_assert(item);
+                item = item->next;
+                if (item)
+                    return *this;
+
+                __nostdlib_assert(bucket < map->_capacity);
+                while (true)
+                {
+                    bucket++;
+                    if (bucket == map->_capacity)
+                        break;
+                    item = map->_table[bucket];
+                    if (item)
+                        break;
+                }
+
+                return *this;
+            }
+
+            bool operator==(const iterator& other) const { return (bucket == other.bucket) && (item == other.item); }
+
+            entry_type& operator*() { return item->entry; }
+            entry_type* operator->() { return &item->entry; }
+
+            operator bool() { return item != nullptr; }
+
+        private:
+            iterator(unordered_map* map, size_t bucket, chain* item) : map(map), item(item), bucket(bucket) {}
+
+            unordered_map* map;
+            chain* item;
+            size_t bucket;
+        };
+
+        class const_iterator
+        {
+            friend class unordered_map;
+
+        public:
+            const_iterator& operator++()
+            {
+                __nostdlib_assert(item);
+                item = item->next;
+                if (item)
+                    return *this;
+
+                __nostdlib_assert(bucket < map->_capacity);
+                while (true)
+                {
+                    bucket++;
+                    if (bucket == map->_capacity)
+                        break;
+                    item = map->_table[bucket];
+                    if (item)
+                        break;
+                }
+
+                return *this;
+            }
+
+            bool operator==(const const_iterator& other) const { return (bucket == other.bucket) && (item == other.item); }
+
+            const entry_type& operator*() const { return item->entry; }
+            const entry_type* operator->() const { return &item->entry; }
+
+            operator bool() const { return item != nullptr; }
+
+        private:
+            const_iterator(const unordered_map* map, size_t bucket, const chain* item) : map(map), item(item), bucket(bucket) {}
+
+            const unordered_map* map;
+            const chain* item;
+            size_t bucket;
+        };
+
+        constexpr unordered_map(const Hash& hasher = Hash(), Allocator allocator = Allocator());
+        unordered_map(initializer_list<entry_type> init, const Hash& hasher = Hash(), Allocator allocator = Allocator());
+        unordered_map(const unordered_map&) = delete;
+
+        ~unordered_map();
+
+        void insert(const Key& key, const Value& value);
+        void insert(const Key& key, Value&& value);
+        Value& operator[](const Key& key);
+
+        bool empty() { return !_size; }
+
+        iterator end() { return iterator(this, _capacity, nullptr); }
+
+        iterator find(const Key& key)
+        {
+            if (!_size)
+                return end();
+
+            unsigned int bucket = ((unsigned int)_hasher(key) % _capacity);
+            for (chain* item = _table[bucket]; item != nullptr; item = item->next)
+            {
+                if (item->entry.first == key)
+                    return iterator(this, bucket, item);
+            }
+
+            return end();
+        }
+
+        iterator begin()
+        {
+            if (!_size)
+                return iterator(this, _capacity, nullptr);
+
+            for (size_t bucket = 0; bucket < _capacity; bucket++)
+            {
+                if (_table[bucket])
+                    return iterator(this, bucket, _table[bucket]);
+            }
+
+            __nostdlib_assert(!"unordered_map corrupted");
+            __builtin_unreachable();
+        }
+
+        const_iterator end() const { return const_iterator(this, _capacity, nullptr); }
+
+        const_iterator find(const Key& key) const
+        {
+            if (!_size)
+                return end();
+
+            unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+            for (const chain* item = _table[bucket]; item != nullptr; item = item->next)
+            {
+                if (item->entry.first == key)
+                    return const_iterator(this, bucket, item);
+            }
+
+            return end();
+        }
+
+        template <typename KeyCompatible>
+        Value* get(const KeyCompatible& key);
+
+        optional<Value> remove(const Key& key);
+
+        [[nodiscard]] constexpr auto size() const -> size_t { return _size; }
+
+    private:
+        void rehash();
+
+        Hash _hasher;
+        Allocator _allocator;
+        chain** _table;
+        size_t _capacity;
+        size_t _size;
+    };
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    constexpr unordered_map<Key, Value, Hash, Allocator>::unordered_map(const Hash& hasher, Allocator allocator)
+        : _hasher(hasher), _allocator(move(allocator)), _table(nullptr), _capacity(0), _size(0)
+    {
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    unordered_map<Key, Value, Hash, Allocator>::unordered_map(initializer_list<entry_type> init, const Hash& hasher, Allocator allocator)
+        : _hasher(hasher), _allocator(move(allocator)), _table(nullptr), _capacity(0), _size(0)
+    {
+        /* TODO: we know the size so we don't have to keep rehashing?? */
+        for (auto& entry : init)
+        {
+            insert(entry.first, entry.second);
+        }
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    unordered_map<Key, Value, Hash, Allocator>::~unordered_map()
+    {
+        for (size_t i = 0; i < _capacity; i++)
+        {
+            chain* item = _table[i];
+            while (item != nullptr)
+            {
+                chain* next = item->next;
+                detail::delete_with_alloc(_allocator, item);
+                item = next;
+            }
+        }
+        detail::deallocate_with(_allocator, _table, _capacity);
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    void unordered_map<Key, Value, Hash, Allocator>::insert(const Key& key, const Value& value)
+    {
+        if (_size >= _capacity)
+            rehash();
+
+        __nostdlib_assert(_capacity > 0);
+        unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+
+        auto item = detail::new_with_alloc<chain>(_allocator, key, value);
+        item->next = _table[bucket];
+        _table[bucket] = item;
+        _size++;
+    }
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    void unordered_map<Key, Value, Hash, Allocator>::insert(const Key& key, Value&& value)
+    {
+        if (_size >= _capacity)
+            rehash();
+
+        __nostdlib_assert(_capacity > 0);
+        unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+
+        auto item = detail::new_with_alloc<chain>(_allocator, key, move(value));
+        item->next = _table[bucket];
+        _table[bucket] = item;
+        _size++;
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    Value& unordered_map<Key, Value, Hash, Allocator>::operator[](const Key& key)
+    {
+        /* empty map case */
+        if (_size == 0)
+        {
+            rehash();
+            unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+            auto item = detail::new_with_alloc<chain>(_allocator, key, Value{});
+            item->next = _table[bucket];
+            _table[bucket] = item;
+            _size++;
+        }
+
+        unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+        for (chain* item = _table[bucket]; item != nullptr; item = item->next)
+        {
+            if (item->entry.first == key)
+                return item->entry.second;
+        }
+
+        if (_size >= _capacity)
+            rehash();
+
+        auto item = detail::new_with_alloc<chain>(_allocator, key, Value{});
+        item->next = _table[bucket];
+        _table[bucket] = item;
+        _size++;
+        return item->entry.second;
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    template <typename KeyCompatible>
+    Value* unordered_map<Key, Value, Hash, Allocator>::get(const KeyCompatible& key)
+    {
+        if (_size == 0)
+            return nullptr;
+
+        unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+
+        for (chain* item = _table[bucket]; item != nullptr; item = item->next)
+        {
+            if (item->entry.first == key)
+                return &item->entry.second;
+        }
+
+        return nullptr;
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    optional<Value> unordered_map<Key, Value, Hash, Allocator>::remove(const Key& key)
+    {
+        if (_size == 0)
+            return nullopt;
+
+        unsigned int bucket = ((unsigned int)_hasher(key)) % _capacity;
+
+        chain* previous = nullptr;
+        for (chain* item = _table[bucket]; item != nullptr; item = item->next)
+        {
+            if (item->entry.first == key)
+            {
+                Value value = move(item->entry.second);
+
+                if (previous == nullptr)
+                {
+                    _table[bucket] = item->next;
+                }
+                else
+                {
+                    previous->next = item->next;
+                }
+                detail::delete_with_alloc(_allocator, item);
+                _size--;
+
+                return value;
+            }
+
+            previous = item;
+        }
+
+        return nullopt;
+    }
+
+    template <typename Key, typename Value, typename Hash, typename Allocator>
+    void unordered_map<Key, Value, Hash, Allocator>::rehash()
+    {
+        size_t new_capacity = 2 * _size;
+        if (new_capacity < 10)
+            new_capacity = 10;
+
+        chain** new_table = detail::allocate_with<chain*>(_allocator, new_capacity);
+        for (size_t i = 0; i < new_capacity; i++)
+            new_table[i] = nullptr;
+
+        for (size_t i = 0; i < _capacity; i++)
+        {
+            chain* item = _table[i];
+            while (item != nullptr)
+            {
+                auto bucket = ((unsigned int)_hasher(item->entry.first)) % new_capacity;
+
+                chain* next = item->next;
+                item->next = new_table[bucket];
+                new_table[bucket] = item;
+                item = next;
+            }
+        }
+
+        detail::deallocate_with(_allocator, _table, _capacity);
+        _table = new_table;
+        _capacity = new_capacity;
+    }
+
+} // namespace std
+
+#endif // FRG_HASHMAP_HPP

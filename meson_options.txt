@@ -1,5 +1,4 @@
-option('max_physical_memory_allocators',  type: 'integer', min: 0x10, value: 0x20)
-option('preallocate_pages',               type: 'integer', min: 50,   value: 0x100)
+option('preallocate_pages',               type: 'integer', min: 50,   value: 0x500)
 option('klog_size_pages',                 type: 'integer', min: 4,    value: 64)
 option('cpuid_feature_buffer_size',       type: 'integer', min: 5,    value: 5)
 
@@ -14,3 +13,6 @@ option('slab_min_order',                  type: 'integer', min: 4,    value: 6)
 option('slab_max_order',                  type: 'integer', max: 16,   value: 12)
 option('slab_size_order',                 type: 'integer', min: 16,   value: 16)
 option('vmm_size',                        type: 'integer', value: 0x100000000000)
+
+option('kernel_ubsan',                    type: 'boolean', value: false)
+option('kernel_asan',                    type: 'boolean', value: false)
