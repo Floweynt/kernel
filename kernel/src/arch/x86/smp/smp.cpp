@@ -6,6 +6,7 @@
 #include <bitbuilder.h>
 #include <cstddef>
 #include <cstdint>
+#include <drivers/keyboard/ps2.h>
 #include <fs/impl/fpk.h>
 #include <fs/vfs.h>
 #include <gdt/gdt.h>
@@ -26,7 +27,6 @@
 #include <user/elf_load.h>
 #include <user/syscall/sys_io.h>
 #include <utility>
-
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -177,7 +177,27 @@ namespace smp
                     }
                 },
                 core_id);
-
+            if (core_id == 0)
+            {
+                proc::make_kthread_args(
+                    +[](std::uint64_t arg) {
+                        klog::log("I got an argument and I don't know what it's for but here it is: %lu", arg);
+                        static constexpr std::uint8_t us_qwerty_translation[128] = {
+                                0, 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0x09, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U',
+                                'I', 'O', 'P', '[', ']', 0x0D, 0x11, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 0x0E, '\\', 'Z',
+                                'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0x0F, '*', 0x13, ' ', 0x02,
+                                // function keys (F1-F10) here
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                // Numlock and Scroll Lock:
+                                0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.',
+                                // three gaps
+                                0, 0, 0,
+                                // F11, F12
+                                0, 0};
+                        poll_keystroke(us_qwerty_translation, us_qwerty_translation+sizeof(us_qwerty_translation)/sizeof(us_qwerty_translation[0]));
+                                            },
+                    0);
+            }
             initialize_apic(smp::core_local::get());
 
             run_init();
