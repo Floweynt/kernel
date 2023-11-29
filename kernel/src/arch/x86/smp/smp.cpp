@@ -26,7 +26,7 @@
 #include <user/elf_load.h>
 #include <user/syscall/sys_io.h>
 #include <utility>
-void poll_keystroke();
+#include <drivers/keyboard/ps2.h>
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -183,7 +183,7 @@ namespace smp
                     +[](std::uint64_t arg) {
                         klog::log("I got an argument and I don't know what it's for but here it is: %lu", arg);
 
-                        poll_keystroke();
+                        drivers::keyboard::poll_keystroke();
                     },
                     0);
             }

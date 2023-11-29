@@ -3,8 +3,23 @@
 #include <cstdint>
 #include <klog/klog.h>
 #include <span>
+namespace drivers::ps2
+{
 static constexpr auto TRANSLATION_TABLE_SIZE = 128;
-std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, const std::array<std::uint8_t, TRANSLATION_TABLE_SIZE>& translation_table,
+  static constexpr std::array<std::uint8_t, TRANSLATION_TABLE_SIZE> us_qwerty_translation = {
+  0, 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0x09, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']',
+  0x0D, 0x11, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 0x0E, '\\', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0x0F,
+  '*', 0x13, ' ', 0x02,
+  // function keys (F1-F10) here
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Numlock and Scroll Lock:
+  0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.',
+  // three gaps
+  0, 0, 0,
+  // F11, F12
+  0, 0};
+  static constexpr std::uint8_t SCAN_TABLE_1_FLAG_PRESSED = 0x80;
+static std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, const std::array<std::uint8_t, TRANSLATION_TABLE_SIZE>& translation_table,
                                       const std::uint8_t flag_pressed)
 // std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, std::span<uint8_t, TRANSLATION_TABLE_SIZE> &translation_table, const std::uint8_t
 // flag_pressed)
@@ -23,23 +38,10 @@ std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, const std::array<st
 // void poll_keystroke(const std::uint8_t* translation_table, const std::uint8_t* translation_table_end)
 void poll_keystroke()
 {
-
-    static constexpr std::array<std::uint8_t, TRANSLATION_TABLE_SIZE> us_qwerty_translation = {
-        0, 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0x09, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']',
-        0x0D, 0x11, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 0x0E, '\\', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0x0F,
-        '*', 0x13, ' ', 0x02,
-        // function keys (F1-F10) here
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        // Numlock and Scroll Lock:
-        0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.',
-        // three gaps
-        0, 0, 0,
-        // F11, F12
-        0, 0};
     auto& translation_table = us_qwerty_translation;
     // auto translation_table =us_qwerty_translation;
     // auto translation_table_end = us_qwerty_translation + sizeof(us_qwerty_translation)/sizeof(us_qwerty_translation[0]);
-    static constexpr std::uint8_t FLAG_PRESSED = 0x80;
+    auto flag_pressed = SCAN_TABLE_1_FLAG_PRESSED;
     auto prev_msg = 0;
     while (true)
     {
@@ -59,9 +61,9 @@ void poll_keystroke()
          * TODO eventually: distinguish Keypad / (0xE0, 0x35) and enter (0xE0, 0x1C) from normal, and RIGHT CTRL and ALT from LEFT
          */
         std::uint8_t decoded_keystroke;
-        bool is_pressed = !(scancode & FLAG_PRESSED);
+        bool is_pressed = !(scancode & flag_pressed);
 
-        decoded_keystroke = decode_keyboard_scancode(scancode, translation_table, FLAG_PRESSED);
+        decoded_keystroke = decode_keyboard_scancode(scancode, translation_table, flag_pressed);
         if (decoded_keystroke != 0)
         {
             // THIS IS A TEMPORARY SWITCH CASE FOR DEBUGGING, TODO: DELETE IT AND ACTUALLY HANDLE STUFF
@@ -102,4 +104,5 @@ void poll_keystroke()
             klog::log("Detected Keyboard Input: %s %s", output_str, is_pressed ? "pressed" : "released");
         }
     }
+}
 }
