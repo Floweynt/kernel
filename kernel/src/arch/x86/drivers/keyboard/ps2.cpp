@@ -5,8 +5,9 @@
 #include <span>
 namespace drivers::ps2
 {
-static constexpr auto TRANSLATION_TABLE_SIZE = 128;
-  static constexpr std::array<std::uint8_t, TRANSLATION_TABLE_SIZE> us_qwerty_translation = {
+  namespace {
+  constexpr auto TRANSLATION_TABLE_SIZE = 128;
+  constexpr std::array<std::uint8_t, TRANSLATION_TABLE_SIZE> us_qwerty_translation = {
   0, 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0x09, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']',
   0x0D, 0x11, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 0x0E, '\\', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0x0F,
   '*', 0x13, ' ', 0x02,
@@ -18,7 +19,7 @@ static constexpr auto TRANSLATION_TABLE_SIZE = 128;
   0, 0, 0,
   // F11, F12
   0, 0};
-  static constexpr std::uint8_t SCAN_TABLE_1_FLAG_PRESSED = 0x80;
+   constexpr std::uint8_t SCAN_TABLE_1_FLAG_PRESSED = 0x80;
 static std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, const std::array<std::uint8_t, TRANSLATION_TABLE_SIZE>& translation_table,
                                       const std::uint8_t flag_pressed)
 // std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, std::span<uint8_t, TRANSLATION_TABLE_SIZE> &translation_table, const std::uint8_t
@@ -33,7 +34,7 @@ static std::uint8_t decode_keyboard_scancode(std::uint8_t scancode, const std::a
     (key_scancode < (translation_table.size())) && (decoded_keystroke = translation_table[key_scancode]);
     // klog::log("%2X, %d", decoded_keystroke, is_pressed);
     return decoded_keystroke;
-}
+}}
 
 // void poll_keystroke(const std::uint8_t* translation_table, const std::uint8_t* translation_table_end)
 void poll_keystroke()
