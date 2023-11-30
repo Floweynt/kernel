@@ -7,12 +7,12 @@ version: 2.1
 jobs:
   build-kernel:
     docker:
-      - image: floweynt/arch-llvm16-meson:1.0
+      - image: archlinux:latest
     steps:
       - checkout
       - run:
           name: "Download deps"
-          command: "sudo pacman -Sy fmt qemu-full pkgconf gdb mtools parted clang -y --needed --noconfirm"
+          command: "sudo pacman -Sy fmt qemu-full pkgconf gdb mtools parted clang meson -y --needed --noconfirm"
       - run:
           name: "Meson configure"
           command: "CC=clang CXX=clang++ meson setup build --buildtype debug -Ddebug_log_mmap=false"
