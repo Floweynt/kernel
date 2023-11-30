@@ -59,4 +59,5 @@ namespace ioports
     inline static constexpr auto PIT_DATA_CHAN_1 = 0x41;
     inline static constexpr auto PIT_DATA_CHAN_2 = 0x42;
     inline static constexpr auto PIT_MODE_COMMAND = 0x43;
+    inline static constexpr auto PS2_KEYBOARD_DATA = 0x60;
 }

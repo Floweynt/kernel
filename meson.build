@@ -30,7 +30,6 @@ mcopy =             find_program('mcopy')
 parted =            find_program('parted')
 
 kernel_src = [
-
     'kernel/src/arch/x86/idt/idt.cpp',
     'kernel/src/arch/x86/idt/handlers/handle_ud.cpp',
     'kernel/src/arch/x86/idt/handlers/handle_np.cpp',
@@ -73,6 +72,7 @@ kernel_src = [
     'kernel/src/arch/x86/user/fd/console.cpp',
     'kernel/src/arch/x86/user/syscall/syscall_entry.S',
     'kernel/src/arch/x86/user/elf_load.cpp',
+    'kernel/src/arch/x86/drivers/keyboard/ps2.cpp',    
     'kernel/src/arch/x86/smp/smp.cpp',
     'kernel/src/arch/x86/smp/tls.cpp',
     'kernel/external/terminal/limine_term_ccompat.cpp',

@@ -26,7 +26,7 @@
 #include <user/elf_load.h>
 #include <user/syscall/sys_io.h>
 #include <utility>
-
+#include <drivers/keyboard/ps2.h>
 namespace smp
 {
     void core_local::create(core_local* cpu0)
@@ -177,7 +177,16 @@ namespace smp
                     }
                 },
                 core_id);
+            if (core_id == 0)
+            {
+                proc::make_kthread_args(
+                    +[](std::uint64_t arg) {
+                        klog::log("I got an argument and I don't know what it's for but here it is: %lu", arg);
 
+                        drivers::ps2::poll_keystroke();
+                    },
+                    0);
+            }
             initialize_apic(smp::core_local::get());
 
             run_init();
